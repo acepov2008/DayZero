@@ -107,4 +107,102 @@ function Invoke-DzUiRefresh {
     $Element.Dispatcher.Invoke([System.Action] {}, [System.Windows.Threading.DispatcherPriority]::Render)
 }
 
-Export-ModuleMember -Function @('Initialize-DzWpf', 'Import-DzXaml', 'Initialize-DzTheme', 'Get-DzNamedElement', 'Show-DzMessage', 'Invoke-DzUiRefresh')
+function Get-DzResource {
+    <# A theme resource (brush, style, font) from Application.Resources. #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Key)
+    return [System.Windows.Application]::Current.FindResource($Key)
+}
+
+function New-DzChoiceControl {
+    <#
+        One review item as a CheckBox, or a RadioButton when it belongs to a pick-one group,
+        showing its title, description and (yellow) warning. Tag = the item.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][object]$Item, [string]$RadioGroup = 'dz')
+    $exclusive = [bool]($Item.PSObject.Properties['Exclusive'] -and $Item.Exclusive)
+    if ($exclusive) {
+        $c = New-Object System.Windows.Controls.RadioButton
+        $c.GroupName = $RadioGroup
+    }
+    else { $c = New-Object System.Windows.Controls.CheckBox }
+    $c.IsChecked = [bool]$Item.Checked
+    $c.Tag = $Item
+    $c.Margin = New-Object System.Windows.Thickness(0, 6, 0, 0)
+    $title = if ($Item.PSObject.Properties['Title'] -and $Item.Title) { [string]$Item.Title } else { [string]$Item.Name }
+    $panel = New-Object System.Windows.Controls.StackPanel
+    $t = New-Object System.Windows.Controls.TextBlock
+    $t.Text = $title
+    $t.FontWeight = [System.Windows.FontWeights]::SemiBold
+    $t.TextWrapping = [System.Windows.TextWrapping]::Wrap
+    [void]$panel.Children.Add($t)
+    if ($Item.PSObject.Properties['Description'] -and $Item.Description) {
+        $d = New-Object System.Windows.Controls.TextBlock
+        $d.Text = [string]$Item.Description
+        $d.FontSize = 11.5
+        $d.TextWrapping = [System.Windows.TextWrapping]::Wrap
+        $d.Foreground = Get-DzResource 'DzMuted'
+        [void]$panel.Children.Add($d)
+    }
+    if ($Item.PSObject.Properties['Warning'] -and $Item.Warning) {
+        $w = New-Object System.Windows.Controls.TextBlock
+        $w.Text = ([string][char]0x26A0) + ' ' + [string]$Item.Warning
+        $w.FontSize = 11.5
+        $w.TextWrapping = [System.Windows.TextWrapping]::Wrap
+        $w.Foreground = Get-DzResource 'DzYellow'
+        $w.Margin = New-Object System.Windows.Thickness(0, 2, 0, 0)
+        [void]$panel.Children.Add($w)
+    }
+    $c.Content = $panel
+    [System.Windows.Automation.AutomationProperties]::SetName($c, $title)
+    return $c
+}
+
+function Add-DzChoiceGroup {
+    <#
+        Adds one block per group (header + its items) to a panel, in the order the items come.
+        GroupWidth makes the blocks flow in columns inside a WrapPanel. Returns the controls.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][object]$Panel,
+        [AllowEmptyCollection()][object[]]$Items = @(),
+        [double]$GroupWidth = 0,
+        [string]$RadioPrefix = 'dz'
+    )
+    $controls = New-Object System.Collections.Generic.List[object]
+    $order = New-Object System.Collections.Generic.List[string]
+    foreach ($i in $Items) { $g = [string]$i.Group; if (-not $order.Contains($g)) { $order.Add($g) } }
+    foreach ($g in $order) {
+        $box = New-Object System.Windows.Controls.StackPanel
+        if ($GroupWidth -gt 0) { $box.Width = $GroupWidth }
+        $box.Margin = New-Object System.Windows.Thickness(0, 0, 18, 14)
+        $h = New-Object System.Windows.Controls.TextBlock
+        $h.Text = $g.ToUpperInvariant()
+        $h.FontSize = 11
+        $h.FontWeight = [System.Windows.FontWeights]::Bold
+        $h.Foreground = Get-DzResource 'DzCyan'
+        [void]$box.Children.Add($h)
+        foreach ($i in @($Items | Where-Object { [string]$_.Group -eq $g })) {
+            $groupId = if ($i.PSObject.Properties['GroupId']) { [string]$i.GroupId } else { $g }
+            $c = New-DzChoiceControl -Item $i -RadioGroup ("{0}-{1}" -f $RadioPrefix, $groupId)
+            [void]$box.Children.Add($c)
+            $controls.Add($c)
+        }
+        [void]$Panel.Children.Add($box)
+    }
+    return $controls.ToArray()
+}
+
+function Update-DzChoiceItem {
+    <# Copies each control's ticked state back into its item (Tag). #>
+    [CmdletBinding()]
+    param([AllowEmptyCollection()][object[]]$Controls = @())
+    foreach ($c in $Controls) { $c.Tag.Checked = ($c.IsChecked -eq $true) }
+}
+
+Export-ModuleMember -Function @(
+    'Initialize-DzWpf', 'Import-DzXaml', 'Initialize-DzTheme', 'Get-DzNamedElement', 'Show-DzMessage', 'Invoke-DzUiRefresh',
+    'Get-DzResource', 'New-DzChoiceControl', 'Add-DzChoiceGroup', 'Update-DzChoiceItem'
+)

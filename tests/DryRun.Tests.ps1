@@ -4,9 +4,11 @@
 # Passing means: in dry-run mode DayZero walks the whole plan and changes nothing.
 
 BeforeDiscovery {
+    # Custom mode arrives with the builder's picks (settings.json customSelection).
     $script:Modes = @(
-        @{ Mode = 'gaming'; Form = 'desktop' }, @{ Mode = 'gaming'; Form = 'laptop' },
-        @{ Mode = 'office'; Form = 'desktop' }, @{ Mode = 'everything'; Form = 'desktop' }
+        @{ Mode = 'gaming'; Form = 'desktop'; Pre = $null }, @{ Mode = 'gaming'; Form = 'laptop'; Pre = $null },
+        @{ Mode = 'office'; Form = 'desktop'; Pre = $null }, @{ Mode = 'everything'; Form = 'desktop'; Pre = $null },
+        @{ Mode = 'custom'; Form = 'desktop'; Pre = @{ apps = @('chrome', 'telegram', 'whatsapp', 'claude', 'winrar'); office = $true; debloat = 'light'; tweaks = @() } }
     )
 }
 
@@ -63,7 +65,7 @@ Describe 'Dry run of <Mode> on a <Form>' -ForEach $script:Modes {
             IsLaptop = ($Form -eq 'laptop'); GpuVendors = @('NVIDIA', 'Intel'); GpuNames = @('RTX', 'UHD'); MemoryGB = 32; FreeDiskGB = 400
         }
         $modeObj = Get-DzMode -Config $script:Config -Id $Mode   # not $mode: PowerShell names ignore case
-        $review = Get-DzReviewModel -Mode $modeObj -System $script:sys -Config $script:Config
+        $review = Get-DzReviewModel -Mode $modeObj -System $script:sys -Config $script:Config -Preselect $Pre
         $script:review = $review
         $options = ConvertTo-DzPlanOption -Apps @($review.Apps) -Options @($review.Options)
         $plan = New-DzPlan -Mode $modeObj -Options $options -System $script:sys -Config $script:Config
@@ -107,10 +109,16 @@ Describe 'Dry run of <Mode> on a <Form>' -ForEach $script:Modes {
         if ($Mode -eq 'gaming') { $ids | Should -Contain 'app:steam'; $ids | Should -Not -Contain 'office' }
         if ($Mode -ne 'gaming') { $ids | Should -Contain 'office' }
         if ($Mode -eq 'office') { $ids | Should -Not -Contain 'tweak:game-mode' }
+        if ($Mode -eq 'custom') {
+            foreach ($id in 'app:telegram', 'app:whatsapp', 'app:claude', 'app:winrar') { $ids | Should -Contain $id }
+            $ids | Should -Not -Contain 'app:steam'
+            $ids | Should -Not -Contain 'app:7zip'
+            @($ids | Where-Object { $_ -like 'tweak:*' }).Count | Should -Be 0
+        }
     }
     It 'adds the performance power plan on desktops only (laptops: unticked)' {
         $ids = @($script:final.steps | ForEach-Object { $_.id })
-        if ($Mode -eq 'office') { $ids | Should -Not -Contain 'tweak:power-plan' }
+        if ($Mode -in 'office', 'custom') { $ids | Should -Not -Contain 'tweak:power-plan' }
         elseif ($Form -eq 'laptop') { $ids | Should -Not -Contain 'tweak:power-plan' }
         else { $ids | Should -Contain 'tweak:power-plan' }
     }

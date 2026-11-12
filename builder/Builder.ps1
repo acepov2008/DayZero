@@ -24,6 +24,10 @@ $script:LogLines = New-Object System.Collections.Generic.List[string]
 $script:MediaByDrive = @{}
 $script:GeneratedPassword = $null
 $script:ThisPcFirmware = $null
+$script:BuilderConfig = $null
+$script:SelectedMode = 'gaming'
+$script:ModeCards = @()
+$script:CustomSelection = $null
 $script:ui = $null
 $script:Window = $null
 
@@ -331,9 +335,11 @@ function Get-BuilderInput {
         $errors.Add("The display language must be one that is on the stick: $($media.Languages -join ', ').")
     }
 
-    $mode = 'gaming'
-    if ($ui.ModeOfficeRadio.IsChecked -eq $true) { $mode = 'office' }
-    elseif ($ui.ModeEverythingRadio.IsChecked -eq $true) { $mode = 'everything' }
+    $mode = [string]$script:SelectedMode
+    $modeDef = Get-DzMode -Config $script:BuilderConfig -Id $mode
+    if ($modeDef.custom -and $null -eq $script:CustomSelection) {
+        $warnings.Add("Custom mode with nothing picked yet: you'll tick everything on the new PC.")
+    }
 
     $autoLogon = ($ui.AutoLogonCheck.IsChecked -eq $true)
     $dryRun = ($ui.DryRunCheck.IsChecked -eq $true)
@@ -376,6 +382,7 @@ function Get-BuilderInput {
         timeZone          = $timeZone
         mediaBuild        = $(if ($media) { $media.Build } else { $null })
     }
+    if ($modeDef.custom -and $null -ne $script:CustomSelection) { $settings.customSelection = $script:CustomSelection }
     return [pscustomobject]@{
         Errors   = $errors
         Warnings = $warnings
@@ -385,6 +392,111 @@ function Get-BuilderInput {
         Options  = $options
         Settings = $settings
     }
+}
+
+# ------------------------------------------------------------------------------------
+# Default mode, "what's included" and the Custom picker
+# ------------------------------------------------------------------------------------
+
+function Initialize-BuilderModeCards {
+    $ui = $script:ui
+    $ui.ModeCardsPanel.Children.Clear()
+    $cards = New-Object System.Collections.Generic.List[object]
+    $style = Get-DzResource 'DzModeCard'
+    foreach ($m in @(Get-DzModeList -Config $script:BuilderConfig)) {
+        $rb = New-Object System.Windows.Controls.RadioButton
+        $rb.GroupName = 'Mode'
+        $rb.Style = $style
+        $rb.Tag = [string]$m.id
+        $rb.Margin = New-Object System.Windows.Thickness(5)
+        $panel = New-Object System.Windows.Controls.StackPanel
+        $emoji = New-Object System.Windows.Controls.TextBlock
+        $emoji.Text = [string](Get-DzProperty $m 'emoji' '')
+        $emoji.FontSize = 26
+        $emoji.FontFamily = Get-DzResource 'DzEmoji'
+        $emoji.HorizontalAlignment = 'Center'
+        [void]$panel.Children.Add($emoji)
+        $title = New-Object System.Windows.Controls.TextBlock
+        $title.Text = [string](Get-DzProperty $m 'title' $m.id)
+        $title.FontSize = 14
+        $title.FontWeight = [System.Windows.FontWeights]::Black
+        $title.HorizontalAlignment = 'Center'
+        $title.Margin = New-Object System.Windows.Thickness(0, 4, 0, 0)
+        [void]$panel.Children.Add($title)
+        $tag = New-Object System.Windows.Controls.TextBlock
+        $tag.Text = [string](Get-DzProperty $m 'tagline' '')
+        $tag.FontSize = 11
+        $tag.Foreground = Get-DzResource 'DzMuted'
+        $tag.TextWrapping = [System.Windows.TextWrapping]::Wrap
+        $tag.TextAlignment = 'Center'
+        [void]$panel.Children.Add($tag)
+        $rb.Content = $panel
+        [System.Windows.Automation.AutomationProperties]::SetName($rb, ('{0} mode: {1}' -f $title.Text, $tag.Text))
+        $rb.Add_Checked({
+                param($src)
+                try { Select-BuilderMode -Id ([string]$src.Tag) } catch { Write-BuilderLog ('Mode preview failed: ' + $_.Exception.Message) }
+            })
+        [void]$ui.ModeCardsPanel.Children.Add($rb)
+        $cards.Add($rb)
+    }
+    $script:ModeCards = $cards.ToArray()
+}
+
+function Select-BuilderMode {
+    param([Parameter(Mandatory = $true)][string]$Id)
+    $script:SelectedMode = $Id
+    foreach ($c in $script:ModeCards) { if ([string]$c.Tag -eq $Id -and -not $c.IsChecked) { $c.IsChecked = $true } }
+    Update-ModeIncludes
+}
+
+function Update-ModeIncludes {
+    $ui = $script:ui
+    $mode = Get-DzMode -Config $script:BuilderConfig -Id $script:SelectedMode
+    $pre = if ($mode.custom) { $script:CustomSelection } else { $null }
+    $ui.ModeIncludesTitle.Text = ('WHAT {0} INCLUDES' -f $mode.title)
+    $ui.ModeIncludesText.Text = Get-DzModeSummary -Mode $mode -Config $script:BuilderConfig -Preselect $pre
+    $ui.CustomizeButton.Visibility = if ($mode.custom) { 'Visible' } else { 'Collapsed' }
+}
+
+function Show-CustomPicker {
+    $mode = Get-DzMode -Config $script:BuilderConfig -Id $script:SelectedMode
+    $model = Get-DzReviewModel -Mode $mode -System $null -Config $script:BuilderConfig -Preselect $script:CustomSelection
+    $path = Join-Path $script:BuilderRoot 'PickerWindow.xaml'
+    $picker = Import-DzXaml -Path $path
+    $names = Get-DzNamedElement -Root $picker -XamlPath $path
+    $controls = @(Add-DzChoiceGroup -Panel $names.PickerAppsPanel -Items @($model.Apps) -GroupWidth 235 -RadioPrefix 'papp') +
+    @(Add-DzChoiceGroup -Panel $names.PickerOptionsPanel -Items @($model.Options) -RadioPrefix 'popt')
+    $countText = $names.PickerCountText
+    $updateCount = {
+        $n = @($controls | Where-Object { $_.IsChecked -eq $true -and $_.Tag.Kind -in @('app', 'office') }).Count
+        $countText.Text = "$n app(s) ticked"
+    }.GetNewClosure()
+    foreach ($c in $controls) { $c.Add_Click($updateCount) }
+    & $updateCount
+    $names.PickerNoneButton.Add_Click({
+            foreach ($c in $controls) {
+                if ($c -is [System.Windows.Controls.RadioButton]) { $c.IsChecked = ($c.Tag.Kind -eq 'none' -or ($c.Tag.Kind -eq 'debloat' -and $c.Tag.Id -eq 'none')) }
+                else { $c.IsChecked = $false }
+            }
+            & $updateCount
+        }.GetNewClosure())
+    $names.PickerCancelButton.Add_Click({ $picker.Close() }.GetNewClosure())
+    $names.PickerOkButton.Add_Click({ $picker.Tag = 'ok'; $picker.Close() }.GetNewClosure())
+    $picker.Owner = $script:Window
+    [void]$picker.ShowDialog()
+    if ([string]$picker.Tag -ne 'ok') { return }
+
+    Update-DzChoiceItem -Controls $controls
+    $opt = ConvertTo-DzPlanOption -Apps @($model.Apps) -Options @($model.Options)
+    $script:CustomSelection = [ordered]@{
+        apps     = @($opt.apps)
+        office   = [bool]$opt.office
+        debloat  = [string]$opt.debloat
+        tweaks   = @($opt.tweaks)
+        removals = @($opt.removals)
+    }
+    Write-BuilderLog ("Custom picks: {0} app(s){1}, clean-up {2}, {3} tweak(s)." -f @($opt.apps).Count, $(if ($opt.office) { ' + Microsoft 365' } else { '' }), $opt.debloat, @($opt.tweaks).Count)
+    Update-ModeIncludes
 }
 
 # ------------------------------------------------------------------------------------
@@ -531,7 +643,7 @@ function Invoke-CheckApps {
 # ------------------------------------------------------------------------------------
 
 function Start-Builder {
-    foreach ($m in 'Core.psm1', 'Config.psm1', 'Engine.psm1', 'Download.psm1', 'Winget.psm1', 'Ui.psm1') {
+    foreach ($m in 'Core.psm1', 'Config.psm1', 'Engine.psm1', 'Plan.psm1', 'Download.psm1', 'Winget.psm1', 'Ui.psm1') {
         Import-Module (Join-Path $script:KitRoot "lib\$m") -Force -DisableNameChecking
     }
     Import-Module (Join-Path $script:BuilderRoot 'lib\Bundles.psm1') -Force
@@ -558,6 +670,11 @@ function Start-Builder {
         (New-ListItem -Label 'Use my own product key' -Value 'key')
     )
     $ui.EditionCombo.SelectedIndex = 0
+    $script:BuilderConfig = Get-DzConfig -KitRoot $script:KitRoot
+    foreach ($p in @(Test-DzConfig -Config $script:BuilderConfig)) { Write-BuilderLog "Config problem: $p" }
+    Initialize-BuilderModeCards
+    $defaultMode = [string](Get-DzProperty $script:BuilderConfig.modes 'defaultMode' 'gaming')
+    Select-BuilderMode -Id $defaultMode
     $ui.OfficePlanCombo.ItemsSource = @(
         (New-ListItem -Label 'Microsoft 365 Personal / Family' -Value 'personal'),
         (New-ListItem -Label 'Microsoft 365 Business Standard / Premium' -Value 'business'),
@@ -580,6 +697,9 @@ function Start-Builder {
     $ui.UseThisPcButton.Add_Click({ Set-RegionFromThisPc })
     $ui.PreviewButton.Add_Click({
             try { Invoke-Preview } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
+        })
+    $ui.CustomizeButton.Add_Click({
+            try { Show-CustomPicker } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
         })
     $ui.CheckAppsButton.Add_Click({
             try { Invoke-CheckApps } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }

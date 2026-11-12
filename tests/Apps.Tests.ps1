@@ -192,12 +192,31 @@ Describe 'Microsoft 365 configuration' {
 
 Describe 'Shipped app catalog' {
     BeforeAll { $script:apps = @($script:Config.apps.apps) }
-    It 'has unique ids and a winget or Store id for every app' {
+    It 'has unique ids and a winget or Store id for every app (Microsoft 365 uses the ODT)' {
         @($script:apps | Group-Object id | Where-Object { $_.Count -gt 1 }).Count | Should -Be 0
         foreach ($a in $script:apps) {
+            if ((Get-DzProperty $a 'kind' '') -eq 'office') { continue }
             $has = [bool](Get-DzProperty $a 'winget' '') -or [bool](Get-DzProperty $a 'msstore' '')
             $has | Should -BeTrue -Because "$($a.id) needs a package id"
         }
+    }
+    It 'puts every app in a known category, in the requested groups' {
+        $cats = @($script:Config.apps.categories | ForEach-Object { $_.id })
+        foreach ($a in $script:apps) { $cats | Should -Contain $a.category }
+        foreach ($c in 'browsers', 'messaging', 'compression', 'utilities', 'ai') { $cats | Should -Contain $c }
+        ($script:Config.apps.categories | Where-Object { $_.id -eq 'compression' }).pickOne | Should -BeTrue
+    }
+    It 'offers the requested apps: <_>' -ForEach @('chrome', 'opera', 'firefox', 'edge', 'brave', 'telegram', 'whatsapp', 'viber', 'teams', '7zip', 'winrar', 'wiztree', 'powertoys', 'claude', 'chatgpt', 'discord', 'steam', 'epic', 'microsoft-365', 'libreoffice') {
+        @($script:apps | ForEach-Object { $_.id }) | Should -Contain $_
+    }
+    It 'installs per-user apps without admin rights (<_>)' -ForEach @('spotify', 'discord', 'telegram', 'claude') {
+        $id = $_
+        (Get-DzProperty ($script:apps | Where-Object { $_.id -eq $id }) 'elevated' $true) | Should -BeFalse
+    }
+    It 'gets WhatsApp from the Microsoft Store (it is not in winget)' {
+        $w = $script:apps | Where-Object { $_.id -eq 'whatsapp' }
+        $w.source | Should -Be 'msstore'
+        $w.msstore | Should -Be '9NKSQGP7F2NH'
     }
     It 'only uses winget ids that were verified against winget-pkgs (<_>)' -ForEach $script:WingetIds {
         $script:Verified | Should -Contain $_
@@ -227,6 +246,74 @@ Describe 'Shipped app catalog' {
         $e = Get-DzMode -Config $script:Config -Id 'everything'
         @((Get-DzReviewModel -Mode $e -System $w11 -Config $script:Config).Apps | ForEach-Object { $_.Id }) | Should -Not -Contain 'windows-terminal'
         @((Get-DzReviewModel -Mode $e -System $w10 -Config $script:Config).Apps | ForEach-Object { $_.Id }) | Should -Contain 'windows-terminal'
+    }
+}
+
+Describe 'Review screen: whole catalog, Custom mode and pick-one groups' {
+    BeforeAll {
+        $script:pc = [pscustomobject]@{ WindowsVersion = 11; Build = 26200; IsLaptop = $false; IsVirtualMachine = $false; GpuVendors = @('NVIDIA'); Architecture = 'amd64'; EditionId = 'Professional'; Brand = 'Other' }
+        function Get-Review { param([string]$Mode, $Pre = $null) Get-DzReviewModel -Mode (Get-DzMode -Config $script:Config -Id $Mode) -System $script:pc -Config $script:Config -Preselect $Pre }
+        function Get-Ticked { param($R) @($R.Apps | Where-Object { $_.Checked -and $_.Kind -ne 'none' } | ForEach-Object { $_.Id }) }
+    }
+    It 'shows the whole catalog in every mode, with only the mode''s apps ticked' {
+        $r = Get-Review 'gaming'
+        @($r.Apps | Where-Object { $_.Kind -eq 'app' }).Count | Should -BeGreaterThan 25
+        $t = Get-Ticked $r
+        $t | Should -Contain 'steam'
+        $t | Should -Not -Contain 'telegram'
+        $t | Should -Not -Contain 'microsoft-365'
+    }
+    It 'ticks Microsoft 365 for Office mode' {
+        Get-Ticked (Get-Review 'office') | Should -Contain 'microsoft-365'
+    }
+    It 'makes compression a pick-one group: 7-Zip in Office, None in Gaming' {
+        $o = @((Get-Review 'office').Apps | Where-Object { $_.GroupId -eq 'compression' })
+        @($o | ForEach-Object { $_.Exclusive } | Select-Object -Unique) | Should -Be @($true)
+        @($o | Where-Object { $_.Checked } | ForEach-Object { $_.Id }) | Should -Be @('7zip')
+        $g = @((Get-Review 'gaming').Apps | Where-Object { $_.GroupId -eq 'compression' })
+        @($g | Where-Object { $_.Checked } | ForEach-Object { $_.Id }) | Should -Be @('none:compression')
+    }
+    It 'never ticks two apps of a pick-one group' {
+        $r = Get-Review 'custom' @{ apps = @('7zip', 'winrar') }
+        @($r.Apps | Where-Object { $_.GroupId -eq 'compression' -and $_.Checked }).Count | Should -Be 1
+    }
+    It 'starts Custom with nothing ticked and no clean-up' {
+        $r = Get-Review 'custom'
+        @(Get-Ticked $r).Count | Should -Be 0
+        @($r.Options | Where-Object { $_.Kind -eq 'tweak' -and $_.Checked }).Count | Should -Be 0
+        (@($r.Options | Where-Object { $_.Kind -eq 'debloat' -and $_.Checked })[0]).Id | Should -Be 'none'
+    }
+    It 'pre-ticks the builder''s Custom picks and turns them into the right plan' {
+        foreach ($t in @('preflight', 'app', 'office', 'tweak', 'debloat', 'winget')) { if (-not (Test-DzStepType -Type $t)) { throw "missing step type $t" } }
+        $pre = @{ apps = @('chrome', 'telegram', 'whatsapp', 'claude', 'winrar'); office = $true; debloat = 'light'; tweaks = @('game-mode') }
+        $r = Get-Review 'custom' $pre
+        $t = Get-Ticked $r
+        foreach ($id in 'chrome', 'telegram', 'whatsapp', 'claude', 'winrar', 'microsoft-365') { $t | Should -Contain $id }
+        $opt = ConvertTo-DzPlanOption -Apps @($r.Apps) -Options @($r.Options)
+        $opt.office | Should -BeTrue
+        $opt.debloat | Should -Be 'light'
+        $opt.explicitTweaks | Should -BeTrue
+        $ids = @(New-DzPlan -Mode (Get-DzMode -Config $script:Config -Id 'custom') -Options $opt -System $script:pc -Config $script:Config | ForEach-Object { $_.id })
+        foreach ($id in 'app:chrome', 'app:telegram', 'app:whatsapp', 'app:claude', 'app:winrar', 'office', 'tweak:game-mode', 'debloat') { $ids | Should -Contain $id }
+        $ids | Should -Not -Contain 'app:microsoft-365'
+        $ids | Should -Not -Contain 'app:steam'
+        $ids | Should -Not -Contain 'tweak:telemetry-min'
+    }
+    It 'lets any mode drop its clean-up and tweaks on the review screen' {
+        $r = Get-Review 'gaming'
+        foreach ($o in $r.Options) { $o.Checked = ($o.Kind -eq 'debloat' -and $o.Id -eq 'none') }
+        $opt = ConvertTo-DzPlanOption -Apps @($r.Apps) -Options @($r.Options)
+        $ids = @(New-DzPlan -Mode (Get-DzMode -Config $script:Config -Id 'gaming') -Options $opt -System $script:pc -Config $script:Config | ForEach-Object { $_.id })
+        $ids | Should -Not -Contain 'debloat'
+        @($ids | Where-Object { $_ -like 'tweak:*' }).Count | Should -Be 0
+    }
+    It 'describes what each mode includes for the builder' {
+        $g = Get-DzModeSummary -Mode (Get-DzMode -Config $script:Config -Id 'gaming') -Config $script:Config
+        $g | Should -Match 'Steam'
+        $g | Should -Match 'off on laptops'
+        $g | Should -Match 'Memory Integrity'
+        Get-DzModeSummary -Mode (Get-DzMode -Config $script:Config -Id 'custom') -Config $script:Config | Should -Match 'Nothing is ticked yet'
+        Get-DzModeSummary -Mode (Get-DzMode -Config $script:Config -Id 'custom') -Config $script:Config -Preselect @{ apps = @('claude') } | Should -Match 'AI assistants: Claude'
     }
 }
 

@@ -100,7 +100,7 @@ changing OOBE, so results can differ between builds.
 - [ ] `C:\DayZero` exists. `C:\DayZero\Logs` has `copykit.log`, `firstlogon.log` and `wizard-*.log`.
 
 **Wizard (stage 2)**
-- [ ] Mode picker: arrow keys and 1 / 2 / 3 switch modes, Enter continues, the mouse works too.
+- [ ] Mode picker: arrow keys and 1 - 4 switch modes, Enter continues, the mouse works too.
 - [ ] Review page: "YOUR PC" shows the right Windows version, laptop/desktop and graphics card.
       On a laptop the yellow laptop note appears. Esc goes back, Enter starts.
 - [ ] Progress page: the step list fills in (pending, running, done), the bar moves, and
@@ -127,6 +127,12 @@ changing OOBE, so results can differ between builds.
       remove App Installer first (`Get-AppxPackage Microsoft.DesktopAppInstaller | Remove-AppxPackage`)
       and check that the log says winget came "from the USB stick".
 - [ ] In the builder, "Check the app list with winget" reports every id as found.
+- [ ] Builder: clicking each mode card updates "What this mode includes"; Custom shows
+      **CHOOSE APPS...**, and the picks (e.g. Telegram, WinRAR, Claude) appear pre-ticked on
+      the new PC's review screen.
+- [ ] Review screen: compression allows only one of 7-Zip / WinRAR / None; WhatsApp installs
+      from the Microsoft Store; Telegram, Claude, Spotify and Discord install for the signed-in
+      user (they appear in that user's Start menu).
 
 **Tweaks and debloat (stage 4)**
 - [ ] "Create a restore point" is green, and Start > "Create a restore point" > System Restore

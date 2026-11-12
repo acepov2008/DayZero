@@ -170,29 +170,15 @@
                     <Border Style="{StaticResource DzCard}">
                         <StackPanel>
                             <TextBlock Text="&#x2465;  DEFAULT MODE" Style="{StaticResource DzCardTitle}"/>
-                            <UniformGrid Columns="3">
-                                <RadioButton x:Name="ModeGamingRadio" GroupName="Mode" Style="{StaticResource DzModeCard}" IsChecked="True">
-                                    <StackPanel>
-                                        <TextBlock Text="&#x1F3AE;" FontFamily="{StaticResource DzEmoji}" FontSize="30" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="GAMING" FontWeight="Black" FontSize="15" HorizontalAlignment="Center" Margin="0,6,0,0"/>
-                                        <TextBlock Text="Steam, Epic, Discord + tweaks" FontSize="11" Foreground="{StaticResource DzMuted}" TextWrapping="Wrap" TextAlignment="Center"/>
-                                    </StackPanel>
-                                </RadioButton>
-                                <RadioButton x:Name="ModeOfficeRadio" GroupName="Mode" Style="{StaticResource DzModeCard}">
-                                    <StackPanel>
-                                        <TextBlock Text="&#x1F4BC;" FontFamily="{StaticResource DzEmoji}" FontSize="30" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="OFFICE" FontWeight="Black" FontSize="15" HorizontalAlignment="Center" Margin="0,6,0,0"/>
-                                        <TextBlock Text="Microsoft 365 + essentials" FontSize="11" Foreground="{StaticResource DzMuted}" TextWrapping="Wrap" TextAlignment="Center"/>
-                                    </StackPanel>
-                                </RadioButton>
-                                <RadioButton x:Name="ModeEverythingRadio" GroupName="Mode" Style="{StaticResource DzModeCard}">
-                                    <StackPanel>
-                                        <TextBlock Text="&#x1F9F0;" FontFamily="{StaticResource DzEmoji}" FontSize="30" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="EVERYTHING" FontWeight="Black" FontSize="15" HorizontalAlignment="Center" Margin="0,6,0,0"/>
-                                        <TextBlock Text="Both + dev tools" FontSize="11" Foreground="{StaticResource DzMuted}" TextWrapping="Wrap" TextAlignment="Center"/>
-                                    </StackPanel>
-                                </RadioButton>
-                            </UniformGrid>
+                            <UniformGrid x:Name="ModeCardsPanel" Columns="2"/>
+                            <Border Style="{StaticResource DzInfoBox}">
+                                <StackPanel>
+                                    <TextBlock x:Name="ModeIncludesTitle" FontWeight="Bold" Foreground="{StaticResource DzCyan}" Text="WHAT THIS MODE INCLUDES"/>
+                                    <TextBlock x:Name="ModeIncludesText" TextWrapping="Wrap" Margin="0,6,0,0" FontSize="12" LineHeight="18"/>
+                                    <Button x:Name="CustomizeButton" HorizontalAlignment="Left" Margin="0,10,0,0" Visibility="Collapsed"
+                                            Content="_Choose apps and options..."/>
+                                </StackPanel>
+                            </Border>
                             <TextBlock Style="{StaticResource DzHint}" Text="This is only pre-selected: you can still pick another mode on the new PC."/>
                         </StackPanel>
                     </Border>

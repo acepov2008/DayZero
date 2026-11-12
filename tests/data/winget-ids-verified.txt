@@ -30,3 +30,13 @@ Intel.IntelDriverAndSupportAssistant
 Dell.CommandUpdate
 HP.SupportAssistant
 Dell.CommandUpdate.Universal
+Opera.Opera
+Mozilla.Firefox
+Microsoft.Edge
+Brave.Brave
+Telegram.TelegramDesktop
+Rakuten.Viber
+Microsoft.Teams
+RARLab.WinRAR
+Anthropic.Claude
+OpenAI.ChatGPT

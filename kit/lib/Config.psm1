@@ -97,6 +97,7 @@ function Get-DzMode {
         tagline     = [string](Get-DzProperty $mode 'tagline' '')
         description = [string](Get-DzProperty $mode 'description' '')
         highlights  = @(Get-DzProperty $mode 'highlights' @())
+        custom      = [bool](Get-DzProperty $mode 'custom' $false)
         modeIds     = $visited.ToArray()
         apps        = $apps.ToArray()
         tweaks      = $tweaks.ToArray()
@@ -137,7 +138,17 @@ function Test-DzConfig {
     $appIds = @{}
     if ($Config.apps) {
         & $checkUnique $Config.apps.apps 'App'
-        foreach ($a in @($Config.apps.apps)) { $appIds[[string]$a.id] = $true }
+        $categoryIds = @{}
+        foreach ($c in @(Get-DzProperty $Config.apps 'categories' @())) { $categoryIds[[string]$c.id] = $true }
+        foreach ($a in @($Config.apps.apps)) {
+            $appIds[[string]$a.id] = $true
+            $cat = [string](Get-DzProperty $a 'category' '')
+            if ($categoryIds.Count -gt 0 -and -not $categoryIds.ContainsKey($cat)) { $problems.Add("App '$($a.id)' has unknown category '$cat'.") }
+            $kind = [string](Get-DzProperty $a 'kind' '')
+            if ($kind -ne 'office' -and -not (Get-DzProperty $a 'winget' '') -and -not (Get-DzProperty $a 'msstore' '')) {
+                $problems.Add("App '$($a.id)' has no winget or msstore id.")
+            }
+        }
     }
     $tweakIds = @{}
     if ($Config.tweaks) {

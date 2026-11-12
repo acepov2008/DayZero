@@ -228,8 +228,8 @@ Describe 'Shipped configuration' {
         $problems = Test-DzConfig -Config $script:cfg
         @($problems).Count | Should -Be 0 -Because ($problems -join '; ')
     }
-    It 'offers gaming, office and everything, defaulting to gaming' {
-        @(Get-DzModeList -Config $script:cfg | ForEach-Object { $_.id }) | Should -Be @('gaming', 'office', 'everything')
+    It 'offers gaming, office, everything and custom, defaulting to gaming' {
+        @(Get-DzModeList -Config $script:cfg | ForEach-Object { $_.id }) | Should -Be @('gaming', 'office', 'everything', 'custom')
         $script:cfg.modes.defaultMode | Should -Be 'gaming'
     }
     It 'builds Everything from Gaming + Office + its own extras' {

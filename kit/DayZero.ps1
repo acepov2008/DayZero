@@ -53,7 +53,7 @@ $script:Page = ''
 $script:State = $null
 $script:SelectedMode = $null
 $script:ModeCards = @()
-$script:ReviewBoxes = New-Object System.Collections.Generic.List[object]
+$script:ReviewControls = @()
 $script:StepItems = $null
 $script:Sync = $null
 $script:Job = $null
@@ -158,7 +158,7 @@ function Set-DzPage {
     switch ($Name) {
         'Mode' {
             $ui.NextButton.Content = "_NEXT  $($script:Arrow)"
-            $ui.HintText.Text = 'Arrow keys or 1 / 2 / 3 pick a mode  |  Enter continues'
+            $ui.HintText.Text = 'Arrow keys or 1 - 4 pick a mode  |  Enter continues'
         }
         'Review' {
             $ui.NextButton.Content = "_START  $($script:Arrow)"
@@ -240,7 +240,9 @@ function Move-DzModeSelection {
 function Show-DzReview {
     $ui = $script:ui
     $mode = Get-DzMode -Config $script:Config -Id $script:SelectedMode
-    $review = Get-DzReviewModel -Mode $mode -System $script:System -Config $script:Config
+    $preselect = $null
+    if ($mode.custom -and $script:Settings.PSObject.Properties['customSelection']) { $preselect = $script:Settings.customSelection }
+    $review = Get-DzReviewModel -Mode $mode -System $script:System -Config $script:Config -Preselect $preselect
     $ui.ReviewTitleText.Text = ("YOUR PC  {0}  {1} MODE" -f $script:Bullet, $mode.title)
 
     $sys = $script:System
@@ -259,45 +261,20 @@ function Show-DzReview {
         $ui.SystemInfoText.Text = 'Could not read the PC details (see the log).'
     }
 
-    $script:ReviewBoxes.Clear()
     $ui.OptionsPanel.Children.Clear()
-    foreach ($o in @($review.Options)) {
-        $ui.OptionsPanel.Children.Add((New-DzReviewCheckBox -Item $o -Title $o.Title -Description $o.Description -Warning $o.Warning)) | Out-Null
-    }
-    Set-DzVisible $ui.NoOptionsText (@($review.Options).Count -eq 0)
-
     $ui.AppsPanel.Children.Clear()
-    $group = $null
-    foreach ($a in @($review.Apps)) {
-        if ($a.Group -ne $group) {
-            $group = $a.Group
-            $ui.AppsPanel.Children.Add((New-DzTextBlock -Text $group.ToUpperInvariant() -Size 11 -Bold -Brush 'DzMuted' -Top 10)) | Out-Null
-        }
-        $ui.AppsPanel.Children.Add((New-DzReviewCheckBox -Item $a -Title $a.Name -Description $a.Description -Warning '')) | Out-Null
-    }
+    $controls = New-Object System.Collections.Generic.List[object]
+    foreach ($c in @(Add-DzChoiceGroup -Panel $ui.OptionsPanel -Items @($review.Options) -RadioPrefix 'opt')) { $controls.Add($c) }
+    foreach ($c in @(Add-DzChoiceGroup -Panel $ui.AppsPanel -Items @($review.Apps) -GroupWidth 215 -RadioPrefix 'app')) { $controls.Add($c) }
+    $script:ReviewControls = $controls.ToArray()
+    Set-DzVisible $ui.NoOptionsText (@($review.Options).Count -eq 0)
     Set-DzVisible $ui.NoAppsText (@($review.Apps).Count -eq 0)
     $script:Review = $review
     Set-DzPage Review
 }
 
-function New-DzReviewCheckBox {
-    param([Parameter(Mandatory = $true)][object]$Item, [string]$Title, [string]$Description, [string]$Warning)
-    $cb = New-Object System.Windows.Controls.CheckBox
-    $cb.IsChecked = [bool]$Item.Checked
-    $cb.Margin = New-Object System.Windows.Thickness(0, 8, 0, 0)
-    $panel = New-Object System.Windows.Controls.StackPanel
-    $t = New-DzTextBlock -Text $Title -Wrap
-    $t.FontWeight = [System.Windows.FontWeights]::SemiBold
-    $panel.Children.Add($t) | Out-Null
-    if ($Description) { $panel.Children.Add((New-DzTextBlock -Text $Description -Size 12 -Brush 'DzMuted' -Wrap)) | Out-Null }
-    if ($Warning) { $panel.Children.Add((New-DzTextBlock -Text ("{0} {1}" -f $script:Icons['warn'], $Warning) -Size 12 -Brush 'DzYellow' -Wrap -Top 2)) | Out-Null }
-    $cb.Content = $panel
-    $script:ReviewBoxes.Add([pscustomobject]@{ Item = $Item; Box = $cb })
-    return $cb
-}
-
 function Start-DzFromReview {
-    foreach ($rb in $script:ReviewBoxes) { $rb.Item.Checked = ($rb.Box.IsChecked -eq $true) }
+    Update-DzChoiceItem -Controls $script:ReviewControls
     $mode = Get-DzMode -Config $script:Config -Id $script:SelectedMode
     $options = ConvertTo-DzPlanOption -Apps @($script:Review.Apps) -Options @($script:Review.Options)
     $plan = New-DzPlan -Mode $mode -Options $options -System $script:System -Config $script:Config

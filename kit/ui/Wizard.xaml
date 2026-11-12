@@ -126,7 +126,7 @@
                 <StackPanel Margin="8,4,8,0">
                     <TextBlock Text="CHOOSE YOUR MODE" FontSize="22" FontWeight="Black" Foreground="{StaticResource DzMagenta}"/>
                     <TextBlock Style="{StaticResource DzHint}" FontSize="13"
-                               Text="The default from your USB builder is already selected. Arrow keys or 1 / 2 / 3 to switch, Enter to continue."/>
+                               Text="The default from your USB builder is already selected. Arrow keys or 1 - 4 to switch, Enter to continue."/>
                 </StackPanel>
                 <UniformGrid x:Name="ModeCardsPanel" Grid.Row="1" Rows="1" Margin="0,14,0,0"/>
                 <Border Grid.Row="2" Style="{StaticResource DzCard}" VerticalAlignment="Top">
@@ -138,8 +138,8 @@
             <ScrollViewer x:Name="ReviewPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="3*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
                         <Border Style="{StaticResource DzCard}">
@@ -156,8 +156,8 @@
                         <Border Style="{StaticResource DzCard}">
                             <StackPanel>
                                 <TextBlock Text="OPTIONS" Style="{StaticResource DzCardTitle}"/>
-                                <TextBlock Style="{StaticResource DzHint}" Margin="0,0,0,4"
-                                           Text="Switches with a warning are off unless you turn them on. Every tweak is logged and can be undone with DayZero.cmd -Undo."/>
+                                <TextBlock Style="{StaticResource DzHint}" Margin="0,0,0,8"
+                                           Text="Clean-up level, every tweak and the PC-brand tool. Switches with a warning are off unless you turn them on. Every tweak can be undone with DayZero.cmd -Undo."/>
                                 <StackPanel x:Name="OptionsPanel"/>
                                 <TextBlock x:Name="NoOptionsText" Style="{StaticResource DzHint}" Text="No extra choices for this mode." Visibility="Collapsed"/>
                             </StackPanel>
@@ -166,8 +166,8 @@
                     <Border Grid.Column="1" Style="{StaticResource DzCard}" VerticalAlignment="Top">
                         <StackPanel>
                             <TextBlock Text="APPS" Style="{StaticResource DzCardTitle}"/>
-                            <TextBlock Style="{StaticResource DzHint}" Margin="0,0,0,4" Text="Untick anything you don't want. Extras are unticked."/>
-                            <StackPanel x:Name="AppsPanel"/>
+                            <TextBlock Style="{StaticResource DzHint}" Margin="0,0,0,8" Text="The whole catalog: this mode's apps are ticked. Tick anything else you want, untick what you don't."/>
+                            <WrapPanel x:Name="AppsPanel" Orientation="Horizontal"/>
                             <TextBlock x:Name="NoAppsText" Style="{StaticResource DzHint}" Text="No app list found (config\apps.json)." Visibility="Collapsed"/>
                         </StackPanel>
                     </Border>

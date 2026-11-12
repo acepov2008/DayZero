@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0 - Custom mode and the full app catalog
+- New **Custom** mode: pick every app, Microsoft 365, clean-up and tweaks in the builder
+  (**CHOOSE APPS...**); the picks arrive pre-ticked on the new PC and can still be changed.
+- Catalog grouped by category, now with Firefox, Opera, Brave, Edge, Telegram, WhatsApp
+  (Microsoft Store), Viber, Teams, WinRAR, Claude and ChatGPT. Compression is pick-one
+  (7-Zip, WinRAR or none). Every winget id checked against winget-pkgs.
+- Review screen shows the whole catalog in every mode, with the mode's apps ticked; clean-up
+  level and every tweak can be changed there.
+- Builder: clicking a mode card shows what the mode includes.
+
 ## 0.6.0 - design polish
 - Animated synthwave header in the builder and the wizard: striped sun, scrolling neon floor
   grid, pulsing title glow.

@@ -3,7 +3,7 @@
 A USB stick that installs Windows and then sets the PC up for you: think **Ninite + an
 unattended Windows installer + a tweak tool**, in a neon synthwave GUI.
 
-> **Status: v0.6.0, all six stages built.** 482 automated tests and static checks pass,
+> **Status: v0.7.0, all six stages built.** 543 automated tests and static checks pass,
 > including a complete dry run of every mode. **It has not run on real Windows yet**: the
 > GUI (WPF) and the Windows-only steps can only be tested on Windows. Do the VM test in
 > [TESTING.md](TESTING.md) before you use it on a real PC.
@@ -30,13 +30,21 @@ unattended Windows installer + a tweak tool**, in a neon synthwave GUI.
 5. Boot the target PC from the stick (boot menu key: often F12, F11, F8 or Esc), pick the disk
    when Setup asks, and let it run.
 
-## The three modes
+## The four modes
 
 | | Apps | Tweaks | Debloat |
 | --- | --- | --- | --- |
 | 🎮 **Gaming** | Chrome, Steam, Epic Games Launcher, Discord, OBS Studio, MSI Afterburner, HWiNFO, WizTree + your graphics card's app | all gaming tweaks (below) | full |
 | 💼 **Office** | Microsoft 365 Apps (Word, Excel, PowerPoint, Outlook, OneNote), Chrome, Acrobat Reader, Spotify, VLC, 7-Zip, Notepad++, Everything, WizTree. *Optional: LibreOffice* | no promoted apps | light |
 | 🧰 **Everything** | Gaming + Office + PowerToys, VS Code, Windows Terminal (Windows 10), Visual C++ 2015-2022, .NET 10, DirectX runtime. *Optional: .NET 8* | Gaming's | full |
+| 🎛️ **Custom** | You pick every app in the builder (**CHOOSE APPS...**) or on the new PC | the ones you tick | the level you pick |
+
+The review screen on the new PC always shows the **whole catalog by category**, with the
+mode's apps ticked, so any mode can be adjusted: web browsers (Chrome, Firefox, Opera, Brave,
+Edge), messaging (Discord, Telegram, WhatsApp, Viber, Teams), gaming, streaming & monitoring,
+music & video, office & documents, compression (**pick one**: 7-Zip or WinRAR), utilities
+(WizTree, PowerToys, Everything, Notepad++), AI assistants (Claude, ChatGPT), developer tools
+and runtimes. In the builder, clicking a mode card shows exactly what that mode includes.
 
 Every mode also does Windows Update (including drivers), installs drivers from the stick's
 `Drivers\` folder, creates a restore point before any tweak, checks activation, and on
@@ -61,7 +69,7 @@ Everything is in editable JSON: `kit\config\modes.json`, `apps.json`, `office.js
 
 ## The wizard
 
-Mode picker (big animated cards; arrows or 1/2/3, Enter) → review (your PC, switches, app
+Mode picker (big animated cards; arrows or 1-4, Enter) → review (your PC, switches, app
 checkboxes) → progress (step list with ⏳ ✅ ❌, neon progress bar, live log on **L**) →
 summary (activation status, **Retry failed steps**, download links, Finish). Restarts are
 announced with a countdown and the wizard picks up where it left off. You can pause, or close

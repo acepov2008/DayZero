@@ -5,7 +5,9 @@
     "tweaks:  ids from tweaks.json. Tweaks marked optional there only appear as switches on the review screen.",
     "debloat: 'full', 'light' or 'none' (profiles are defined in debloat.json).",
     "office:  true installs Microsoft 365 Apps with the Office Deployment Tool (office.json).",
-    "includes: other modes merged into this one (apps and tweaks are combined)."
+    "includes: other modes merged into this one (apps and tweaks are combined).",
+    "custom:  true = nothing pre-ticked; the user picks everything (in the builder or on the review screen).",
+    "The review screen always shows the whole app catalog and every tweak, so any mode can be adjusted."
   ],
   "defaultMode": "gaming",
   "modes": [
@@ -62,6 +64,24 @@
       ],
       "includes": ["gaming", "office"],
       "apps": ["powertoys", "windows-terminal", "vscode", "vcredist-x64", "vcredist-x86", "dotnet-desktop-10", "directx"],
+      "tweaks": []
+    },
+    {
+      "id": "custom",
+      "title": "CUSTOM",
+      "emoji": "🎛️",
+      "tagline": "You pick every app",
+      "description": "Nothing is ticked until you tick it: choose your browsers, messengers, AI apps, Microsoft 365, the clean-up level and each tweak. Picks made in the USB builder arrive pre-ticked.",
+      "highlights": [
+        "Browsers, messaging, AI apps and more",
+        "7-Zip or WinRAR, Microsoft 365 or LibreOffice",
+        "Choose the clean-up level and each tweak",
+        "Nothing happens that you didn't tick"
+      ],
+      "custom": true,
+      "debloat": "none",
+      "office": false,
+      "apps": [],
       "tweaks": []
     }
   ]
