@@ -231,6 +231,10 @@ function Invoke-DzRun {
         Write-DzLog -Level $level -Message ("{0}: {1} {2}" -f $step.title, $status.ToUpperInvariant(), $message)
     }
 
+    if ($Context.Flags['RestartRecommended']) {
+        if ($State.PSObject.Properties['restartRecommended']) { $State.restartRecommended = $true }
+        else { $State | Add-Member -NotePropertyName restartRecommended -NotePropertyValue $true }
+    }
     $State.phase = 'summary'
     Save-DzState -State $State -Path $StatePath
     & $Sink @{ type = 'finished' }

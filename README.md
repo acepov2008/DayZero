@@ -3,9 +3,10 @@
 A USB-stick toolkit that installs Windows and then sets the PC up for you. Think
 Ninite + an unattended Windows installer + a tweak tool, wrapped in a neon synthwave GUI.
 
-> **Status: stage 4 of 6.** USB builder, answer file, install-time bootstrap, the setup
-> wizard, the app engine, and the reversible tweaks + debloat (with restore point, activation
-> check and undo) work. Drivers and Windows Update come next.
+> **Status: stage 5 of 6.** Everything works end to end: USB builder, answer file, setup
+> wizard, apps, reversible tweaks and debloat, drivers and Windows Update. Stage 6 is design
+> polish. Nothing has run on real Windows hardware yet: test in a VM first, see
+> [TESTING.md](TESTING.md).
 > Test in a virtual machine first; see [TESTING.md](TESTING.md).
 
 ## How it works
@@ -131,6 +132,22 @@ and the app frameworks are always kept. OneDrive removal is an optional switch (
 the PC's firmware holds a key for the installed edition, it installs that key and activates
 online; otherwise it asks Microsoft once (digital licence). Nothing else, ever.
 
+## Drivers and Windows Update
+
+1. **`Drivers\` folder on the stick** (optional): installed first with Windows' own
+   `pnputil /add-driver *.inf /subdirs /install`, before anything needs the internet, so a
+   network driver can come from the stick.
+2. **Windows Update**, through the update API built into Windows: all software and driver
+   updates Windows would install by itself (not the "optional" ones), restarting and continuing
+   automatically until nothing is left. A final check at the end only recommends a restart.
+3. **Graphics card app**, detected from the PCI vendor id:
+   Intel Driver & Support Assistant is installed with winget. NVIDIA App and AMD Adrenalin are
+   not published through winget, so the summary shows a button that opens their official
+   download pages (Windows Update has already installed a working driver by then).
+4. **PC-brand update tool** (ticked on the review screen when the brand is recognised):
+   Dell Command | Update and HP Support Assistant via winget, Lenovo Vantage and MyASUS from
+   the Microsoft Store. Never in a virtual machine.
+
 ## Tech
 
 Windows PowerShell 5.1 + WPF/XAML, which is built into every Windows 10/11, so there's nothing to
@@ -155,5 +172,5 @@ endings, and every control and theme resource a script uses really exists in the
 2. ~~Wizard GUI: mode picker, progress screen with live log, summary with "retry failed steps", resume after reboots~~ ✅
 3. ~~App engine: winget (with bundled fallback), Microsoft 365 via the Office Deployment Tool~~ ✅
 4. ~~Tweaks and debloat per mode: all reversible and documented in JSON, restore point first~~ ✅
-5. Drivers: Windows Update, the `Drivers\` folder, GPU vendor app, PC-brand update tool
+5. ~~Drivers: Windows Update, the `Drivers\` folder, GPU vendor app, PC-brand update tool~~ ✅
 6. Design polish

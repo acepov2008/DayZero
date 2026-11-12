@@ -246,7 +246,7 @@ function Initialize-DzWinget {
 
     & $say 'Downloading App Installer from Microsoft (winget-cli on GitHub)...'
     try {
-        $tmp = Join-Path $env:TEMP 'DayZero-winget'
+        $tmp = Join-Path ([System.IO.Path]::GetTempPath()) 'DayZero-winget'
         $b = Save-DzDownload -Url $script:WingetBundleUrl -Path (Join-Path $tmp 'Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle')
         $z = Save-DzDownload -Url $script:WingetDepsUrl -Path (Join-Path $tmp 'DesktopAppInstaller_Dependencies.zip')
         $depsDir = Join-Path $tmp 'deps'
@@ -273,7 +273,7 @@ function Invoke-DzAsUser {
         [int]$TimeoutSec = 3600
     )
     $id = 'DayZero-AsUser-' + [guid]::NewGuid().ToString('N').Substring(0, 8)
-    $work = Join-Path $env:TEMP $id
+    $work = Join-Path ([System.IO.Path]::GetTempPath()) $id
     [void](New-Item -ItemType Directory -Path $work -Force)
     $outFile = Join-Path $work 'output.txt'
     $q = { param($s) "'" + ($s -replace "'", "''") + "'" }

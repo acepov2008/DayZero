@@ -137,6 +137,24 @@ changing OOBE, so results can differ between builds.
       shadow copies): every tweak and removal step fails with "No restore point yet".
 - [ ] "Check Windows activation": in a VM it says "Not activated yet" (expected). On a PC with
       a firmware key and the matching edition it ends "Activated".
+
+**Drivers and Windows Update (stage 5)**
+- [ ] Put a driver folder with `.inf` files in the stick's `DayZero\Drivers\` (any small driver,
+      e.g. a VirtIO or a USB-serial driver for a VM). "Install drivers from the USB stick" runs
+      pnputil and `pnputil /enum-drivers` lists it. With an empty folder the step is skipped.
+- [ ] "Windows Update (including drivers)" installs updates, asks for a restart (overlay with
+      countdown), signs back in and continues until Windows Update shows nothing left.
+      The engine log lists every update ("found: ...", "succeeded: ...").
+- [ ] "Final Windows Update check" never restarts by itself; the summary says "Restart the PC
+      once you are done" if something still needs it.
+- [ ] In a VM: no graphics-card app and no PC-brand tool steps (expected).
+- [ ] On real hardware: NVIDIA/AMD show "Open download pages" on the summary, which opens the
+      official page in your normal browser; Intel DSA installs by itself. The PC-brand tool
+      (Dell/Lenovo/HP/ASUS) installs when ticked.
+
+**Automated end-to-end dry run.** `tests\DryRun.Tests.ps1` runs the complete Gaming, Office
+and Everything plans through the real engine with every function that could change the PC
+replaced by one that throws; it proves a dry run walks the whole plan and changes nothing.
 - [ ] Press **FINISH**. Afterwards the task `\DayZero\DayZero` is gone, `C:\Windows\Panther\unattend.xml`
       is gone, and after a restart Windows asks for the password instead of signing in.
 - [ ] Windows 10 only: FINISH shows the Extended Security Updates reminder with a working

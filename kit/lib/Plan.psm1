@@ -93,7 +93,10 @@ function Get-DzReviewModel {
     if ($Config.tweaks) {
         foreach ($t in @($Config.tweaks.tweaks)) {
             if (-not [bool](Get-DzProperty $t 'optional' $false)) { continue }
-            $inMode = (Test-DzInMode -Item $t -ModeIds $modeIds) -or (@($Mode.tweaks) -contains [string]$t.id)
+            # An optional tweak shows up only in modes that list it (or that its own "modes" names);
+            # without this, Office mode would offer - and pre-tick - the gaming power plan.
+            $explicitModes = @(Get-DzProperty $t 'modes' @()).Count -gt 0
+            $inMode = (@($Mode.tweaks) -contains [string]$t.id) -or ($explicitModes -and (Test-DzInMode -Item $t -ModeIds $modeIds))
             if (-not $inMode) { continue }
             if (Test-DzApplicable -Item $t -System $System) { continue }
             $checked = [bool](Get-DzProperty $t 'default' $false)

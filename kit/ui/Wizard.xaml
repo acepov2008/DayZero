@@ -253,6 +253,8 @@
                     <Button x:Name="BackButton" Margin="10,0,0,0" Content="_Back"/>
                     <Button x:Name="StopButton" Margin="10,0,0,0" Content="_Pause after this step" Visibility="Collapsed"/>
                     <Button x:Name="OpenLogsButton" Margin="10,0,0,0" Content="Open _logs" Visibility="Collapsed"/>
+                    <Button x:Name="OpenLinksButton" Margin="10,0,0,0" Content="Open _download pages" Visibility="Collapsed"
+                            ToolTip="Opens the official download pages listed under WHAT NOW in your browser"/>
                     <Button x:Name="RetryButton" Margin="10,0,0,0" Content="_Retry failed steps" Visibility="Collapsed"/>
                     <Button x:Name="NextButton" Margin="10,0,0,0" Style="{StaticResource DzPrimaryButton}" Content="_NEXT"/>
                 </StackPanel>

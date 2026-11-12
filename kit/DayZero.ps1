@@ -130,6 +130,7 @@ function Set-DzPage {
     Set-DzVisible $ui.StopButton ($Name -eq 'Progress' -and -not $script:WaitingForRestart)
     Set-DzVisible $ui.OpenLogsButton ($Name -in @('Progress', 'Summary'))
     Set-DzVisible $ui.RetryButton $false
+    Set-DzVisible $ui.OpenLinksButton $false
     Set-DzVisible $ui.NextButton ($Name -ne 'Progress')
     $ui.NextButton.IsEnabled = $true
     switch ($Name) {
@@ -458,6 +459,8 @@ function Show-DzSummary {
         $notes.Add('Some tweaks (GPU scheduling, Memory Integrity, mouse) take effect after the next restart.')
         $notes.Add(('Changed your mind? Run {0} -Undo to put every tweak back and reinstall removed apps.' -f (Join-Path $script:Kit 'DayZero.cmd')))
     }
+    foreach ($f in @(Get-DzFollowUpList)) { $notes.Add(("{0}: {1}" -f $f.title, $f.url)) }
+    if ($script:State.PSObject.Properties['restartRecommended'] -and $script:State.restartRecommended) { $notes.Add('Restart the PC once you are done, to finish drivers and updates.') }
     if ($script:Settings.temporaryPassword) { $notes.Add('You set a temporary password: Windows asks for a new one at your next sign-in.') }
     if (Test-DzDryRun) { $notes.Add('This was a DRY RUN. Open the logs to see everything DayZero would have done.') }
     if (-not $script:Paused) { $notes.Add('Press FINISH to switch off automatic sign-in and remove the setup helpers.') }
@@ -465,6 +468,22 @@ function Show-DzSummary {
 
     Set-DzPage Summary
     Set-DzVisible $ui.RetryButton ($counts.failed -gt 0)
+    Set-DzVisible $ui.OpenLinksButton (@(Get-DzFollowUpList).Count -gt 0)
+}
+
+function Get-DzFollowUpList {
+    if ($null -eq $script:State -or -not $script:State.PSObject.Properties['followUps']) { return @() }
+    return @($script:State.followUps | Where-Object { $_ -and $_.url })
+}
+
+function Open-DzFollowUp {
+    # explorer.exe hands the link to the signed-in user's normal (not elevated) browser.
+    foreach ($f in @(Get-DzFollowUpList)) {
+        if ([string]$f.url -match '^https://') {
+            Write-DzLog -Message ("Opening {0}" -f $f.url)
+            Start-Process -FilePath 'explorer.exe' -ArgumentList ([string]$f.url)
+        }
+    }
 }
 
 function Invoke-DzRetry {
@@ -626,6 +645,7 @@ function Start-DzWizard {
     $ui.NextButton.Add_Click({ Invoke-DzSafe { Invoke-DzNext } })
     $ui.BackButton.Add_Click({ Invoke-DzSafe { Set-DzPage Mode } })
     $ui.RetryButton.Add_Click({ Invoke-DzSafe { Invoke-DzRetry } })
+    $ui.OpenLinksButton.Add_Click({ Invoke-DzSafe { Open-DzFollowUp } })
     $ui.StopButton.Add_Click({
             Invoke-DzSafe {
                 if ($script:Sync) { $script:Sync.Cancel = $true }

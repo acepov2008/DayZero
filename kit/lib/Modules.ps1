@@ -15,7 +15,10 @@
     'Tweaks.psm1',
     'Debloat.psm1',
     'Undo.psm1',
+    'WindowsUpdate.psm1',
+    'Drivers.psm1',
     'Steps.Base.psm1',
     'Steps.Apps.psm1',
-    'Steps.Windows.psm1'
+    'Steps.Windows.psm1',
+    'Steps.Drivers.psm1'
 )

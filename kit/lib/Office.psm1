@@ -127,7 +127,7 @@ function Get-DzOdtSetup {
     $url = [string](Get-DzProperty $odt 'downloadUrl' '')
     if ($url) {
         try {
-            $dl = Save-DzDownload -Url $url -Path (Join-Path $env:TEMP 'DayZero-odt\setup.exe')
+            $dl = Save-DzDownload -Url $url -Path (Join-Path ([System.IO.Path]::GetTempPath()) 'DayZero-odt\setup.exe')
             if (& $check $dl) { Write-DzLog -Message "Downloaded the Office Deployment Tool from $url"; return $dl }
         }
         catch { Write-DzLog -Level Warn -Message ('ODT download failed: ' + $_.Exception.Message) }
@@ -148,11 +148,16 @@ function Install-DzOffice {
     }
 
     $xml = New-DzOfficeConfigXml -OfficeConfig $cfg -ProductId $productId
-    $work = Join-Path $env:TEMP 'DayZero-office'
+    $work = Join-Path ([System.IO.Path]::GetTempPath()) 'DayZero-office'
     if (-not (Test-Path -LiteralPath $work)) { [void](New-Item -ItemType Directory -Path $work -Force) }
     $xmlPath = Join-Path $work 'configuration.xml'
     [System.IO.File]::WriteAllText($xmlPath, $xml, (New-Object System.Text.UTF8Encoding($false)))
-    try { Copy-Item -LiteralPath $xmlPath -Destination (Join-Path (Join-Path $Context.KitRoot 'Logs') 'office-configuration.xml') -Force } catch { Write-Verbose 'Could not copy the config to Logs.' }
+    try {
+        $logs = Join-Path $Context.KitRoot 'Logs'
+        if (-not (Test-Path -LiteralPath $logs)) { [void](New-Item -ItemType Directory -Path $logs -Force) }
+        Copy-Item -LiteralPath $xmlPath -Destination (Join-Path $logs 'office-configuration.xml') -Force -ErrorAction Stop
+    }
+    catch { Write-Verbose 'Could not copy the config to Logs.' }
     Write-DzLog -Message "Microsoft 365 configuration ($productId):"
     foreach ($line in ($xml -split "`r?`n")) { if ($line.Trim()) { Write-DzLog -Message "  $line" } }
 

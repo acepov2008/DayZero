@@ -1,0 +1,38 @@
+{
+  "_doc": [
+    "Graphics-card apps and PC-brand update tools. DayZero detects the GPU vendor (PCI vendor id) and the",
+    "brand (BIOS manufacturer), then installs the matching official app.",
+    "winget:  package id (checked against winget-pkgs on 2026-11-12, re-checked at install time).",
+    "msstore: Microsoft Store id (installed with winget from the msstore source).",
+    "page:    official download page, used when the vendor does not publish the app through winget.",
+    "         DayZero never downloads installers from unofficial mirrors; it shows a link on the summary",
+    "         screen instead. Windows Update still installs a working graphics driver in the meantime.",
+    "PC-brand tools are offered on the review screen (ticked) when the brand is recognised; never in a VM."
+  ],
+  "gpuApps": [
+    {
+      "vendor": "NVIDIA",
+      "name": "NVIDIA App",
+      "what": "NVIDIA's driver and game-settings app (GeForce Game Ready drivers, overlay, recording).",
+      "page": "https://www.nvidia.com/en-us/software/nvidia-app/"
+    },
+    {
+      "vendor": "AMD",
+      "name": "AMD Software: Adrenalin Edition",
+      "what": "AMD's Radeon driver and settings app. The page offers AMD's auto-detect installer.",
+      "page": "https://www.amd.com/en/support/download/drivers.html"
+    },
+    {
+      "vendor": "Intel",
+      "name": "Intel Driver & Support Assistant",
+      "what": "Keeps Intel graphics, Wi-Fi and Bluetooth drivers up to date.",
+      "winget": "Intel.IntelDriverAndSupportAssistant"
+    }
+  ],
+  "oemTools": [
+    { "brand": "Dell", "name": "Dell Command | Update", "what": "Dell's BIOS, firmware and driver updater.", "winget": "Dell.CommandUpdate.Universal" },
+    { "brand": "Lenovo", "name": "Lenovo Vantage", "what": "Lenovo's driver, BIOS and settings app.", "msstore": "9WZDNCRFJ4MV" },
+    { "brand": "HP", "name": "HP Support Assistant", "what": "HP's driver, BIOS and support app.", "winget": "HP.SupportAssistant" },
+    { "brand": "ASUS", "name": "MyASUS", "what": "ASUS's driver, BIOS and settings app.", "msstore": "9N7R5S6B0ZZH" }
+  ]
+}
