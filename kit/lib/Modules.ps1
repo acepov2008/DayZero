@@ -9,5 +9,9 @@
     'Engine.psm1',
     'Session.psm1',
     'Plan.psm1',
-    'Steps.Base.psm1'
+    'Download.psm1',
+    'Winget.psm1',
+    'Office.psm1',
+    'Steps.Base.psm1',
+    'Steps.Apps.psm1'
 )

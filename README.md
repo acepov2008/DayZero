@@ -3,9 +3,9 @@
 A USB-stick toolkit that installs Windows and then sets the PC up for you. Think
 Ninite + an unattended Windows installer + a tweak tool, wrapped in a neon synthwave GUI.
 
-> **Status: stage 2 of 6.** USB builder, answer file, install-time bootstrap and the setup
-> wizard (mode picker, review, progress with live log, summary with retry, resume after
-> restarts) work. Apps, tweaks and drivers plug in over the next stages.
+> **Status: stage 3 of 6.** USB builder, answer file, install-time bootstrap, the setup
+> wizard and the app engine (winget with offline fallback, Microsoft 365 via the Office
+> Deployment Tool) work. Tweaks and drivers plug in over the next stages.
 > Test in a virtual machine first; see [TESTING.md](TESTING.md).
 
 ## How it works
@@ -46,6 +46,9 @@ Ninite + an unattended Windows installer + a tweak tool, wrapped in a neon synth
 | **Password** | Stored in `autounattend.xml` as **base64, which is not encryption**. Use **Generate a temporary password** and Windows asks for a new one after DayZero finishes. |
 | **Sign in automatically** | Lets the wizard continue after restarts. DayZero switches it off and deletes the stored password when it finishes. |
 | **Dry run** | The wizard only logs what it would do. |
+| **Offline installers** | Puts App Installer (winget) and Microsoft's Office Deployment Tool on the stick (~250 MB), so a fresh PC doesn't have to wait for the Store. |
+| **Microsoft 365 plan** | Personal/Family, Business or Enterprise: picks the matching Office product. You activate by signing in. |
+| **Check the app list** | Runs `winget show` for every package id on your PC (read-only), so a renamed package is caught before you install. |
 
 DayZero only uses legitimate activation: the PC's firmware key, its digital licence, or a key
 you own. No activators or licence-bypass scripts, ever.
@@ -58,6 +61,7 @@ DayZero-README.txt        plain-text explanation + security notes
 DayZero\                  the toolkit, copied to C:\DayZero during setup
 DayZero\Drivers\          optional: drop extra .inf drivers here (kept when you rebuild)
 DayZero\Logs\             logs from the builder and from every PC set up with this stick
+DayZero\bundled\          offline installers (winget, Office Deployment Tool), if you ticked them
 ```
 
 ## Repository layout
@@ -67,15 +71,29 @@ Build-DayZeroUSB.cmd      starts the builder (UAC + execution-policy bypass for 
 builder\                  builder GUI + modules (Unattend.psm1 = answer-file generator)
 kit\                      everything copied to the stick and then to C:\DayZero
   DayZero.cmd / .ps1      wizard launcher / wizard
-  config\                 modes.json (and from later stages apps, tweaks, ...)
+  config\                 modes.json, apps.json, office.json (and later tweaks, drivers)
   bootstrap\              install-time scripts called by the answer file
   lib\                    modules: Core (logs, dry run), State (state.json), Engine (step
                           runner, restarts, background runspace), Plan, System (PC detection),
                           Config, Steps.* (the steps), Session (cleanup), Ui (WPF helpers)
   ui\Theme.xaml           the neon synthwave theme, shared by builder and wizard
 tests\                    Pester tests + static checks
-tools\                    Invoke-DzChecks.ps1 (run all checks), New-DzTestIso.ps1 (VM testing)
+tools\                    Invoke-DzChecks.ps1 (run all checks), New-DzTestIso.ps1 (VM testing),
+                          Test-DzAppIds.ps1 (check every winget id on a Windows PC)
 ```
+
+## Apps per mode
+
+| Mode | Installs (edit `kit\config\apps.json` and `modes.json` to change) |
+| --- | --- |
+| 🎮 Gaming | Chrome, Steam, Epic Games Launcher, Discord, OBS Studio, MSI Afterburner, HWiNFO, WizTree + your graphics card's app |
+| 💼 Office | Microsoft 365 Apps (Word, Excel, PowerPoint, Outlook, OneNote), Chrome, Acrobat Reader, Spotify, VLC, 7-Zip, Notepad++, Everything, WizTree. LibreOffice optional |
+| 🧰 Everything | Both of the above + PowerToys, VS Code, Windows Terminal (Windows 10), Visual C++ 2015-2022, .NET 10 Desktop Runtime, DirectX runtime. .NET 8 optional |
+
+Every winget id was checked against Microsoft's winget-pkgs repository, and the wizard checks
+each one again (`winget show`) before installing. If an id disappears, it runs `winget search`
+and puts the results in the log instead of guessing. Spotify and Discord install as your user
+without admin rights (Spotify's installer refuses admin).
 
 ## Tech
 
@@ -99,7 +117,7 @@ endings, and every control and theme resource a script uses really exists in the
 
 1. ~~USB builder + answer file~~ ✅
 2. ~~Wizard GUI: mode picker, progress screen with live log, summary with "retry failed steps", resume after reboots~~ ✅
-3. App engine: winget (with bundled fallback), Microsoft 365 via the Office Deployment Tool
+3. ~~App engine: winget (with bundled fallback), Microsoft 365 via the Office Deployment Tool~~ ✅
 4. Tweaks and debloat per mode: all reversible and documented in JSON, restore point first
 5. Drivers: Windows Update, the `Drivers\` folder, GPU vendor app, PC-brand update tool
 6. Design polish

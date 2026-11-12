@@ -369,6 +369,7 @@ function Get-BuilderInput {
         autoLogonCount    = 10
         defaultMode       = $mode
         dryRun            = $dryRun
+        officePlan        = [string]$ui.OfficePlanCombo.SelectedValue
         uiLanguage        = $display
         userLocale        = $region
         inputLocale       = $keyboard
@@ -458,6 +459,20 @@ function Invoke-Write {
         $result = Write-DzKitToTarget -TargetRoot $data.Target -KitSource $script:KitRoot -UnattendXml $xml -Settings $data.Settings -Log {
             param($m) Write-BuilderLog $m
         }
+        $bundleNote = ''
+        if ($script:ui.BundlesCheck.IsChecked -eq $true) {
+            if ($data.IsUsb -and $data.Media -and $script:ui.DriveCombo.SelectedItem.FreeMB -lt 400) {
+                Write-BuilderLog 'Not enough free space on the stick for the offline installers; skipped.'
+                $bundleNote = "`n`nThe offline installers were skipped (less than 400 MB free on the stick)."
+            }
+            else {
+                $bundles = Save-DzBundle -KitPath $result.KitPath -Log { param($m) Write-BuilderLog $m } -Status { param($t) Set-BuilderStatus -Text $t }
+                $failed = @($bundles | Where-Object { -not $_.ok })
+                if ($failed.Count -gt 0) {
+                    $bundleNote = "`n`nThese offline installers could not be downloaded (the new PC will download them instead):`n - " + (($failed | ForEach-Object { "$($_.name): $($_.error)" }) -join "`n - ")
+                }
+            }
+        }
         $logFile = Join-Path $result.KitPath ('Logs\builder-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.log')
         Write-DzUtf8File -Path $logFile -Text (($script:LogLines -join "`r`n") + "`r`n")
     }
@@ -478,7 +493,37 @@ function Invoke-Write {
     else {
         $next = "Exported!`n`nNext: run tools\New-DzTestIso.ps1 -SourceFolder `"$($data.Target)`" to make an ISO, attach it to your VM as a second DVD drive, and follow TESTING.md."
     }
-    [void](Show-DzMessage -Text $next -Title 'DayZero Builder' -Kind Info -Owner $script:Window)
+    [void](Show-DzMessage -Text ($next + $bundleNote) -Title 'DayZero Builder' -Kind Info -Owner $script:Window)
+}
+
+function Invoke-CheckApps {
+    $winget = Find-DzWinget
+    if (-not $winget) {
+        [void](Show-DzMessage -Text 'winget was not found on this PC. Install or update "App Installer" from the Microsoft Store, then try again.' -Kind Warning -Owner $script:Window)
+        return
+    }
+    $config = Get-DzConfig -KitRoot $script:KitRoot
+    $items = Get-DzCatalogPackageList -Config $config
+    $script:ui.LogExpander.IsExpanded = $true
+    Write-BuilderLog ("Checking {0} package ids with {1} ({2})..." -f $items.Count, $winget, (Get-DzWingetVersion -WingetPath $winget))
+    $script:Window.Cursor = [System.Windows.Input.Cursors]::Wait
+    try {
+        $n = 0
+        $results = foreach ($i in $items) {
+            $n++
+            Set-BuilderStatus -Text ("Checking {0} of {1}: {2}" -f $n, $items.Count, $i.Id)
+            Test-DzAppCatalog -WingetPath $winget -Items @($i) -Log { param($m) Write-BuilderLog $m }
+        }
+    }
+    finally { $script:Window.Cursor = $null }
+    $missing = @($results | Where-Object { -not $_.Found })
+    if ($missing.Count -eq 0) {
+        Set-BuilderStatus -Text ("All {0} package ids exist in winget." -f @($results).Count) -Kind Ok
+    }
+    else {
+        Set-BuilderStatus -Text ("{0} package id(s) not found; see the log." -f $missing.Count) -Kind Warn
+        [void](Show-DzMessage -Kind Warning -Owner $script:Window -Text ("Not found in winget:`n - " + (($missing | ForEach-Object { "$($_.Id) ($($_.Name))" }) -join "`n - ") + "`n`nThe log shows what 'winget search' found. Fix the ids in kit\config\apps.json or drivers.json."))
+    }
 }
 
 # ------------------------------------------------------------------------------------
@@ -486,7 +531,10 @@ function Invoke-Write {
 # ------------------------------------------------------------------------------------
 
 function Start-Builder {
-    Import-Module (Join-Path $script:KitRoot 'lib\Ui.psm1') -Force
+    foreach ($m in 'Core.psm1', 'Config.psm1', 'Engine.psm1', 'Download.psm1', 'Winget.psm1', 'Ui.psm1') {
+        Import-Module (Join-Path $script:KitRoot "lib\$m") -Force -DisableNameChecking
+    }
+    Import-Module (Join-Path $script:BuilderRoot 'lib\Bundles.psm1') -Force
     Import-Module (Join-Path $script:BuilderRoot 'lib\Unattend.psm1') -Force
     Import-Module (Join-Path $script:BuilderRoot 'lib\Media.psm1') -Force
     Import-Module (Join-Path $script:BuilderRoot 'lib\UsbWriter.psm1') -Force
@@ -510,6 +558,12 @@ function Start-Builder {
         (New-ListItem -Label 'Use my own product key' -Value 'key')
     )
     $ui.EditionCombo.SelectedIndex = 0
+    $ui.OfficePlanCombo.ItemsSource = @(
+        (New-ListItem -Label 'Microsoft 365 Personal / Family' -Value 'personal'),
+        (New-ListItem -Label 'Microsoft 365 Business Standard / Premium' -Value 'business'),
+        (New-ListItem -Label 'Microsoft 365 E3 / E5 (enterprise)' -Value 'enterprise')
+    )
+    $ui.OfficePlanCombo.SelectedIndex = 0
     $ui.RegionCombo.ItemsSource = Get-RegionItemList
     $ui.KeyboardCombo.ItemsSource = Get-KeyboardItemList
     $ui.TimeZoneCombo.ItemsSource = Get-TimeZoneItemList
@@ -526,6 +580,9 @@ function Start-Builder {
     $ui.UseThisPcButton.Add_Click({ Set-RegionFromThisPc })
     $ui.PreviewButton.Add_Click({
             try { Invoke-Preview } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
+        })
+    $ui.CheckAppsButton.Add_Click({
+            try { Invoke-CheckApps } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
         })
     $ui.WriteButton.Add_Click({
             try { Invoke-Write } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }

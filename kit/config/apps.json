@@ -1,0 +1,46 @@
+{
+  "_doc": [
+    "DayZero app catalog. Modes in modes.json list ids from here.",
+    "winget:    the exact winget package id. Each id below was checked against Microsoft's winget-pkgs",
+    "           repository on 2026-11-12. At install time DayZero runs 'winget show --id <id> --exact'",
+    "           first; if the id no longer exists it runs 'winget search' and logs what it found.",
+    "           tools\\Test-DzAppIds.ps1 (or 'Check app list' in the builder) re-checks every id.",
+    "source:    'winget' (default) or 'msstore' (Microsoft Store id).",
+    "elevated:  false = install as the signed-in user without admin rights. Needed for installers that",
+    "           refuse admin (Spotify) or install per user (Discord, so it is not started as admin).",
+    "scope:     optional 'machine' or 'user', passed to winget --scope.",
+    "optional:  true = shown unticked on the review screen (for the modes listed in 'modes').",
+    "appliesTo: optional limits, e.g. {\"windows\": [10]} or {\"arch\": [\"amd64\"]}."
+  ],
+  "apps": [
+    { "id": "chrome", "name": "Google Chrome", "category": "Browser", "winget": "Google.Chrome", "description": "Web browser." },
+
+    { "id": "steam", "name": "Steam", "category": "Gaming", "winget": "Valve.Steam", "description": "Valve's game store and launcher." },
+    { "id": "epic", "name": "Epic Games Launcher", "category": "Gaming", "winget": "EpicGames.EpicGamesLauncher", "description": "Epic's store, free weekly games, Fortnite." },
+    { "id": "discord", "name": "Discord", "category": "Gaming", "winget": "Discord.Discord", "elevated": false, "description": "Voice and text chat. Installed for your user account." },
+
+    { "id": "obs", "name": "OBS Studio", "category": "Streaming & monitoring", "winget": "OBSProject.OBSStudio", "description": "Recording and streaming." },
+    { "id": "afterburner", "name": "MSI Afterburner", "category": "Streaming & monitoring", "winget": "Guru3D.Afterburner", "description": "GPU monitoring, fan curves and the in-game FPS overlay (with RivaTuner)." },
+    { "id": "hwinfo", "name": "HWiNFO", "category": "Streaming & monitoring", "winget": "REALiX.HWiNFO", "description": "Detailed hardware sensors: temperatures, clocks, voltages." },
+
+    { "id": "acrobat-reader", "name": "Adobe Acrobat Reader", "category": "Office & media", "winget": "Adobe.Acrobat.Reader.64-bit", "appliesTo": { "arch": ["amd64"] }, "description": "PDF reader." },
+    { "id": "spotify", "name": "Spotify", "category": "Office & media", "winget": "Spotify.Spotify", "elevated": false, "description": "Music. Its installer refuses to run as admin, so DayZero installs it as you." },
+    { "id": "vlc", "name": "VLC media player", "category": "Office & media", "winget": "VideoLAN.VLC", "description": "Plays every video and audio format." },
+    { "id": "libreoffice", "name": "LibreOffice", "category": "Office & media", "winget": "TheDocumentFoundation.LibreOffice", "optional": true, "modes": ["office", "everything"], "description": "Free office suite, next to (or instead of) Microsoft 365." },
+
+    { "id": "7zip", "name": "7-Zip", "category": "Utilities", "winget": "7zip.7zip", "description": "Opens zip, 7z, rar and more." },
+    { "id": "notepadplusplus", "name": "Notepad++", "category": "Utilities", "winget": "Notepad++.Notepad++", "description": "Text and code editor." },
+    { "id": "everything-search", "name": "Everything", "category": "Utilities", "winget": "voidtools.Everything", "description": "Finds any file by name instantly." },
+    { "id": "wiztree", "name": "WizTree", "category": "Utilities", "winget": "AntibodySoftware.WizTree", "description": "Shows what is filling up your disk, in seconds." },
+
+    { "id": "powertoys", "name": "Microsoft PowerToys", "category": "Microsoft tools", "winget": "Microsoft.PowerToys", "scope": "machine", "description": "FancyZones, PowerToys Run, color picker and more." },
+    { "id": "windows-terminal", "name": "Windows Terminal", "category": "Microsoft tools", "winget": "Microsoft.WindowsTerminal", "appliesTo": { "windows": [10] }, "description": "Modern terminal (already built into Windows 11)." },
+    { "id": "vscode", "name": "Visual Studio Code", "category": "Microsoft tools", "winget": "Microsoft.VisualStudioCode", "scope": "machine", "description": "Code editor." },
+
+    { "id": "vcredist-x64", "name": "Visual C++ 2015-2022 runtime (64-bit)", "category": "Runtimes", "winget": "Microsoft.VCRedist.2015+.x64", "description": "Needed by many games and apps." },
+    { "id": "vcredist-x86", "name": "Visual C++ 2015-2022 runtime (32-bit)", "category": "Runtimes", "winget": "Microsoft.VCRedist.2015+.x86", "description": "Same, for 32-bit programs." },
+    { "id": "dotnet-desktop-10", "name": ".NET 10 Desktop Runtime", "category": "Runtimes", "winget": "Microsoft.DotNet.DesktopRuntime.10", "description": "Current long-term-support .NET, used by many desktop apps." },
+    { "id": "dotnet-desktop-8", "name": ".NET 8 Desktop Runtime", "category": "Runtimes", "winget": "Microsoft.DotNet.DesktopRuntime.8", "optional": true, "modes": ["everything"], "description": "Only for older apps that ask for it. .NET 8 left Microsoft support on 10 Nov 2026." },
+    { "id": "directx", "name": "DirectX End-User Runtime", "category": "Runtimes", "winget": "Microsoft.DirectX", "description": "Legacy DirectX 9-11 files that older games still look for." }
+  ]
+}

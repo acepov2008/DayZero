@@ -1,0 +1,31 @@
+# winget package ids confirmed to exist in github.com/microsoft/winget-pkgs (manifests/) on 2026-11-12, commit 0f35aa1cd.
+# tests/Apps.Tests.ps1 requires every winget id in the kit config to be listed here, so a new id gets checked
+# (tools/Test-DzAppIds.ps1 on Windows, or the winget-pkgs repository) before it ships.
+Google.Chrome
+Valve.Steam
+EpicGames.EpicGamesLauncher
+Discord.Discord
+OBSProject.OBSStudio
+Guru3D.Afterburner
+REALiX.HWiNFO
+AntibodySoftware.WizTree
+Adobe.Acrobat.Reader.64-bit
+Spotify.Spotify
+VideoLAN.VLC
+7zip.7zip
+Notepad++.Notepad++
+voidtools.Everything
+TheDocumentFoundation.LibreOffice
+Microsoft.PowerToys
+Microsoft.WindowsTerminal
+Microsoft.VisualStudioCode
+Microsoft.VCRedist.2015+.x64
+Microsoft.VCRedist.2015+.x86
+Microsoft.DotNet.DesktopRuntime.10
+Microsoft.DotNet.DesktopRuntime.8
+Microsoft.DirectX
+Microsoft.OfficeDeploymentTool
+Microsoft.OneDrive
+Intel.IntelDriverAndSupportAssistant
+Dell.CommandUpdate
+HP.SupportAssistant

@@ -188,6 +188,13 @@
                             <CheckBox x:Name="DryRunCheck">
                                 <TextBlock TextWrapping="Wrap" Text="Dry run: the wizard on the new PC only logs what it would do and changes nothing (for testing)"/>
                             </CheckBox>
+                            <CheckBox x:Name="BundlesCheck" IsChecked="True">
+                                <TextBlock TextWrapping="Wrap" Text="Put offline installers on the stick: winget (App Installer) and Microsoft's Office Deployment Tool, about 250 MB. Helps when the Store on a fresh PC is not ready yet."/>
+                            </CheckBox>
+                            <TextBlock Text="Microsoft 365 plan (Office and Everything modes)" Style="{StaticResource DzLabel}"/>
+                            <ComboBox x:Name="OfficePlanCombo" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                            <Button x:Name="CheckAppsButton" HorizontalAlignment="Left" Margin="0,12,0,0" Content="_Check the app list with winget"
+                                    ToolTip="Runs 'winget show' for every app id on this PC. Read-only."/>
                             <Border Style="{StaticResource DzInfoBox}">
                                 <TextBlock TextWrapping="Wrap" Foreground="{StaticResource DzText}"
                                            Text="Safety: DayZero never picks, wipes or partitions a disk. Windows Setup will stop and ask you which disk to install on."/>

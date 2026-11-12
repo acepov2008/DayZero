@@ -102,6 +102,21 @@ changing OOBE, so results can differ between builds.
 - [ ] Restart the VM mid-run: after the automatic sign-in the wizard opens straight on the
       progress page and continues (finished steps are not repeated).
 - [ ] Summary page: activation status is shown (VMs normally show "Not activated").
+
+**Apps (stage 3)**
+- [ ] "Get winget ready" finishes (look for `winget v1.x ready (...)` in the engine log and how
+      it got there: already installed, re-registered, from the USB stick, or downloaded).
+- [ ] Every app step ends green or with a clear message. Run `winget list` afterwards.
+- [ ] Spotify and Discord install (they run as your user without admin rights; the log says
+      "as the signed-in user").
+- [ ] Office / Everything: "Install Microsoft 365 Apps" takes 10-30 minutes, then Word, Excel,
+      PowerPoint, Outlook and OneNote are in Start, and nothing else (no Access/Publisher/Teams).
+      `C:\DayZero\Logs\office-configuration.xml` shows the exact configuration used.
+- [ ] Dry run: app steps say "[DRY-RUN] id checked; would install ..." (winget show still runs).
+- [ ] Offline test: build the stick with "Put offline installers on the stick", then in the VM
+      remove App Installer first (`Get-AppxPackage Microsoft.DesktopAppInstaller | Remove-AppxPackage`)
+      and check that the log says winget came "from the USB stick".
+- [ ] In the builder, "Check the app list with winget" reports every id as found.
 - [ ] Press **FINISH**. Afterwards the task `\DayZero\DayZero` is gone, `C:\Windows\Panther\unattend.xml`
       is gone, and after a restart Windows asks for the password instead of signing in.
 - [ ] Windows 10 only: FINISH shows the Extended Security Updates reminder with a working

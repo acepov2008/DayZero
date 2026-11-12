@@ -1,0 +1,34 @@
+{
+  "_doc": [
+    "Microsoft 365 Apps, installed with Microsoft's Office Deployment Tool (ODT) and a configuration.xml",
+    "that DayZero generates from this file. You activate Office by signing in with your own Microsoft account.",
+    "plans:     product ids for the plan chosen in the builder (Microsoft's list: 'Product IDs supported by",
+    "           the Office Deployment Tool for Click-to-Run'). personal = Microsoft 365 Personal/Family,",
+    "           business = Business Standard/Premium, enterprise = E3/E5.",
+    "apps:      what gets installed. Every other id in allApps is excluded (ExcludeApp).",
+    "allApps:   the ExcludeApp ids the ODT documents. OutlookForWindows = the new Outlook app.",
+    "channel:   Current, MonthlyEnterprise, SemiAnnual, ...",
+    "odt:       where setup.exe comes from, in order: the stick's bundled\\odt\\setup.exe (added by the",
+    "           builder), then winget (Microsoft.OfficeDeploymentTool), then Microsoft's Office CDN.",
+    "           A downloaded setup.exe must carry a valid Microsoft signature or it is not run."
+  ],
+  "plans": {
+    "personal": "O365HomePremRetail",
+    "business": "O365BusinessRetail",
+    "enterprise": "O365ProPlusRetail"
+  },
+  "defaultPlan": "personal",
+  "apps": ["Word", "Excel", "PowerPoint", "Outlook", "OneNote"],
+  "allApps": ["Access", "Excel", "Groove", "Lync", "OneDrive", "OneNote", "Outlook", "OutlookForWindows", "PowerPoint", "Publisher", "Teams", "Word"],
+  "channel": "Current",
+  "edition": "64",
+  "language": "MatchOS",
+  "fallbackLanguage": "en-us",
+  "removeMsi": true,
+  "odt": {
+    "wingetId": "Microsoft.OfficeDeploymentTool",
+    "wingetInstallDir": "%ProgramW6432%\\OfficeDeploymentTool",
+    "downloadUrl": "https://officecdn.microsoft.com/pr/wsus/setup.exe"
+  },
+  "timeoutMinutes": 90
+}
