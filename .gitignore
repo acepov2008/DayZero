@@ -5,6 +5,8 @@ kit/bundled/
 kit/Logs/*
 !kit/Logs/.gitkeep
 kit/config/settings.json
+kit/state.json*
+kit/backup/
 kit/build-*.marker
 
 # Test / editor output

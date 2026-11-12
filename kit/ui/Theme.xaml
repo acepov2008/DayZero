@@ -509,6 +509,23 @@
         </Style.Triggers>
     </Style>
 
+    <!-- ===== Neon progress bar ================================================ -->
+    <Style TargetType="ProgressBar">
+        <Setter Property="Height" Value="14"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ProgressBar">
+                    <Grid>
+                        <Border x:Name="PART_Track" CornerRadius="7" Background="{StaticResource DzInput}"
+                                BorderBrush="{StaticResource DzBorder}" BorderThickness="1"/>
+                        <Border x:Name="PART_Indicator" CornerRadius="7" HorizontalAlignment="Left"
+                                Background="{StaticResource DzNeonGradient}" Effect="{StaticResource DzGlowMagenta}"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- ===== ToolTip =========================================================== -->
     <Style TargetType="ToolTip">
         <Setter Property="Background" Value="{StaticResource DzPanelSolid}"/>

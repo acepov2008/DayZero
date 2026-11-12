@@ -3,8 +3,9 @@
 A USB-stick toolkit that installs Windows and then sets the PC up for you. Think
 Ninite + an unattended Windows installer + a tweak tool, wrapped in a neon synthwave GUI.
 
-> **Status: stage 1 of 6.** The USB builder, the answer-file generator and the install-time
-> bootstrap work. The setup wizard is still a placeholder screen that proves the chain works.
+> **Status: stage 2 of 6.** USB builder, answer file, install-time bootstrap and the setup
+> wizard (mode picker, review, progress with live log, summary with retry, resume after
+> restarts) work. Apps, tweaks and drivers plug in over the next stages.
 > Test in a virtual machine first; see [TESTING.md](TESTING.md).
 
 ## How it works
@@ -18,8 +19,9 @@ Ninite + an unattended Windows installer + a tweak tool, wrapped in a neon synth
 3. **You boot the target PC from the stick.** Setup runs on its own, **except that it always
    stops and asks you which disk to install on.** DayZero never picks, wipes or
    partitions a disk.
-4. **At the first sign-in the DayZero wizard starts** (stage 2+: mode picker, apps, tweaks,
-   drivers, summary).
+4. **At the first sign-in the DayZero wizard starts**: pick a mode, review the apps and
+   options, then watch it work through its steps. It keeps going across restarts and ends
+   with a summary (activation status, "Retry failed steps").
 
 ## Quick start
 
@@ -64,9 +66,12 @@ DayZero\Logs\             logs from the builder and from every PC set up with th
 Build-DayZeroUSB.cmd      starts the builder (UAC + execution-policy bypass for that process only)
 builder\                  builder GUI + modules (Unattend.psm1 = answer-file generator)
 kit\                      everything copied to the stick and then to C:\DayZero
-  DayZero.cmd / .ps1      wizard launcher / wizard (placeholder in stage 1)
+  DayZero.cmd / .ps1      wizard launcher / wizard
+  config\                 modes.json (and from later stages apps, tweaks, ...)
   bootstrap\              install-time scripts called by the answer file
-  lib\                    shared modules (core, logging, dry run, cleanup, WPF helpers)
+  lib\                    modules: Core (logs, dry run), State (state.json), Engine (step
+                          runner, restarts, background runspace), Plan, System (PC detection),
+                          Config, Steps.* (the steps), Session (cleanup), Ui (WPF helpers)
   ui\Theme.xaml           the neon synthwave theme, shared by builder and wizard
 tests\                    Pester tests + static checks
 tools\                    Invoke-DzChecks.ps1 (run all checks), New-DzTestIso.ps1 (VM testing)
@@ -93,7 +98,7 @@ endings, and every control and theme resource a script uses really exists in the
 ## Roadmap
 
 1. ~~USB builder + answer file~~ ✅
-2. Wizard GUI: mode picker, progress screen with live log, summary with "retry failed steps", resume after reboots
+2. ~~Wizard GUI: mode picker, progress screen with live log, summary with "retry failed steps", resume after reboots~~ ✅
 3. App engine: winget (with bundled fallback), Microsoft 365 via the Office Deployment Tool
 4. Tweaks and debloat per mode: all reversible and documented in JSON, restore point first
 5. Drivers: Windows Update, the `Drivers\` folder, GPU vendor app, PC-brand update tool

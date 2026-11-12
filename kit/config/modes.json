@@ -1,0 +1,68 @@
+{
+  "_doc": [
+    "DayZero modes. Edit freely; the wizard reads this file at start.",
+    "apps:    ids from apps.json, installed and ticked by default on the review screen.",
+    "tweaks:  ids from tweaks.json. Tweaks marked optional there only appear as switches on the review screen.",
+    "debloat: 'full', 'light' or 'none' (profiles are defined in debloat.json).",
+    "office:  true installs Microsoft 365 Apps with the Office Deployment Tool (office.json).",
+    "includes: other modes merged into this one (apps and tweaks are combined)."
+  ],
+  "defaultMode": "gaming",
+  "modes": [
+    {
+      "id": "gaming",
+      "title": "GAMING",
+      "emoji": "🎮",
+      "tagline": "Max FPS, zero clutter",
+      "description": "Game launchers, chat and capture tools, your graphics card's app, a full debloat and the gaming tweaks that actually do something.",
+      "highlights": [
+        "Steam, Epic, Discord, OBS, Afterburner, HWiNFO",
+        "Full debloat (Store, Calculator, Photos stay)",
+        "Game Mode, GPU scheduling, raw mouse input",
+        "Performance power plan (asks first on laptops)"
+      ],
+      "debloat": "full",
+      "office": false,
+      "apps": ["chrome", "steam", "epic", "discord", "obs", "afterburner", "hwinfo", "wiztree"],
+      "tweaks": [
+        "game-mode", "gpu-scheduling", "mouse-accel-off", "background-apps-off",
+        "bing-search-off", "widgets-off", "news-interests-off", "copilot-off",
+        "telemetry-min", "promoted-apps-off", "startup-trim",
+        "power-plan", "memory-integrity-off", "game-bar-off"
+      ]
+    },
+    {
+      "id": "office",
+      "title": "OFFICE",
+      "emoji": "💼",
+      "tagline": "Work-ready in one go",
+      "description": "Microsoft 365 Apps plus the everyday essentials, a light debloat and no performance tweaks.",
+      "highlights": [
+        "Microsoft 365 Apps (sign in to activate)",
+        "Chrome, Acrobat Reader, Spotify, VLC, 7-Zip",
+        "Notepad++, Everything search, WizTree",
+        "Light debloat, LibreOffice optional"
+      ],
+      "debloat": "light",
+      "office": true,
+      "apps": ["chrome", "acrobat-reader", "spotify", "vlc", "7zip", "notepadplusplus", "everything-search", "wiztree"],
+      "tweaks": ["promoted-apps-off"]
+    },
+    {
+      "id": "everything",
+      "title": "EVERYTHING",
+      "emoji": "🧰",
+      "tagline": "The whole toolbox",
+      "description": "Gaming and Office together, plus PowerToys, VS Code, Windows Terminal and the runtimes many apps and games need.",
+      "highlights": [
+        "Everything from Gaming and Office",
+        "PowerToys, VS Code, Windows Terminal",
+        "Visual C++, .NET 10 and DirectX runtimes",
+        "Full debloat + gaming tweaks"
+      ],
+      "includes": ["gaming", "office"],
+      "apps": ["powertoys", "windows-terminal", "vscode", "vcredist-x64", "vcredist-x86", "dotnet-desktop-10", "directx"],
+      "tweaks": []
+    }
+  ]
+}

@@ -18,7 +18,7 @@ BeforeDiscovery {
     # Script -> the XAML files whose x:Name elements it uses through $ui / $names.
     $script:ScriptXamlPairs = @(
         @{ Script = 'builder/Builder.ps1'; Xaml = @('builder/Builder.xaml', 'builder/PreviewWindow.xaml') },
-        @{ Script = 'kit/DayZero.ps1'; Xaml = @('kit/ui/Placeholder.xaml') }
+        @{ Script = 'kit/DayZero.ps1'; Xaml = @('kit/ui/Wizard.xaml') }
     )
 }
 
@@ -109,6 +109,8 @@ Describe 'XAML' {
     It '<Name> only uses theme resources that exist' -ForEach $script:XamlFiles {
         $keys = Get-ThemeKey
         $text = Get-Content -Raw -LiteralPath $Path
+        # Keys defined in the file itself (e.g. Window.Resources) count too.
+        foreach ($m in [regex]::Matches($text, 'x:Key="([^"]+)"')) { [void]$keys.Add($m.Groups[1].Value) }
         $used = [regex]::Matches($text, '\{(?:Static|Dynamic)Resource\s+([A-Za-z][A-Za-z0-9]*)\}') | ForEach-Object { $_.Groups[1].Value }
         foreach ($k in $used) { $keys.Contains($k) | Should -BeTrue -Because "resource '$k' is used in $Name" }
     }

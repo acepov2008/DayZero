@@ -26,6 +26,29 @@ function Get-DzKitRoot {
     return $script:KitRoot
 }
 
+function Set-DzKitRoot {
+    <# Points DayZero at another kit folder (used by tests and by the USB fallback). #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Path)
+    $script:KitRoot = $Path
+}
+
+function Join-DzPath {
+    <# Joins path parts with the OS separator (PowerShell 5.1's Join-Path takes only two parts). #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory = $true, ValueFromRemainingArguments = $true)][string[]]$Part)
+    return [System.IO.Path]::Combine([string[]]$Part)
+}
+
+function Get-DzStatePath {
+    <# The wizard's progress file: <kit>\state.json (C:\DayZero\state.json on the new PC). #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+    return (Join-DzPath $script:KitRoot 'state.json')
+}
+
 function Get-DzVersion {
     [CmdletBinding()]
     [OutputType([string])]
@@ -50,7 +73,7 @@ function Get-DzSettings {
     #>
     [CmdletBinding()]
     param()
-    $path = Join-Path $script:KitRoot 'config\settings.json'
+    $path = Join-DzPath $script:KitRoot 'config' 'settings.json'
     $defaults = [ordered]@{
         schemaVersion = 1; buildId = $null; builtAt = $null; builderVersion = $null
         windowsVersion = $null; edition = 'auto'; userName = $env:USERNAME; computerName = $env:COMPUTERNAME
@@ -173,6 +196,6 @@ function Invoke-DzAction {
 }
 
 Export-ModuleMember -Function @(
-    'Get-DzKitRoot', 'Get-DzVersion', 'Read-DzJsonFile', 'Get-DzSettings', 'Find-DzUsbKit',
+    'Get-DzKitRoot', 'Set-DzKitRoot', 'Join-DzPath', 'Get-DzStatePath', 'Get-DzVersion', 'Read-DzJsonFile', 'Get-DzSettings', 'Find-DzUsbKit',
     'Set-DzDryRun', 'Test-DzDryRun', 'Initialize-DzLog', 'Add-DzLogListener', 'Write-DzLog', 'Invoke-DzAction'
 )

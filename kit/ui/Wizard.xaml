@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    DayZero setup wizard. One window, five pages (only one visible at a time):
+      ModePage -> ReviewPage -> ProgressPage -> SummaryPage (-> EsuPage on Windows 10)
+    plus RebootOverlay. Styles come from Theme.xaml; kit\DayZero.ps1 wires up the events.
+-->
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Name="WizardWindow"
+        Title="DayZero"
+        Width="1120" Height="790" MinWidth="940" MinHeight="660"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource DzWindowBackground}"
+        Foreground="{StaticResource DzText}"
+        FontFamily="Segoe UI" FontSize="13"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display">
+    <Window.Resources>
+        <!-- One row in the step list: status icon, title, detail text. -->
+        <DataTemplate x:Key="DzStepItemTemplate">
+            <Border x:Name="Row" Padding="10,7" Margin="0,2" CornerRadius="8" Background="Transparent">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="34"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="Icon" Text="{Binding Icon}" FontFamily="{StaticResource DzEmoji}" FontSize="16" VerticalAlignment="Top"/>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock x:Name="StepTitle" Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                        <TextBlock x:Name="Detail" Text="{Binding Message}" FontSize="12" Foreground="{StaticResource DzMuted}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Status}" Value="pending">
+                    <Setter TargetName="Row" Property="Opacity" Value="0.55"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="running">
+                    <Setter TargetName="Row" Property="Background" Value="{StaticResource DzSelectedCardBg}"/>
+                    <Setter TargetName="StepTitle" Property="Foreground" Value="{StaticResource DzCyan}"/>
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard x:Name="PulseIcon">
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="Icon" Storyboard.TargetProperty="Opacity"
+                                                 From="1" To="0.25" Duration="0:0:0.7" AutoReverse="True" RepeatBehavior="Forever"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <StopStoryboard BeginStoryboardName="PulseIcon"/>
+                    </DataTrigger.ExitActions>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="failed">
+                    <Setter TargetName="StepTitle" Property="Foreground" Value="{StaticResource DzRed}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="warn">
+                    <Setter TargetName="StepTitle" Property="Foreground" Value="{StaticResource DzYellow}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="reboot">
+                    <Setter TargetName="StepTitle" Property="Foreground" Value="{StaticResource DzYellow}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="skipped">
+                    <Setter TargetName="Row" Property="Opacity" Value="0.7"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Message}" Value="">
+                    <Setter TargetName="Detail" Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ===== Header with synthwave sun and grid ===== -->
+        <Grid Grid.Row="0" Height="112" ClipToBounds="True">
+            <Canvas x:Name="HeaderArt" IsHitTestVisible="False">
+                <Ellipse x:Name="HeaderSun" Width="150" Height="150" Canvas.Right="70" Canvas.Top="22"
+                         Fill="{StaticResource DzSunsetGradient}" Opacity="0.85" Effect="{StaticResource DzGlowMagenta}"/>
+            </Canvas>
+            <Grid Margin="28,18,28,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="DAYZERO" Style="{StaticResource DzTitle}"/>
+                    <TextBlock x:Name="SubtitleText" Text="SETUP WIZARD" Style="{StaticResource DzSubtitle}" Margin="2,0,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border x:Name="DryRunBadge" Visibility="Collapsed" Background="{StaticResource DzWarningBg}" BorderBrush="{StaticResource DzYellow}"
+                            BorderThickness="1.5" CornerRadius="6" Padding="10,4" Margin="0,0,12,0">
+                        <TextBlock Text="DRY RUN - nothing is changed" FontWeight="Bold" Foreground="{StaticResource DzYellow}"/>
+                    </Border>
+                    <TextBlock x:Name="SystemChipText" VerticalAlignment="Center" Foreground="{StaticResource DzMuted}" FontSize="12" MaxWidth="420" TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+        <Border Grid.Row="0" VerticalAlignment="Bottom" Height="2" Margin="0" Background="{StaticResource DzNeonGradient}" Effect="{StaticResource DzGlowMagenta}"/>
+
+        <!-- ===== Pages ===== -->
+        <Grid Grid.Row="1" Margin="20,12,20,8">
+
+            <!-- 1. Mode picker -->
+            <Grid x:Name="ModePage">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <StackPanel Margin="8,4,8,0">
+                    <TextBlock Text="CHOOSE YOUR MODE" FontSize="22" FontWeight="Black" Foreground="{StaticResource DzMagenta}"/>
+                    <TextBlock Style="{StaticResource DzHint}" FontSize="13"
+                               Text="The default from your USB builder is already selected. Arrow keys or 1 / 2 / 3 to switch, Enter to continue."/>
+                </StackPanel>
+                <UniformGrid x:Name="ModeCardsPanel" Grid.Row="1" Rows="1" Margin="0,14,0,0"/>
+                <Border Grid.Row="2" Style="{StaticResource DzCard}" VerticalAlignment="Top">
+                    <TextBlock x:Name="ModeDescriptionText" TextWrapping="Wrap" FontSize="14"/>
+                </Border>
+            </Grid>
+
+            <!-- 2. Review -->
+            <ScrollViewer x:Name="ReviewPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <Border Style="{StaticResource DzCard}">
+                            <StackPanel>
+                                <TextBlock x:Name="ReviewTitleText" Text="YOUR PC" Style="{StaticResource DzCardTitle}"/>
+                                <TextBlock x:Name="SystemInfoText" TextWrapping="Wrap" FontFamily="{StaticResource DzMono}" FontSize="12"
+                                           Foreground="{StaticResource DzCyan}" LineHeight="19"/>
+                                <Border x:Name="LaptopNotice" Style="{StaticResource DzWarningBox}" Visibility="Collapsed">
+                                    <TextBlock TextWrapping="Wrap"
+                                               Text="Laptop detected. Performance options that cost battery life are switched OFF below; tick them only if you mostly play plugged in."/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource DzCard}">
+                            <StackPanel>
+                                <TextBlock Text="OPTIONS" Style="{StaticResource DzCardTitle}"/>
+                                <TextBlock Style="{StaticResource DzHint}" Margin="0,0,0,4"
+                                           Text="Switches with a warning are off unless you turn them on. Every tweak is logged and can be undone with DayZero.cmd -Undo."/>
+                                <StackPanel x:Name="OptionsPanel"/>
+                                <TextBlock x:Name="NoOptionsText" Style="{StaticResource DzHint}" Text="No extra choices for this mode." Visibility="Collapsed"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <Border Grid.Column="1" Style="{StaticResource DzCard}" VerticalAlignment="Top">
+                        <StackPanel>
+                            <TextBlock Text="APPS" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock Style="{StaticResource DzHint}" Margin="0,0,0,4" Text="Untick anything you don't want. Extras are unticked."/>
+                            <StackPanel x:Name="AppsPanel"/>
+                            <TextBlock x:Name="NoAppsText" Style="{StaticResource DzHint}" Text="No app list found (config\apps.json)." Visibility="Collapsed"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </ScrollViewer>
+
+            <!-- 3. Progress -->
+            <Grid x:Name="ProgressPage" Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <StackPanel Margin="8,0,8,0">
+                    <TextBlock x:Name="CurrentStepText" FontSize="20" FontWeight="Bold" Foreground="{StaticResource DzCyan}" TextTrimming="CharacterEllipsis" Text="Starting..."/>
+                    <TextBlock x:Name="ProgressDetailText" Style="{StaticResource DzHint}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                </StackPanel>
+                <Grid Grid.Row="1" Margin="8,12,8,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ProgressBar x:Name="OverallProgress" Minimum="0" Maximum="1" Value="0"/>
+                    <TextBlock x:Name="ProgressCountText" Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                </Grid>
+                <Border Grid.Row="2" Style="{StaticResource DzCard}" Padding="6">
+                    <ScrollViewer x:Name="StepScroll" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="StepList" ItemTemplate="{StaticResource DzStepItemTemplate}"/>
+                    </ScrollViewer>
+                </Border>
+                <Expander x:Name="LogExpander" Grid.Row="3" Margin="8,0,8,0" Foreground="{StaticResource DzMuted}" Header="Live log  (press L)">
+                    <TextBox x:Name="LogText" Style="{StaticResource DzLogBox}" Height="170" Margin="0,6,0,0"/>
+                </Expander>
+            </Grid>
+
+            <!-- 4. Summary -->
+            <Grid x:Name="SummaryPage" Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <StackPanel Margin="8,0,8,4">
+                    <TextBlock x:Name="SummaryTitleText" FontSize="24" FontWeight="Black" Foreground="{StaticResource DzMagenta}" Text="ALL DONE"/>
+                    <TextBlock x:Name="SummaryCountsText" Style="{StaticResource DzHint}" FontSize="13"/>
+                </StackPanel>
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="5*"/>
+                        <ColumnDefinition Width="6*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <Border Style="{StaticResource DzCard}">
+                            <StackPanel>
+                                <TextBlock Text="WINDOWS ACTIVATION" Style="{StaticResource DzCardTitle}"/>
+                                <TextBlock x:Name="ActivationText" FontSize="16" FontWeight="Bold" TextWrapping="Wrap"/>
+                                <TextBlock x:Name="ActivationDetailText" Style="{StaticResource DzHint}"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource DzCard}">
+                            <StackPanel>
+                                <TextBlock Text="WHAT NOW" Style="{StaticResource DzCardTitle}"/>
+                                <TextBlock x:Name="NextStepsText" TextWrapping="Wrap" LineHeight="20"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <Border Grid.Column="1" Style="{StaticResource DzCard}" Padding="6">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="SummaryList" ItemTemplate="{StaticResource DzStepItemTemplate}"/>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- 5. Windows 10 Extended Security Updates reminder -->
+            <Border x:Name="EsuPage" Visibility="Collapsed" Style="{StaticResource DzCard}" VerticalAlignment="Top" Margin="60,20">
+                <StackPanel>
+                    <TextBlock Text="WINDOWS 10: KEEP GETTING SECURITY UPDATES" Style="{StaticResource DzCardTitle}" FontSize="18"/>
+                    <TextBlock x:Name="EsuText" TextWrapping="Wrap" FontSize="14" LineHeight="22"/>
+                    <Button x:Name="OpenWindowsUpdateButton" HorizontalAlignment="Left" Margin="0,16,0,0" Content="Open _Windows Update settings"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ===== Footer ===== -->
+        <Border Grid.Row="2" Background="{StaticResource DzPanelSolid}" BorderBrush="{StaticResource DzBorder}" BorderThickness="0,1,0,0">
+            <Grid Margin="24,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="HintText" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{StaticResource DzMuted}" FontSize="12"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button x:Name="BackButton" Margin="10,0,0,0" Content="_Back"/>
+                    <Button x:Name="StopButton" Margin="10,0,0,0" Content="_Pause after this step" Visibility="Collapsed"/>
+                    <Button x:Name="OpenLogsButton" Margin="10,0,0,0" Content="Open _logs" Visibility="Collapsed"/>
+                    <Button x:Name="RetryButton" Margin="10,0,0,0" Content="_Retry failed steps" Visibility="Collapsed"/>
+                    <Button x:Name="NextButton" Margin="10,0,0,0" Style="{StaticResource DzPrimaryButton}" Content="_NEXT"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ===== Restart overlay ===== -->
+        <Grid x:Name="RebootOverlay" Grid.RowSpan="3" Visibility="Collapsed" Background="#D90B0620">
+            <Border Style="{StaticResource DzCard}" Width="560" VerticalAlignment="Center" HorizontalAlignment="Center"
+                    BorderBrush="{StaticResource DzMagenta}" Effect="{StaticResource DzGlowMagenta}">
+                <StackPanel>
+                    <TextBlock Text="RESTART NEEDED" Style="{StaticResource DzCardTitle}" FontSize="20"/>
+                    <TextBlock x:Name="RebootReasonText" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="RebootCountdownText" Margin="0,12,0,0" FontSize="16" FontWeight="Bold" Foreground="{StaticResource DzCyan}"/>
+                    <TextBlock Style="{StaticResource DzHint}" Text="DayZero signs back in and continues automatically after the restart."/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                        <Button x:Name="RestartLaterButton" Content="Not _now"/>
+                        <Button x:Name="RestartNowButton" Margin="10,0,0,0" Style="{StaticResource DzPrimaryButton}" Content="_RESTART NOW"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

@@ -67,6 +67,23 @@ function Set-DzPasswordChangeRequired {
     }.GetNewClosure() | Out-Null
 }
 
+function Invoke-DzRestart {
+    <#
+        Restarts the PC so a step can continue. If automatic sign-in is still active, makes
+        sure it has at least 2 sign-ins left, so DayZero comes back on its own.
+    #>
+    [CmdletBinding()]
+    param([string]$Reason = 'continue setup')
+    Invoke-DzAction -Description "Restart the PC to $Reason" -Action {
+        $auto = Get-ItemProperty -LiteralPath $script:WinlogonKey -ErrorAction SilentlyContinue
+        if ($auto -and $auto.PSObject.Properties['AutoAdminLogon'] -and [string]$auto.AutoAdminLogon -eq '1' -and
+            $auto.PSObject.Properties['DefaultPassword'] -and $auto.PSObject.Properties['AutoLogonCount'] -and [int]$auto.AutoLogonCount -lt 2) {
+            Set-ItemProperty -LiteralPath $script:WinlogonKey -Name 'AutoLogonCount' -Value 2
+        }
+        Restart-Computer -Force
+    } | Out-Null
+}
+
 function Complete-DzSetup {
     <# Runs all cleanup steps. Each one is attempted even if an earlier one fails. #>
     [CmdletBinding()]
@@ -94,4 +111,4 @@ function Complete-DzSetup {
     return ($failures -eq 0)
 }
 
-Export-ModuleMember -Function @('Unregister-DzResumeTask', 'Disable-DzAutoLogon', 'Remove-DzCachedAnswerFile', 'Set-DzPasswordChangeRequired', 'Complete-DzSetup')
+Export-ModuleMember -Function @('Invoke-DzRestart', 'Unregister-DzResumeTask', 'Disable-DzAutoLogon', 'Remove-DzCachedAnswerFile', 'Set-DzPasswordChangeRequired', 'Complete-DzSetup')

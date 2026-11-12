@@ -54,7 +54,18 @@ finds its folder by the build marker file, so a second virtual DVD drive behaves
    `DayZero-test.iso`.
 3. **Take a snapshot** ("blank"), then start the VM.
 
-## 4. Stage 1 checklist
+## 3c. Try the wizard on your own PC (dry run, no VM needed)
+
+The wizard can run on any Windows 10/11 PC in dry-run mode: it detects the PC and walks
+through its plan, but every change is only logged as `[DRY-RUN] would: ...`.
+
+```
+kit\DayZero.cmd -DryRun
+```
+
+It keeps its progress in `kit\state.json`. Add `-Reset` to start again at the mode picker.
+
+## 4. Checklist
 
 Write down the Windows **build number** you tested (`winver` after install). Microsoft keeps
 changing OOBE, so results can differ between builds.
@@ -74,15 +85,31 @@ changing OOBE, so results can differ between builds.
 - [ ] Windows signs in automatically as your account (if auto sign-in was on).
 
 **After the first sign-in**
-- [ ] The DayZero window appears ("DayZero made it onto this PC").
+- [ ] The DayZero wizard appears with the builder's default mode selected ("BUILDER DEFAULT").
 - [ ] Computer name, time zone, keyboard and region formats match the builder.
 - [ ] `C:\DayZero` exists. `C:\DayZero\Logs` has `copykit.log`, `firstlogon.log` and `wizard-*.log`.
-- [ ] Task Scheduler shows `\DayZero\DayZero`. Restart the VM: it signs in again and the
-      DayZero window comes back.
-- [ ] Press **FINISH**. Afterwards the task is gone, `C:\Windows\Panther\unattend.xml` is gone,
-      and after a restart Windows asks for the password instead of signing in.
+
+**Wizard (stage 2)**
+- [ ] Mode picker: arrow keys and 1 / 2 / 3 switch modes, Enter continues, the mouse works too.
+- [ ] Review page: "YOUR PC" shows the right Windows version, laptop/desktop and graphics card.
+      On a laptop the yellow laptop note appears. Esc goes back, Enter starts.
+- [ ] Progress page: the step list fills in (pending, running, done), the bar moves, and
+      **L** opens the live log. `C:\DayZero\Logs\engine-*.log` has the same lines.
+- [ ] Unplug the VM's network before starting: "Connect to the internet" waits, then fails
+      after 10 minutes. Reconnect, press **Retry failed steps** and it turns green.
+- [ ] Press **Pause after this step**: the summary says PAUSED and **CONTINUE** carries on.
+- [ ] Close the window mid-run: it asks first, pauses, and the wizard resumes at the next sign-in.
+- [ ] Restart the VM mid-run: after the automatic sign-in the wizard opens straight on the
+      progress page and continues (finished steps are not repeated).
+- [ ] Summary page: activation status is shown (VMs normally show "Not activated").
+- [ ] Press **FINISH**. Afterwards the task `\DayZero\DayZero` is gone, `C:\Windows\Panther\unattend.xml`
+      is gone, and after a restart Windows asks for the password instead of signing in.
+- [ ] Windows 10 only: FINISH shows the Extended Security Updates reminder with a working
+      "Open Windows Update settings" button.
 - [ ] With a **temporary password**: after Finish and a restart, Windows asks you to set a new password.
-- [ ] With **Dry run** on: Finish only logs `[DRY-RUN] would: ...` lines and changes nothing.
+- [ ] With **Dry run** on: the yellow DRY RUN badge shows, and the logs contain only
+      `[DRY-RUN] would: ...` for changes. (After a dry run, automatic sign-in stays on; the
+      wizard just closes itself at each sign-in.)
 
 Note: on the test ISO the "USB" is read-only, so logs are not copied back to it. That is
 expected. A real USB stick gets them in `DayZero\Logs\`.
@@ -95,7 +122,9 @@ expected. A real USB stick gets them in `DayZero\Logs\`.
 | `C:\Windows\Panther\UnattendGC\setupact.log` | the specialize / OOBE passes |
 | `C:\DayZero\Logs\copykit.log` | copying the toolkit off the stick |
 | `C:\DayZero\Logs\firstlogon.log` | first sign-in, scheduled task |
-| `C:\DayZero\Logs\wizard-*.log` | the wizard |
+| `C:\DayZero\Logs\wizard-*.log` | the wizard window |
+| `C:\DayZero\Logs\engine-*.log` | every step the wizard ran (the main log) |
+| `C:\DayZero\state.json` | progress: chosen mode, options and each step's status |
 | `%TEMP%\DayZero-builder-error.log` | builder crashes |
 
 Run `Build-DayZeroUSB.cmd /console` or `DayZero.cmd /console` to keep a PowerShell window
