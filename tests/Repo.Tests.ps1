@@ -114,6 +114,24 @@ Describe 'XAML' {
         $used = [regex]::Matches($text, '\{(?:Static|Dynamic)Resource\s+([A-Za-z][A-Za-z0-9]*)\}') | ForEach-Object { $_.Groups[1].Value }
         foreach ($k in $used) { $keys.Contains($k) | Should -BeTrue -Because "resource '$k' is used in $Name" }
     }
+    It '<Name>: every TargetName and BeginStoryboardName points at an x:Name in the same file' -ForEach $script:XamlFiles {
+        $text = Get-Content -Raw -LiteralPath $Path
+        $names = @([regex]::Matches($text, 'x:Name="([^"]+)"') | ForEach-Object { $_.Groups[1].Value })
+        foreach ($m in [regex]::Matches($text, '(?:Storyboard\.TargetName|TargetName|BeginStoryboardName)="([^"]+)"')) {
+            $names | Should -Contain $m.Groups[1].Value -Because "$Name refers to '$($m.Groups[1].Value)'"
+        }
+    }
+    It 'Theme.xaml defines every resource before it is used (WPF StaticResource rule)' {
+        $text = Get-Content -Raw -LiteralPath (Join-Path $repo 'kit/ui/Theme.xaml')
+        $text = [regex]::Replace($text, '(?s)<!--.*?-->', { param($m) ' ' * $m.Value.Length })   # comments are not uses
+        $defined = @{}
+        foreach ($m in [regex]::Matches($text, 'x:Key="([^"]+)"')) { if (-not $defined.ContainsKey($m.Groups[1].Value)) { $defined[$m.Groups[1].Value] = $m.Index } }
+        foreach ($m in [regex]::Matches($text, '\{StaticResource\s+([A-Za-z][A-Za-z0-9]*)\}')) {
+            $key = $m.Groups[1].Value
+            $defined.ContainsKey($key) | Should -BeTrue -Because "'$key' is used in Theme.xaml"
+            $defined[$key] | Should -BeLessThan $m.Index -Because "'$key' must be defined above its first use"
+        }
+    }
     It 'scripts only use theme resources that exist' {
         $keys = Get-ThemeKey
         foreach ($f in @(Get-ChildItem -Path (Join-Path $repo 'builder'), (Join-Path $repo 'kit') -Recurse -Include '*.ps1', '*.psm1')) {

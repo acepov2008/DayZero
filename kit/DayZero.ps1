@@ -116,15 +116,37 @@ function New-DzStepView {
 # Pages
 # ------------------------------------------------------------------------------------
 
+function Invoke-DzPageAnimation {
+    <# Fades a page in while it slides up a little. #>
+    param([Parameter(Mandatory = $true)][object]$Element)
+    if (-not ($Element.RenderTransform -is [System.Windows.Media.TranslateTransform])) {
+        $Element.RenderTransform = New-Object System.Windows.Media.TranslateTransform
+    }
+    $duration = New-Object System.Windows.Duration([TimeSpan]::FromMilliseconds(280))
+    $ease = New-Object System.Windows.Media.Animation.CubicEase
+    $ease.EasingMode = [System.Windows.Media.Animation.EasingMode]::EaseOut
+    $fade = New-Object System.Windows.Media.Animation.DoubleAnimation(0.0, 1.0, $duration)
+    $fade.EasingFunction = $ease
+    $slide = New-Object System.Windows.Media.Animation.DoubleAnimation(16.0, 0.0, $duration)
+    $slide.EasingFunction = $ease
+    $Element.BeginAnimation([System.Windows.UIElement]::OpacityProperty, $fade)
+    $Element.RenderTransform.BeginAnimation([System.Windows.Media.TranslateTransform]::YProperty, $slide)
+}
+
 function Set-DzPage {
     param([Parameter(Mandatory = $true)][ValidateSet('Mode', 'Review', 'Progress', 'Summary', 'Esu')][string]$Name)
     $ui = $script:ui
+    $changed = ($script:Page -ne $Name)
     $script:Page = $Name
     Set-DzVisible $ui.ModePage ($Name -eq 'Mode')
     Set-DzVisible $ui.ReviewPage ($Name -eq 'Review')
     Set-DzVisible $ui.ProgressPage ($Name -eq 'Progress')
     Set-DzVisible $ui.SummaryPage ($Name -eq 'Summary')
     Set-DzVisible $ui.EsuPage ($Name -eq 'Esu')
+    if ($changed) {
+        $pageElement = @{ Mode = $ui.ModePage; Review = $ui.ReviewPage; Progress = $ui.ProgressPage; Summary = $ui.SummaryPage; Esu = $ui.EsuPage }[$Name]
+        try { Invoke-DzPageAnimation -Element $pageElement } catch { Write-Verbose 'Page animation skipped.' }
+    }
 
     Set-DzVisible $ui.BackButton ($Name -eq 'Review')
     Set-DzVisible $ui.StopButton ($Name -eq 'Progress' -and -not $script:WaitingForRestart)
@@ -189,6 +211,7 @@ function Initialize-DzModeCards {
             $panel.Children.Add((New-DzTextBlock -Text ("{0} {1}" -f $script:Bullet, $h) -Size 12 -Brush 'DzMuted' -Wrap -Top $top)) | Out-Null
         }
         $rb.Content = $panel
+        [System.Windows.Automation.AutomationProperties]::SetName($rb, ('{0} mode: {1}' -f (Get-DzProperty $m 'title' $m.id), (Get-DzProperty $m 'tagline' '')))
         $rb.Add_Checked({ param($src, $evt) Invoke-DzSafe { Select-DzMode -Id ([string]$src.Tag) } })
         $ui.ModeCardsPanel.Children.Add($rb) | Out-Null
         $cards.Add($rb)

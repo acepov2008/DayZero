@@ -3,6 +3,16 @@
 **Always test in a virtual machine before using a DayZero stick on real hardware.** A VM
 costs nothing to break, and you can roll it back with a snapshot in seconds.
 
+DayZero was built with automated tests that run anywhere, but its GUI (WPF) and its
+Windows-only steps have **not yet run on real Windows**. The checklist below is the first
+real test. Recommended order:
+
+1. Automated checks (section 1). They must all pass.
+2. On your own PC: start the builder (`Build-DayZeroUSB.cmd`), then try the wizard in dry-run
+   mode (section 3c). Both only look at your PC and change nothing.
+3. A dry-run install in a VM, then a real install in a VM (sections 2-4).
+4. Real hardware, after a backup (section 6).
+
 ## 1. Automated checks (any PC)
 
 ```powershell
@@ -151,6 +161,19 @@ changing OOBE, so results can differ between builds.
 - [ ] On real hardware: NVIDIA/AMD show "Open download pages" on the summary, which opens the
       official page in your normal browser; Intel DSA installs by itself. The PC-brand tool
       (Dell/Lenovo/HP/ASUS) installs when ticked.
+
+**Design (stage 6)**
+- [ ] Builder and wizard headers: the striped sun glows, the neon floor grid scrolls, the
+      DAYZERO title pulses. Nothing flickers or stutters.
+- [ ] Mode picker: hovering a card grows it slightly; the selected card has a magenta border
+      with a slowly breathing glow; keyboard focus shows a cyan border.
+- [ ] The progress bar has a moving shine; pages fade/slide in when you switch.
+- [ ] Dark theme everywhere: drop-down lists, scroll bars, check boxes and tooltips are dark
+      and readable (no white boxes).
+- [ ] Windows "Narrator" (Ctrl+Win+Enter) reads the mode cards as "GAMING mode: ...".
+
+If something looks wrong or a window doesn't open, run the launcher with `/console`, then
+send the error and the files in `Logs\` along.
 
 **Automated end-to-end dry run.** `tests\DryRun.Tests.ps1` runs the complete Gaming, Office
 and Everything plans through the real engine with every function that could change the PC

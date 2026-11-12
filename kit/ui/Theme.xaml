@@ -408,7 +408,8 @@
         </Setter>
     </Style>
 
-    <!-- Big selectable mode card (a RadioButton underneath, so arrows/Space work). -->
+    <!-- Big selectable mode card (a RadioButton underneath, so arrows/Space work).
+         Hover: grows a little. Selected: magenta border plus a glow ring that slowly breathes. -->
     <Style x:Key="DzModeCard" TargetType="RadioButton">
         <Setter Property="Foreground" Value="{StaticResource DzText}"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -417,30 +418,33 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="Bd" CornerRadius="12" BorderThickness="2" Padding="12,14"
-                            BorderBrush="{StaticResource DzBorder}" Background="{StaticResource DzInput}"
-                            RenderTransformOrigin="0.5,0.5">
-                        <Border.RenderTransform>
+                    <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform>
                             <ScaleTransform ScaleX="1" ScaleY="1"/>
-                        </Border.RenderTransform>
-                        <ContentPresenter HorizontalAlignment="Center"/>
-                    </Border>
+                        </Grid.RenderTransform>
+                        <Border x:Name="GlowRing" CornerRadius="12" BorderThickness="2" BorderBrush="{StaticResource DzMagenta}"
+                                Effect="{StaticResource DzGlowMagenta}" Opacity="0"/>
+                        <Border x:Name="Bd" CornerRadius="12" BorderThickness="2" Padding="12,14"
+                                BorderBrush="{StaticResource DzBorder}" Background="{StaticResource DzInput}">
+                            <ContentPresenter HorizontalAlignment="Center"/>
+                        </Border>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzPurple}"/>
                             <Trigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.04" Duration="0:0:0.15"/>
-                                        <DoubleAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.04" Duration="0:0:0.15"/>
+                                        <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.04" Duration="0:0:0.15"/>
+                                        <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.04" Duration="0:0:0.15"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.EnterActions>
                             <Trigger.ExitActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.2"/>
-                                        <DoubleAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.2"/>
+                                        <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.2"/>
+                                        <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.2"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
@@ -448,7 +452,17 @@
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzMagenta}"/>
                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource DzSelectedCardBg}"/>
-                            <Setter TargetName="Bd" Property="Effect" Value="{StaticResource DzGlowMagenta}"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard x:Name="Breathe">
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="GlowRing" Storyboard.TargetProperty="Opacity"
+                                                         From="0.35" To="1" Duration="0:0:1.4" AutoReverse="True" RepeatBehavior="Forever"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <StopStoryboard BeginStoryboardName="Breathe"/>
+                            </Trigger.ExitActions>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzCyan}"/>
@@ -509,7 +523,7 @@
         </Style.Triggers>
     </Style>
 
-    <!-- ===== Neon progress bar ================================================ -->
+    <!-- ===== Neon progress bar with a moving shine ============================ -->
     <Style TargetType="ProgressBar">
         <Setter Property="Height" Value="14"/>
         <Setter Property="Template">
@@ -518,13 +532,97 @@
                     <Grid>
                         <Border x:Name="PART_Track" CornerRadius="7" Background="{StaticResource DzInput}"
                                 BorderBrush="{StaticResource DzBorder}" BorderThickness="1"/>
-                        <Border x:Name="PART_Indicator" CornerRadius="7" HorizontalAlignment="Left"
-                                Background="{StaticResource DzNeonGradient}" Effect="{StaticResource DzGlowMagenta}"/>
+                        <Border x:Name="PART_Indicator" CornerRadius="7" HorizontalAlignment="Left" ClipToBounds="True"
+                                Background="{StaticResource DzNeonGradient}" Effect="{StaticResource DzGlowMagenta}">
+                            <Rectangle x:Name="Shine" Width="90" HorizontalAlignment="Left" IsHitTestVisible="False">
+                                <Rectangle.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#00FFFFFF" Offset="0"/>
+                                        <GradientStop Color="#70FFFFFF" Offset="0.5"/>
+                                        <GradientStop Color="#00FFFFFF" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Rectangle.Fill>
+                                <Rectangle.RenderTransform>
+                                    <TranslateTransform X="-90"/>
+                                </Rectangle.RenderTransform>
+                            </Rectangle>
+                        </Border>
                     </Grid>
+                    <ControlTemplate.Triggers>
+                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetName="Shine" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                     From="-90" To="1400" Duration="0:0:2.4" RepeatBehavior="Forever"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
+
+    <!-- ===== Animated synthwave header art: striped sun + scrolling neon floor ===== -->
+    <!-- Use with <ContentControl Template="{StaticResource DzHeaderArt}"/> behind a header. -->
+    <ControlTemplate x:Key="DzHeaderArt" TargetType="ContentControl">
+        <Grid ClipToBounds="True" IsHitTestVisible="False">
+            <Grid HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="170" Height="170" Margin="0,0,90,-70">
+                <Ellipse Fill="{StaticResource DzSunsetGradient}" Effect="{StaticResource DzGlowMagenta}">
+                    <Ellipse.OpacityMask>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="White" Offset="0"/>
+                            <GradientStop Color="White" Offset="0.30"/>
+                            <GradientStop Color="Transparent" Offset="0.30"/>
+                            <GradientStop Color="Transparent" Offset="0.33"/>
+                            <GradientStop Color="White" Offset="0.33"/>
+                            <GradientStop Color="White" Offset="0.38"/>
+                            <GradientStop Color="Transparent" Offset="0.38"/>
+                            <GradientStop Color="Transparent" Offset="0.42"/>
+                            <GradientStop Color="White" Offset="0.42"/>
+                            <GradientStop Color="White" Offset="0.47"/>
+                            <GradientStop Color="Transparent" Offset="0.47"/>
+                            <GradientStop Color="Transparent" Offset="0.53"/>
+                            <GradientStop Color="White" Offset="0.53"/>
+                            <GradientStop Color="White" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Ellipse.OpacityMask>
+                </Ellipse>
+            </Grid>
+            <Grid VerticalAlignment="Bottom" Height="34" ClipToBounds="True">
+                <Grid.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#000B0620" Offset="0"/>
+                        <GradientStop Color="#552A0B45" Offset="1"/>
+                    </LinearGradientBrush>
+                </Grid.Background>
+                <Canvas x:Name="FloorLines">
+                    <Canvas.RenderTransform>
+                        <TranslateTransform Y="0"/>
+                    </Canvas.RenderTransform>
+                    <Rectangle Canvas.Top="0" Width="4000" Height="1" Fill="#55FF2BD6"/>
+                    <Rectangle Canvas.Top="9" Width="4000" Height="1" Fill="#66FF2BD6"/>
+                    <Rectangle Canvas.Top="18" Width="4000" Height="1" Fill="#88FF2BD6"/>
+                    <Rectangle Canvas.Top="27" Width="4000" Height="1" Fill="#AAFF2BD6"/>
+                    <Rectangle Canvas.Top="36" Width="4000" Height="1" Fill="#CCFF2BD6"/>
+                </Canvas>
+                <Viewbox Stretch="Fill">
+                    <Path Stroke="#5522E6FF" StrokeThickness="1.2"
+                          Data="M500,0 L-400,34 M500,0 L-200,34 M500,0 L0,34 M500,0 L200,34 M500,0 L400,34 M500,0 L600,34 M500,0 L800,34 M500,0 L1000,34 M500,0 L1200,34 M500,0 L1400,34"/>
+                </Viewbox>
+            </Grid>
+        </Grid>
+        <ControlTemplate.Triggers>
+            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetName="FloorLines" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                         From="-9" To="0" Duration="0:0:0.7" RepeatBehavior="Forever"/>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
 
     <!-- ===== ToolTip =========================================================== -->
     <Style TargetType="ToolTip">
