@@ -121,6 +121,18 @@ Describe 'XAML' {
             $names | Should -Contain $m.Groups[1].Value -Because "$Name refers to '$($m.Groups[1].Value)'"
         }
     }
+    It '<Name> starts no animation from ControlTemplate.Triggers EventTriggers (they fire before hidden templates exist)' -ForEach $script:XamlFiles {
+        # Found on real Windows: a Loaded EventTrigger in ControlTemplate.Triggers looked up its
+        # TargetName ("Shine") before the template of a hidden ProgressBar existed and crashed
+        # ShowDialog. Put such EventTriggers on the animated element itself instead.
+        $text = Get-Content -Raw -LiteralPath $Path
+        foreach ($block in [regex]::Matches($text, '(?s)<ControlTemplate\.Triggers>.*?</ControlTemplate\.Triggers>')) {
+            $block.Value | Should -Not -Match '<EventTrigger' -Because "$Name has an EventTrigger in ControlTemplate.Triggers"
+        }
+        foreach ($block in [regex]::Matches($text, '(?s)<DataTemplate\.Triggers>.*?</DataTemplate\.Triggers>')) {
+            $block.Value | Should -Not -Match '<EventTrigger' -Because "$Name has an EventTrigger in DataTemplate.Triggers"
+        }
+    }
     It 'Theme.xaml defines every resource before it is used (WPF StaticResource rule)' {
         $text = Get-Content -Raw -LiteralPath (Join-Path $repo 'kit/ui/Theme.xaml')
         $text = [regex]::Replace($text, '(?s)<!--.*?-->', { param($m) ' ' * $m.Value.Length })   # comments are not uses

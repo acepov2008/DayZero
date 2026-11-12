@@ -545,19 +545,20 @@
                                 <Rectangle.RenderTransform>
                                     <TranslateTransform X="-90"/>
                                 </Rectangle.RenderTransform>
+                                <!-- Started by the Rectangle's own Loaded event: it only fires once the element exists. -->
+                                <Rectangle.Triggers>
+                                    <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                 From="-90" To="1400" Duration="0:0:2.4" RepeatBehavior="Forever"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </EventTrigger>
+                                </Rectangle.Triggers>
                             </Rectangle>
                         </Border>
                     </Grid>
-                    <ControlTemplate.Triggers>
-                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="Shine" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
-                                                     From="-90" To="1400" Duration="0:0:2.4" RepeatBehavior="Forever"/>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -600,6 +601,16 @@
                     <Canvas.RenderTransform>
                         <TranslateTransform Y="0"/>
                     </Canvas.RenderTransform>
+                    <Canvas.Triggers>
+                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                     From="-9" To="0" Duration="0:0:0.7" RepeatBehavior="Forever"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Canvas.Triggers>
                     <Rectangle Canvas.Top="0" Width="4000" Height="1" Fill="#55FF2BD6"/>
                     <Rectangle Canvas.Top="9" Width="4000" Height="1" Fill="#66FF2BD6"/>
                     <Rectangle Canvas.Top="18" Width="4000" Height="1" Fill="#88FF2BD6"/>
@@ -612,16 +623,6 @@
                 </Viewbox>
             </Grid>
         </Grid>
-        <ControlTemplate.Triggers>
-            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                <BeginStoryboard>
-                    <Storyboard>
-                        <DoubleAnimation Storyboard.TargetName="FloorLines" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                                         From="-9" To="0" Duration="0:0:0.7" RepeatBehavior="Forever"/>
-                    </Storyboard>
-                </BeginStoryboard>
-            </EventTrigger>
-        </ControlTemplate.Triggers>
     </ControlTemplate>
 
     <!-- ===== ToolTip =========================================================== -->
