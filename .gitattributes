@@ -1,0 +1,7 @@
+# Windows batch files must keep CRLF line endings byte-for-byte, otherwise cmd.exe
+# can misread labels and blocks. "-text" stores them exactly as written (CRLF).
+*.cmd -text
+*.bat -text
+
+# Everything else: normalise to LF in the repo, native endings on checkout.
+* text=auto

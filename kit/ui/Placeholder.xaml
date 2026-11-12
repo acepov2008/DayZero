@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Stage 1 placeholder for the setup wizard. Replaced by the full wizard in stage 2. -->
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="DayZero"
+        Width="760" Height="560" MinWidth="620" MinHeight="460"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource DzWindowBackground}"
+        Foreground="{StaticResource DzText}"
+        FontFamily="Segoe UI" FontSize="13"
+        UseLayoutRounding="True" TextOptions.TextFormattingMode="Display">
+    <Grid Margin="28,22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel>
+            <TextBlock Text="DAYZERO" Style="{StaticResource DzTitle}"/>
+            <TextBlock x:Name="SubtitleText" Text="SETUP WIZARD" Style="{StaticResource DzSubtitle}"/>
+            <Border Height="2" Margin="0,10,0,0" Background="{StaticResource DzNeonGradient}" Effect="{StaticResource DzGlowMagenta}"/>
+        </StackPanel>
+
+        <Border Grid.Row="1" Style="{StaticResource DzCard}" Margin="0,18,0,0">
+            <StackPanel>
+                <TextBlock Style="{StaticResource DzCardTitle}">
+                    <Run Text="&#x2705;" FontFamily="{StaticResource DzEmoji}"/>
+                    <Run Text="DayZero made it onto this PC"/>
+                </TextBlock>
+                <TextBlock x:Name="DetailsText" TextWrapping="Wrap" FontFamily="{StaticResource DzMono}" FontSize="12"
+                           Foreground="{StaticResource DzCyan}" LineHeight="20"/>
+                <Border Style="{StaticResource DzInfoBox}">
+                    <TextBlock TextWrapping="Wrap"
+                               Text="This is the stage 1 test build: Windows was installed from your answer file, the toolkit was copied to C:\DayZero, and the first sign-in started DayZero. The full wizard (mode picker, apps, tweaks, drivers) arrives in the next stages."/>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="0,16,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="StatusText" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{StaticResource DzMuted}"
+                       Text="Finish turns off automatic sign-in and the auto-start task."/>
+            <Button x:Name="LaterButton" Grid.Column="1" Margin="12,0,0,0" Content="_Ask again next sign-in"/>
+            <Button x:Name="FinishButton" Grid.Column="2" Margin="12,0,0,0" Style="{StaticResource DzPrimaryButton}" Content="_FINISH  &#x25B6;"/>
+        </Grid>
+    </Grid>
+</Window>

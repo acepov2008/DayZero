@@ -1,0 +1,13 @@
+# Filled by the builder at build time (winget packages, Office Deployment Tool, ...)
+kit/bundled/
+
+# Runtime output
+kit/Logs/*
+!kit/Logs/.gitkeep
+kit/config/settings.json
+kit/build-*.marker
+
+# Test / editor output
+TestResults/
+*.log
+.vscode/

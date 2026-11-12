@@ -1,0 +1,519 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    DayZero neon synthwave theme. Shared by the USB builder and the setup wizard.
+    Loaded once into Application.Resources by kit\lib\Ui.psm1, so every window can use
+    {StaticResource ...} names from here. Colours live at the top; tweak them freely.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ===== Palette ===================================================== -->
+    <Color x:Key="DzColorBg">#0B0620</Color>
+    <Color x:Key="DzColorMagenta">#FF2BD6</Color>
+    <Color x:Key="DzColorCyan">#22E6FF</Color>
+    <Color x:Key="DzColorPurple">#7B2FF7</Color>
+
+    <SolidColorBrush x:Key="DzBg" Color="#0B0620"/>
+    <SolidColorBrush x:Key="DzPanel" Color="#E6150C33"/>
+    <SolidColorBrush x:Key="DzPanelSolid" Color="#1A0F38"/>
+    <SolidColorBrush x:Key="DzInput" Color="#110A28"/>
+    <SolidColorBrush x:Key="DzBorder" Color="#3D2A6E"/>
+    <SolidColorBrush x:Key="DzHover" Color="#2A1A5E"/>
+    <SolidColorBrush x:Key="DzSelectedCardBg" Color="#2B0F4A"/>
+    <SolidColorBrush x:Key="DzText" Color="#F3E9FF"/>
+    <SolidColorBrush x:Key="DzMuted" Color="#A99BC9"/>
+    <SolidColorBrush x:Key="DzMagenta" Color="#FF2BD6"/>
+    <SolidColorBrush x:Key="DzCyan" Color="#22E6FF"/>
+    <SolidColorBrush x:Key="DzPurple" Color="#7B2FF7"/>
+    <SolidColorBrush x:Key="DzYellow" Color="#FFD166"/>
+    <SolidColorBrush x:Key="DzRed" Color="#FF4D6D"/>
+    <SolidColorBrush x:Key="DzGreen" Color="#3DFFB0"/>
+    <SolidColorBrush x:Key="DzScrollThumb" Color="#5A3F9E"/>
+    <SolidColorBrush x:Key="DzWarningBg" Color="#33FF4D6D"/>
+    <SolidColorBrush x:Key="DzInfoBg" Color="#2222E6FF"/>
+
+    <LinearGradientBrush x:Key="DzWindowBackground" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#0B0620" Offset="0"/>
+        <GradientStop Color="#160934" Offset="0.55"/>
+        <GradientStop Color="#2A0B45" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="DzNeonGradient" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#FF2BD6" Offset="0"/>
+        <GradientStop Color="#7B2FF7" Offset="0.5"/>
+        <GradientStop Color="#22E6FF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="DzSunsetGradient" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FFD166" Offset="0"/>
+        <GradientStop Color="#FF2BD6" Offset="0.6"/>
+        <GradientStop Color="#7B2FF7" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="DzPrimaryButtonBg" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#C21FA6" Offset="0"/>
+        <GradientStop Color="#6A24D8" Offset="1"/>
+    </LinearGradientBrush>
+
+    <DropShadowEffect x:Key="DzGlowMagenta" Color="#FF2BD6" BlurRadius="18" ShadowDepth="0" Opacity="0.75"/>
+    <DropShadowEffect x:Key="DzGlowCyan" Color="#22E6FF" BlurRadius="14" ShadowDepth="0" Opacity="0.6"/>
+    <DropShadowEffect x:Key="DzGlowSoft" Color="#22E6FF" BlurRadius="8" ShadowDepth="0" Opacity="0.3"/>
+    <DropShadowEffect x:Key="DzTitleGlow" Color="#FF2BD6" BlurRadius="22" ShadowDepth="0" Opacity="0.9"/>
+
+    <FontFamily x:Key="DzMono">Consolas, Cascadia Mono, Courier New</FontFamily>
+    <FontFamily x:Key="DzEmoji">Segoe UI Emoji, Segoe UI Symbol</FontFamily>
+
+    <!-- ===== Text styles (keyed: implicit TextBlock styles leak into controls) ===== -->
+    <Style x:Key="DzTitle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="34"/>
+        <Setter Property="FontWeight" Value="Black"/>
+        <Setter Property="Foreground" Value="{StaticResource DzNeonGradient}"/>
+        <Setter Property="Effect" Value="{StaticResource DzTitleGlow}"/>
+    </Style>
+    <Style x:Key="DzSubtitle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{StaticResource DzCyan}"/>
+    </Style>
+    <Style x:Key="DzCardTitle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="{StaticResource DzMagenta}"/>
+        <Setter Property="Margin" Value="0,0,0,10"/>
+    </Style>
+    <Style x:Key="DzLabel" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource DzMuted}"/>
+        <Setter Property="Margin" Value="0,8,0,4"/>
+    </Style>
+    <Style x:Key="DzHint" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource DzMuted}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Margin" Value="0,6,0,0"/>
+    </Style>
+
+    <!-- ===== Containers ===================================================== -->
+    <Style x:Key="DzCard" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource DzPanel}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DzBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="Padding" Value="16"/>
+        <Setter Property="Margin" Value="8"/>
+    </Style>
+    <Style x:Key="DzWarningBox" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource DzWarningBg}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DzRed}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="10"/>
+        <Setter Property="Margin" Value="0,10,0,0"/>
+    </Style>
+    <Style x:Key="DzInfoBox" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource DzInfoBg}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DzCyan}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="10"/>
+        <Setter Property="Margin" Value="0,10,0,0"/>
+    </Style>
+
+    <!-- ===== Buttons ========================================================= -->
+    <Style TargetType="Button">
+        <Setter Property="Foreground" Value="{StaticResource DzText}"/>
+        <Setter Property="Background" Value="{StaticResource DzInput}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DzCyan}"/>
+        <Setter Property="Padding" Value="14,7"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1.5"
+                            Padding="{TemplateBinding Padding}" Effect="{StaticResource DzGlowSoft}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource DzHover}"/>
+                            <Setter TargetName="Bd" Property="Effect" Value="{StaticResource DzGlowCyan}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzMagenta}"/>
+                            <Setter TargetName="Bd" Property="Effect" Value="{StaticResource DzGlowMagenta}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource DzPurple}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="DzPrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Background" Value="{StaticResource DzPrimaryButtonBg}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DzMagenta}"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Padding" Value="22,10"/>
+    </Style>
+
+    <!-- ===== Text inputs ===================================================== -->
+    <Style TargetType="TextBox">
+        <Setter Property="Foreground" Value="{StaticResource DzText}"/>
+        <Setter Property="Background" Value="{StaticResource DzInput}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DzBorder}"/>
+        <Setter Property="CaretBrush" Value="{StaticResource DzCyan}"/>
+        <Setter Property="SelectionBrush" Value="{StaticResource DzMagenta}"/>
+        <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="MinHeight" Value="32"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="1" CornerRadius="6">
+                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"
+                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzPurple}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzCyan}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="DzLogBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+        <Setter Property="FontFamily" Value="{StaticResource DzMono}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="IsReadOnly" Value="True"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="VerticalContentAlignment" Value="Top"/>
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="Foreground" Value="{StaticResource DzCyan}"/>
+    </Style>
+
+    <Style TargetType="PasswordBox">
+        <Setter Property="Foreground" Value="{StaticResource DzText}"/>
+        <Setter Property="Background" Value="{StaticResource DzInput}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DzBorder}"/>
+        <Setter Property="CaretBrush" Value="{StaticResource DzCyan}"/>
+        <Setter Property="SelectionBrush" Value="{StaticResource DzMagenta}"/>
+        <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="MinHeight" Value="32"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="PasswordBox">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="1" CornerRadius="6">
+                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"
+                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzPurple}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzCyan}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===== ComboBox (dark drop-down) ======================================== -->
+    <Style TargetType="ComboBoxItem">
+        <Setter Property="Foreground" Value="{StaticResource DzText}"/>
+        <Setter Property="Padding" Value="10,5"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBoxItem">
+                    <Border x:Name="Bd" Background="Transparent" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource DzHover}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource DzCyan}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="ComboBox">
+        <Setter Property="Foreground" Value="{StaticResource DzText}"/>
+        <Setter Property="Background" Value="{StaticResource DzInput}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DzBorder}"/>
+        <Setter Property="MinHeight" Value="32"/>
+        <Setter Property="MaxDropDownHeight" Value="320"/>
+        <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid>
+                        <ToggleButton x:Name="Toggle" Focusable="False" ClickMode="Press"
+                                      IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border x:Name="Bd" CornerRadius="6" BorderThickness="1"
+                                            Background="{Binding Background, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                            BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType=ComboBox}}">
+                                        <Path HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"
+                                              Data="M0,0 L5,5 L10,0" Stroke="{StaticResource DzCyan}" StrokeThickness="1.8"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzPurple}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+                        <ContentPresenter x:Name="ContentSite" IsHitTestVisible="False" Margin="10,0,32,0"
+                                          VerticalAlignment="Center" HorizontalAlignment="Left"
+                                          Content="{TemplateBinding SelectionBoxItem}"
+                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                          ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"/>
+                        <Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}"
+                               AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
+                            <Border Background="{StaticResource DzPanelSolid}" BorderBrush="{StaticResource DzMagenta}"
+                                    BorderThickness="1" CornerRadius="6" Margin="0,2,0,0"
+                                    MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                                    MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                <ScrollViewer CanContentScroll="True" SnapsToDevicePixels="True">
+                                    <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter Property="BorderBrush" Value="{StaticResource DzCyan}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel/>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===== CheckBox / RadioButton ========================================== -->
+    <Style TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{StaticResource DzText}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Margin" Value="0,6,0,0"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Grid Background="Transparent">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border x:Name="Box" Width="18" Height="18" CornerRadius="4" BorderThickness="1.5"
+                                BorderBrush="{StaticResource DzCyan}" Background="{StaticResource DzInput}"
+                                VerticalAlignment="Top" Margin="0,1,8,0">
+                            <Path x:Name="Mark" Data="M3.5,9 L7.5,13 L14.5,5" Stroke="{StaticResource DzBg}"
+                                  StrokeThickness="2.4" Visibility="Collapsed"/>
+                        </Border>
+                        <ContentPresenter Grid.Column="1" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Box" Property="Background" Value="{StaticResource DzCyan}"/>
+                            <Setter TargetName="Mark" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource DzMagenta}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource DzMagenta}"/>
+                            <Setter TargetName="Box" Property="Effect" Value="{StaticResource DzGlowMagenta}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="RadioButton">
+        <Setter Property="Foreground" Value="{StaticResource DzText}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Margin" Value="0,4,18,0"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Grid Background="Transparent">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid Width="18" Height="18" VerticalAlignment="Top" Margin="0,1,8,0">
+                            <Ellipse x:Name="Ring" Stroke="{StaticResource DzCyan}" StrokeThickness="1.5" Fill="{StaticResource DzInput}"/>
+                            <Ellipse x:Name="Dot" Width="8" Height="8" Fill="{StaticResource DzMagenta}" Visibility="Collapsed"/>
+                        </Grid>
+                        <ContentPresenter Grid.Column="1" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Dot" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="Ring" Property="Stroke" Value="{StaticResource DzMagenta}"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Ring" Property="Stroke" Value="{StaticResource DzMagenta}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Ring" Property="Effect" Value="{StaticResource DzGlowMagenta}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Big selectable mode card (a RadioButton underneath, so arrows/Space work). -->
+    <Style x:Key="DzModeCard" TargetType="RadioButton">
+        <Setter Property="Foreground" Value="{StaticResource DzText}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Margin" Value="6"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="Bd" CornerRadius="12" BorderThickness="2" Padding="12,14"
+                            BorderBrush="{StaticResource DzBorder}" Background="{StaticResource DzInput}"
+                            RenderTransformOrigin="0.5,0.5">
+                        <Border.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        </Border.RenderTransform>
+                        <ContentPresenter HorizontalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzPurple}"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.04" Duration="0:0:0.15"/>
+                                        <DoubleAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.04" Duration="0:0:0.15"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.2"/>
+                                        <DoubleAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.2"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzMagenta}"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource DzSelectedCardBg}"/>
+                            <Setter TargetName="Bd" Property="Effect" Value="{StaticResource DzGlowMagenta}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzCyan}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===== Slim neon scroll bars ============================================ -->
+    <Style x:Key="DzScrollThumbStyle" TargetType="Thumb">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Border CornerRadius="4" Background="{StaticResource DzScrollThumb}"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="ScrollBar">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Width" Value="10"/>
+        <Setter Property="MinWidth" Value="10"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollBar">
+                    <Grid Background="{TemplateBinding Background}">
+                        <Track x:Name="PART_Track" IsDirectionReversed="True">
+                            <Track.Thumb>
+                                <Thumb Style="{StaticResource DzScrollThumbStyle}" Margin="2"/>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="Orientation" Value="Horizontal">
+                <Setter Property="Width" Value="Auto"/>
+                <Setter Property="MinWidth" Value="0"/>
+                <Setter Property="Height" Value="10"/>
+                <Setter Property="MinHeight" Value="10"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ScrollBar">
+                            <Grid Background="{TemplateBinding Background}">
+                                <Track x:Name="PART_Track" IsDirectionReversed="False">
+                                    <Track.Thumb>
+                                        <Thumb Style="{StaticResource DzScrollThumbStyle}" Margin="2"/>
+                                    </Track.Thumb>
+                                </Track>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ===== ToolTip =========================================================== -->
+    <Style TargetType="ToolTip">
+        <Setter Property="Background" Value="{StaticResource DzPanelSolid}"/>
+        <Setter Property="Foreground" Value="{StaticResource DzText}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DzCyan}"/>
+        <Setter Property="Padding" Value="8,5"/>
+    </Style>
+</ResourceDictionary>
