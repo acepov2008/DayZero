@@ -117,6 +117,26 @@ changing OOBE, so results can differ between builds.
       remove App Installer first (`Get-AppxPackage Microsoft.DesktopAppInstaller | Remove-AppxPackage`)
       and check that the log says winget came "from the USB stick".
 - [ ] In the builder, "Check the app list with winget" reports every id as found.
+
+**Tweaks and debloat (stage 4)**
+- [ ] "Create a restore point" is green, and Start > "Create a restore point" > System Restore
+      lists "DayZero: before tweaks".
+- [ ] Review page in Gaming mode: "High-performance power plan" is ticked on a desktop and
+      unticked with a battery warning on a laptop; "Memory Integrity and VBS" and "Xbox Game Bar"
+      are unticked with warnings; "Remove OneDrive" is unticked.
+- [ ] After the run: Settings > Gaming > Game Mode is on; Control Panel > Mouse > Pointer
+      Options > Enhance pointer precision is off (after sign-out); `powercfg /getactivescheme`
+      shows Ultimate or High performance (desktop); typing in Start shows no web results;
+      Widgets are gone (Windows 11).
+- [ ] Debloat: Clipchamp, News, Solitaire and friends are gone; the Microsoft Store,
+      Calculator and Photos are still there.
+- [ ] `C:\DayZero\backup\tweaks.json` and `apps.json` list what changed.
+- [ ] Run `C:\DayZero\DayZero.cmd -Undo`: it lists what it will put back, then restores the
+      settings and reinstalls the removed apps. Restart and re-check the items above.
+- [ ] Make the restore point fail (Group Policy "Turn off System Restore", or a VM without
+      shadow copies): every tweak and removal step fails with "No restore point yet".
+- [ ] "Check Windows activation": in a VM it says "Not activated yet" (expected). On a PC with
+      a firmware key and the matching edition it ends "Activated".
 - [ ] Press **FINISH**. Afterwards the task `\DayZero\DayZero` is gone, `C:\Windows\Panther\unattend.xml`
       is gone, and after a restart Windows asks for the password instead of signing in.
 - [ ] Windows 10 only: FINISH shows the Extended Security Updates reminder with a working
@@ -140,6 +160,7 @@ expected. A real USB stick gets them in `DayZero\Logs\`.
 | `C:\DayZero\Logs\wizard-*.log` | the wizard window |
 | `C:\DayZero\Logs\engine-*.log` | every step the wizard ran (the main log) |
 | `C:\DayZero\state.json` | progress: chosen mode, options and each step's status |
+| `C:\DayZero\backup\*.json` | every tweak's old values and every removed app (used by `-Undo`) |
 | `%TEMP%\DayZero-builder-error.log` | builder crashes |
 
 Run `Build-DayZeroUSB.cmd /console` or `DayZero.cmd /console` to keep a PowerShell window

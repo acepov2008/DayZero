@@ -12,6 +12,10 @@
     'Download.psm1',
     'Winget.psm1',
     'Office.psm1',
+    'Tweaks.psm1',
+    'Debloat.psm1',
+    'Undo.psm1',
     'Steps.Base.psm1',
-    'Steps.Apps.psm1'
+    'Steps.Apps.psm1',
+    'Steps.Windows.psm1'
 )

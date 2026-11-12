@@ -1,0 +1,212 @@
+{
+  "_doc": [
+    "DayZero tweaks. Each one says WHAT it changes and WHY, and every change is reversible:",
+    "before a value is changed, the old value (or 'did not exist') is saved to C:\\DayZero\\backup\\tweaks.json,",
+    "and 'DayZero.cmd -Undo' puts everything back. A tweak whose value is already right is left alone.",
+    "",
+    "optional:      shown as a switch on the review screen instead of always applied (default / defaultLaptop).",
+    "warning:       shown next to the switch. laptopWarning replaces it on laptops.",
+    "phase:         'late' = runs after the apps are installed (e.g. startup clean-up).",
+    "appliesTo:     windows [10,11], minBuild, formFactor desktop|laptop, gpuVendors, notVirtual, editions.",
+    "needsRestart / needsSignOut: the change takes effect after a restart / signing out.",
+    "actions:",
+    "  registry:       path, name, kind (DWord|String|QWord|ExpandString|Binary), value,",
+    "                  optional valueByEdition {EditionID: value} for edition-specific values.",
+    "  powerPlan:      activates Ultimate Performance, or High performance where Ultimate is not offered.",
+    "  startupDisable: turns off matching startup entries (same switch as Task Manager > Startup apps).",
+    "",
+    "Hard rules (enforced in code, not just here): no service changes, and no registry path that",
+    "belongs to Windows Update or Microsoft Defender. requireRestorePoint: tweaks and removals are",
+    "skipped when no restore point could be created."
+  ],
+  "requireRestorePoint": true,
+  "tweaks": [
+    {
+      "id": "game-mode",
+      "title": "Turn on Game Mode",
+      "category": "Gaming",
+      "what": "Settings > Gaming > Game Mode = On (AutoGameModeEnabled = 1).",
+      "why": "While a game runs, Game Mode stops Windows Update from installing drivers and showing restart prompts, and gives the game priority. It is on by default on most PCs; this makes sure.",
+      "risk": "low",
+      "actions": [
+        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\GameBar", "name": "AutoGameModeEnabled", "kind": "DWord", "value": 1 }
+      ]
+    },
+    {
+      "id": "gpu-scheduling",
+      "title": "Turn on hardware-accelerated GPU scheduling",
+      "category": "Gaming",
+      "what": "Settings > System > Display > Graphics > Hardware-accelerated GPU scheduling = On (HwSchMode = 2).",
+      "why": "The graphics card schedules its own memory work, which can lower latency. Windows simply ignores the setting on graphics cards or drivers that don't support it.",
+      "risk": "low",
+      "needsRestart": true,
+      "appliesTo": { "minBuild": 19041, "notVirtual": true, "gpuVendors": ["NVIDIA", "AMD", "Intel"] },
+      "actions": [
+        { "type": "registry", "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers", "name": "HwSchMode", "kind": "DWord", "value": 2 }
+      ]
+    },
+    {
+      "id": "mouse-accel-off",
+      "title": "Turn off mouse acceleration",
+      "category": "Gaming",
+      "what": "Control Panel > Mouse > Pointer Options > Enhance pointer precision = off (MouseSpeed, MouseThreshold1, MouseThreshold2 = 0).",
+      "why": "The pointer then moves exactly as far as your hand does, so aim stays consistent at any speed.",
+      "risk": "low",
+      "needsSignOut": true,
+      "actions": [
+        { "type": "registry", "path": "HKCU:\\Control Panel\\Mouse", "name": "MouseSpeed", "kind": "String", "value": "0" },
+        { "type": "registry", "path": "HKCU:\\Control Panel\\Mouse", "name": "MouseThreshold1", "kind": "String", "value": "0" },
+        { "type": "registry", "path": "HKCU:\\Control Panel\\Mouse", "name": "MouseThreshold2", "kind": "String", "value": "0" }
+      ]
+    },
+    {
+      "id": "background-apps-off",
+      "title": "Stop Store apps from running in the background",
+      "category": "Performance",
+      "what": "Group Policy 'Let Windows apps run in the background' = Force Deny (AppPrivacy LetAppsRunInBackground = 2).",
+      "why": "Microsoft Store (UWP) apps stop using CPU, memory and network while you aren't using them. Normal desktop programs such as Steam or Discord are not affected.",
+      "risk": "medium",
+      "warning": "Store apps such as Phone Link can't sync or notify in the background.",
+      "actions": [
+        { "type": "registry", "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy", "name": "LetAppsRunInBackground", "kind": "DWord", "value": 2 }
+      ]
+    },
+    {
+      "id": "bing-search-off",
+      "title": "No Bing web results in Start search",
+      "category": "Privacy",
+      "what": "Policy 'Turn off display of recent search entries in the File Explorer search box' (DisableSearchBoxSuggestions = 1), which also removes web results from Start search, plus BingSearchEnabled = 0.",
+      "why": "Start search only searches your PC: results appear faster and what you type is not sent to Bing.",
+      "risk": "low",
+      "needsSignOut": true,
+      "actions": [
+        { "type": "registry", "path": "HKCU:\\Software\\Policies\\Microsoft\\Windows\\Explorer", "name": "DisableSearchBoxSuggestions", "kind": "DWord", "value": 1 },
+        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Search", "name": "BingSearchEnabled", "kind": "DWord", "value": 0 }
+      ]
+    },
+    {
+      "id": "widgets-off",
+      "title": "Turn off Widgets",
+      "category": "Performance",
+      "what": "Group Policy 'Allow widgets' = disabled (Dsh AllowNewsAndInterests = 0).",
+      "why": "Removes the Widgets board and its news feed from the taskbar; it uses memory and network in the background.",
+      "risk": "low",
+      "appliesTo": { "windows": [11] },
+      "actions": [
+        { "type": "registry", "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Dsh", "name": "AllowNewsAndInterests", "kind": "DWord", "value": 0 }
+      ]
+    },
+    {
+      "id": "news-interests-off",
+      "title": "Turn off News and interests",
+      "category": "Performance",
+      "what": "Group Policy 'Enable news and interests on the taskbar' = disabled (Windows Feeds EnableFeeds = 0).",
+      "why": "Windows 10's version of Widgets: removes the weather/news feed from the taskbar.",
+      "risk": "low",
+      "appliesTo": { "windows": [10] },
+      "actions": [
+        { "type": "registry", "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Feeds", "name": "EnableFeeds", "kind": "DWord", "value": 0 }
+      ]
+    },
+    {
+      "id": "copilot-off",
+      "title": "Hide Copilot",
+      "category": "Performance",
+      "what": "Hides the Copilot taskbar button (ShowCopilotButton = 0) and sets the older 'Turn off Windows Copilot' policy. The Copilot app itself is removed by the full debloat (Gaming and Everything).",
+      "why": "Keeps Copilot out of the way on a gaming PC. You can install it again from the Microsoft Store.",
+      "risk": "low",
+      "appliesTo": { "windows": [11] },
+      "actions": [
+        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "name": "ShowCopilotButton", "kind": "DWord", "value": 0 },
+        { "type": "registry", "path": "HKCU:\\Software\\Policies\\Microsoft\\Windows\\WindowsCopilot", "name": "TurnOffWindowsCopilot", "kind": "DWord", "value": 1 }
+      ]
+    },
+    {
+      "id": "telemetry-min",
+      "title": "Diagnostic data at the lowest level this edition allows",
+      "category": "Privacy",
+      "what": "Group Policy 'Allow Diagnostic Data' (DataCollection AllowTelemetry): 1 = Required diagnostic data, which is the lowest Home and Pro support; 0 = off on Enterprise and Education.",
+      "why": "Sends Microsoft only the minimum Windows needs to stay secure and up to date. Windows Update and Defender keep working normally.",
+      "risk": "low",
+      "actions": [
+        {
+          "type": "registry", "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection", "name": "AllowTelemetry", "kind": "DWord", "value": 1,
+          "valueByEdition": { "Enterprise": 0, "EnterpriseN": 0, "Education": 0, "EducationN": 0 }
+        }
+      ]
+    },
+    {
+      "id": "promoted-apps-off",
+      "title": "Stop suggested and auto-installed promoted apps",
+      "category": "Privacy",
+      "what": "Turns off 'silently installed' promoted apps (Candy Crush and friends), app suggestions in Start and Settings, and Start's tips/new-app recommendations.",
+      "why": "Stops Windows from quietly adding sponsored apps and showing ads in Start and Settings.",
+      "risk": "low",
+      "actions": [
+        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager", "name": "SilentInstalledAppsEnabled", "kind": "DWord", "value": 0 },
+        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager", "name": "SystemPaneSuggestionsEnabled", "kind": "DWord", "value": 0 },
+        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager", "name": "SubscribedContent-338388Enabled", "kind": "DWord", "value": 0 },
+        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager", "name": "SubscribedContent-353694Enabled", "kind": "DWord", "value": 0 },
+        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager", "name": "SubscribedContent-353696Enabled", "kind": "DWord", "value": 0 },
+        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "name": "Start_IrisRecommendations", "kind": "DWord", "value": 0 }
+      ]
+    },
+    {
+      "id": "startup-trim",
+      "title": "Stop launchers and chat apps from starting with Windows",
+      "category": "Performance",
+      "phase": "late",
+      "what": "Turns off the startup entries of Steam, Epic Games Launcher, Discord, Spotify and Microsoft Edge's auto-launch, if they have one (the same switch as Task Manager > Startup apps).",
+      "why": "Faster sign-in and less running in the background. Start them when you need them, or switch them back on in Task Manager. Apps that only add their startup entry on first launch will show up there later.",
+      "risk": "low",
+      "actions": [
+        { "type": "startupDisable", "names": ["Steam", "EpicGamesLauncher", "Discord", "Spotify", "MicrosoftEdgeAutoLaunch_*"] }
+      ]
+    },
+    {
+      "id": "power-plan",
+      "title": "High-performance power plan",
+      "category": "Gaming",
+      "optional": true,
+      "default": true,
+      "defaultLaptop": false,
+      "laptopWarning": "Laptop: keeps the processor at high clocks and noticeably shortens battery life. Leave it off unless you mostly play plugged in.",
+      "what": "Activates the Ultimate Performance power plan (copied from Windows' built-in template), or High performance where Ultimate isn't offered.",
+      "why": "The CPU stops dropping to low clocks between frames, which removes small stutters. Costs a little more power on desktops.",
+      "risk": "low",
+      "actions": [ { "type": "powerPlan" } ]
+    },
+    {
+      "id": "memory-integrity-off",
+      "title": "Turn off Memory Integrity and VBS",
+      "category": "Gaming",
+      "optional": true,
+      "default": false,
+      "risk": "high",
+      "warning": "SECURITY TRADE-OFF. Memory Integrity stops malicious or vulnerable drivers from taking over Windows. Turning it off can gain a few % FPS in some games, but makes the PC easier to attack. Some anti-cheat systems require it to stay on. Undo turns it back on.",
+      "what": "Core isolation > Memory integrity = off (HypervisorEnforcedCodeIntegrity Enabled = 0) and virtualization-based security off (EnableVirtualizationBasedSecurity = 0).",
+      "why": "Virtualization-based security costs some CPU performance in games on some PCs.",
+      "needsRestart": true,
+      "actions": [
+        { "type": "registry", "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity", "name": "Enabled", "kind": "DWord", "value": 0 },
+        { "type": "registry", "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard", "name": "EnableVirtualizationBasedSecurity", "kind": "DWord", "value": 0 }
+      ]
+    },
+    {
+      "id": "game-bar-off",
+      "title": "Turn off Xbox Game Bar",
+      "category": "Gaming",
+      "optional": true,
+      "default": false,
+      "risk": "medium",
+      "warning": "Win+G, game clips and screenshots, and the controller's Xbox-button overlay stop working. Some games use Game Bar for party chat.",
+      "what": "Turns off game capture (AppCaptureEnabled = 0, GameDVR_Enabled = 0) and opening Game Bar with the controller (UseNexusForGameBarEnabled = 0). The app stays installed.",
+      "why": "Background game recording costs a little performance.",
+      "actions": [
+        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR", "name": "AppCaptureEnabled", "kind": "DWord", "value": 0 },
+        { "type": "registry", "path": "HKCU:\\System\\GameConfigStore", "name": "GameDVR_Enabled", "kind": "DWord", "value": 0 },
+        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\GameBar", "name": "UseNexusForGameBarEnabled", "kind": "DWord", "value": 0 }
+      ]
+    }
+  ]
+}

@@ -3,9 +3,9 @@
 A USB-stick toolkit that installs Windows and then sets the PC up for you. Think
 Ninite + an unattended Windows installer + a tweak tool, wrapped in a neon synthwave GUI.
 
-> **Status: stage 3 of 6.** USB builder, answer file, install-time bootstrap, the setup
-> wizard and the app engine (winget with offline fallback, Microsoft 365 via the Office
-> Deployment Tool) work. Tweaks and drivers plug in over the next stages.
+> **Status: stage 4 of 6.** USB builder, answer file, install-time bootstrap, the setup
+> wizard, the app engine, and the reversible tweaks + debloat (with restore point, activation
+> check and undo) work. Drivers and Windows Update come next.
 > Test in a virtual machine first; see [TESTING.md](TESTING.md).
 
 ## How it works
@@ -95,6 +95,42 @@ each one again (`winget show`) before installing. If an id disappears, it runs `
 and puts the results in the log instead of guessing. Spotify and Discord install as your user
 without admin rights (Spotify's installer refuses admin).
 
+## Tweaks, debloat and undo
+
+Every tweak lives in `kit\config\tweaks.json` with **what** it changes and **why**. Before a
+value changes, DayZero saves the old one to `C:\DayZero\backup\tweaks.json`, and
+
+```
+C:\DayZero\DayZero.cmd -Undo
+```
+
+puts every tweak back and reinstalls the removed apps. A restore point is created first; if
+that fails, no tweak or removal runs. DayZero never changes services, Windows Update or
+Microsoft Defender (enforced in code, not just in the JSON).
+
+| Tweak | Gaming | Office | Notes |
+| --- | :-: | :-: | --- |
+| Game Mode on | ✅ | | |
+| Hardware-accelerated GPU scheduling | ✅ | | real GPUs only; restart |
+| Mouse acceleration off | ✅ | | sign out |
+| Store apps not running in the background | ✅ | | desktop programs unaffected |
+| No Bing web results in Start | ✅ | | |
+| Widgets / News and interests off, Copilot hidden | ✅ | | |
+| Diagnostic data at the lowest level the edition allows | ✅ | | Required on Home/Pro |
+| No auto-installed promoted apps or Start suggestions | ✅ | ✅ | |
+| Launchers and chat apps don't auto-start | ✅ | | same switch as Task Manager |
+| Ultimate/High performance power plan | ✅ desktops | | **laptops: asks first, battery warning** |
+| Memory Integrity / VBS off | optional, off | | **security trade-off warning** |
+| Xbox Game Bar off | optional, off | | warning |
+
+Debloat (`kit\config\debloat.json`): **full** for Gaming/Everything, **light** for Office.
+The Microsoft Store, Calculator, Photos, winget, Windows Security, Xbox/Game Pass components
+and the app frameworks are always kept. OneDrive removal is an optional switch (off).
+
+**Activation:** the wizard shows the status on the summary. If Windows isn't activated and
+the PC's firmware holds a key for the installed edition, it installs that key and activates
+online; otherwise it asks Microsoft once (digital licence). Nothing else, ever.
+
 ## Tech
 
 Windows PowerShell 5.1 + WPF/XAML, which is built into every Windows 10/11, so there's nothing to
@@ -118,6 +154,6 @@ endings, and every control and theme resource a script uses really exists in the
 1. ~~USB builder + answer file~~ ✅
 2. ~~Wizard GUI: mode picker, progress screen with live log, summary with "retry failed steps", resume after reboots~~ ✅
 3. ~~App engine: winget (with bundled fallback), Microsoft 365 via the Office Deployment Tool~~ ✅
-4. Tweaks and debloat per mode: all reversible and documented in JSON, restore point first
+4. ~~Tweaks and debloat per mode: all reversible and documented in JSON, restore point first~~ ✅
 5. Drivers: Windows Update, the `Drivers\` folder, GPU vendor app, PC-brand update tool
 6. Design polish

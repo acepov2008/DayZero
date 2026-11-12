@@ -454,7 +454,10 @@ function Show-DzSummary {
     if ($counts.failed -gt 0) { $notes.Add("Press 'Retry failed steps'. Many failures (downloads, Store apps) work on a second try, especially after Windows Update.") }
     $office = @($script:State.steps | Where-Object { $_.type -eq 'office' -and $_.status -in @('done', 'warn') })
     if ($office.Count -gt 0) { $notes.Add('Open Word or Excel and sign in with your Microsoft account to activate Microsoft 365.') }
-    if (@($script:State.steps | Where-Object { $_.type -eq 'tweak' -and $_.status -eq 'done' }).Count -gt 0) { $notes.Add('Some tweaks (GPU scheduling, Memory Integrity, mouse) take effect after the next restart.') }
+    if (@($script:State.steps | Where-Object { $_.type -eq 'tweak' -and $_.status -eq 'done' }).Count -gt 0) {
+        $notes.Add('Some tweaks (GPU scheduling, Memory Integrity, mouse) take effect after the next restart.')
+        $notes.Add(('Changed your mind? Run {0} -Undo to put every tweak back and reinstall removed apps.' -f (Join-Path $script:Kit 'DayZero.cmd')))
+    }
     if ($script:Settings.temporaryPassword) { $notes.Add('You set a temporary password: Windows asks for a new one at your next sign-in.') }
     if (Test-DzDryRun) { $notes.Add('This was a DRY RUN. Open the logs to see everything DayZero would have done.') }
     if (-not $script:Paused) { $notes.Add('Press FINISH to switch off automatic sign-in and remove the setup helpers.') }
