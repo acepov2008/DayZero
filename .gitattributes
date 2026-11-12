@@ -1,7 +1,8 @@
+# Default: normalise text files to LF in the repo, native endings on checkout.
+* text=auto
+
 # Windows batch files must keep CRLF line endings byte-for-byte, otherwise cmd.exe
 # can misread labels and blocks. "-text" stores them exactly as written (CRLF).
+# These lines must come AFTER "* text=auto": later lines win.
 *.cmd -text
 *.bat -text
-
-# Everything else: normalise to LF in the repo, native endings on checkout.
-* text=auto

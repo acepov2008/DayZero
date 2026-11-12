@@ -90,8 +90,10 @@ Describe 'Batch files' {
     It '<Name> is plain ASCII' -ForEach $script:CmdFiles {
         @([System.IO.File]::ReadAllBytes($Path) | Where-Object { $_ -gt 127 }).Count | Should -Be 0
     }
-    It '.gitattributes stores batch files byte-for-byte' {
-        Get-Content -Raw (Join-Path $repo '.gitattributes') | Should -Match '(?m)^\*\.cmd\s+-text'
+    It 'git stores <Name> byte-for-byte (text attribute unset, so CRLF survives)' -ForEach $script:CmdFiles -Skip:(-not (Get-Command git -ErrorAction SilentlyContinue)) {
+        # Checks the attribute git actually applies, so a later "* text=auto" line cannot silently win.
+        $attr = & git -C $repo check-attr text -- $Name 2>$null
+        $attr | Should -Match ': text: unset$'
     }
 }
 
