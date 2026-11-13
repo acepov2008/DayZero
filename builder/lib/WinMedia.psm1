@@ -126,7 +126,8 @@ function Invoke-DzProcess {
         [Parameter(Mandatory = $true)][string]$FilePath,
         [string]$Arguments = '',
         [string]$Activity = '',
-        [scriptblock]$Tick
+        [scriptblock]$Tick,
+        [scriptblock]$OnLine
     )
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $FilePath
@@ -143,21 +144,27 @@ function Invoke-DzProcess {
         $errTask = $p.StandardError.ReadToEndAsync()
         $lineTask = $p.StandardOutput.ReadLineAsync()
         $percent = ''
+        $clock = [System.Diagnostics.Stopwatch]::StartNew()
         while ($true) {
-            if ($lineTask.IsCompleted) {
+            $ready = $lineTask.IsCompleted
+            if ($ready) {
                 $line = $lineTask.Result
                 if ($null -eq $line) { break }
                 if ($line.Trim()) {
+                    if ($OnLine) { & $OnLine $line }
                     $m = [regex]::Match($line, '(\d{1,3}(?:[.,]\d)?)\s?%')
                     if ($m.Success) { $percent = $m.Groups[1].Value } else { $lines.Add($line.Trim()) }
                 }
                 $lineTask = $p.StandardOutput.ReadLineAsync()
             }
-            else {
+            # Tick at least every 200 ms, also while the program prints without a pause
+            # (robocopy does), so the window never stops responding.
+            if (-not $ready -or $clock.ElapsedMilliseconds -ge 200) {
                 $text = if ($percent) { '{0} ({1}%)' -f $Activity, $percent } else { $Activity }
                 Invoke-DzTick -Tick $Tick -Text $text
-                Start-Sleep -Milliseconds 200
+                $clock.Restart()
             }
+            if (-not $ready) { Start-Sleep -Milliseconds 200 }
         }
         $p.WaitForExit()
         $err = [string]$errTask.Result
@@ -739,8 +746,43 @@ function ConvertTo-DzRobocopyPath {
     return ('"{0}"' -f $trimmed)
 }
 
+function Update-DzCopyState {
+    <#
+        Follows robocopy's output (/BYTES /NC, per-file percentages on) to know how many bytes
+        have really been written. A file line is "<size> <path>"; it is followed by "12.3%"
+        lines for that file. $State needs Done, Current and Percent (all numbers) and Seen.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][hashtable]$State,
+        [AllowNull()][AllowEmptyString()][string]$Line
+    )
+    if ([string]::IsNullOrWhiteSpace($Line)) { return }
+    $m = [regex]::Match($Line, '^\s*(\d{1,3}(?:[.,]\d+)?)\s?%\s*$')
+    if ($m.Success) {
+        $State.Percent = [double]::Parse($m.Groups[1].Value.Replace(',', '.'), [System.Globalization.CultureInfo]::InvariantCulture)
+        if ($State.Percent -gt 100) { $State.Percent = 100 }
+        return
+    }
+    $m = [regex]::Match($Line, '^\s*(\d+)\s+\S')
+    if ($m.Success) {
+        $State.Done = [double]$State.Done + [double]$State.Current   # the previous file is complete
+        $State.Current = [double]::Parse($m.Groups[1].Value, [System.Globalization.CultureInfo]::InvariantCulture)
+        $State.Percent = [double]0
+        $State.Seen = $true
+    }
+}
+
+function Get-DzCopyStateBytes {
+    <# Bytes written so far according to Update-DzCopyState. #>
+    [CmdletBinding()]
+    [OutputType([double])]
+    param([Parameter(Mandatory = $true)][hashtable]$State)
+    return ([double]$State.Done + ([double]$State.Current * [double]$State.Percent / 100))
+}
+
 function Copy-DzMediaTree {
-    <# Copies a folder onto the stick with robocopy, showing how much has arrived. #>
+    <# Copies a folder onto the stick with robocopy, showing how much has really been written. #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Used inside the nested script block, which the analyzer cannot follow.')]
     [CmdletBinding()]
     param(
@@ -749,23 +791,32 @@ function Copy-DzMediaTree {
         [string[]]$ExcludeFile = @(),
         [scriptblock]$Tick
     )
-    $dst = $TargetRoot.TrimEnd('\')
-    $arguments = '{0} {1} /E /J /R:2 /W:3 /NP /NFL /NDL /NJH /XD "System Volume Information" "$RECYCLE.BIN"' -f (ConvertTo-DzRobocopyPath -Path $Source), (ConvertTo-DzRobocopyPath -Path $TargetRoot)
+    # No /NP and no /NFL: robocopy then prints each file's size and its percentage, which is
+    # the only honest progress. (Free space on the stick is useless for that: Windows reserves
+    # a whole 3.8 GB file the moment its copy starts.)
+    $arguments = '{0} {1} /E /J /R:2 /W:3 /NDL /NJH /NJS /NC /BYTES /XD "System Volume Information" "$RECYCLE.BIN"' -f (ConvertTo-DzRobocopyPath -Path $Source), (ConvertTo-DzRobocopyPath -Path $TargetRoot)
     foreach ($x in $ExcludeFile) { $arguments += (' /XF "{0}"' -f $x) }
     $total = [double]0
-    foreach ($f in @(Get-ChildItem -LiteralPath $Source -Recurse -File -Force -ErrorAction SilentlyContinue)) { $total += $f.Length }
-    $device = $dst.Substring(0, 2)
+    foreach ($f in @(Get-ChildItem -LiteralPath $Source -Recurse -File -Force -ErrorAction SilentlyContinue)) {
+        if ($ExcludeFile -notcontains $f.Name) { $total += $f.Length }
+    }
+    $state = @{ Done = [double]0; Current = [double]0; Percent = [double]0; Seen = $false }
+    $clock = [System.Diagnostics.Stopwatch]::StartNew()
+    # Closures: Invoke-DzProcess has its own $Tick and $clock, which plain script blocks would pick up instead.
+    $onLine = { param($line) Update-DzCopyState -State $state -Line $line }.GetNewClosure()
     $progress = {
-        param($text)
         $label = 'Copying Windows to the USB stick'
-        try {
-            $d = Get-CimInstance -ClassName Win32_LogicalDisk -Filter "DeviceID = '$device'" -ErrorAction Stop
-            if ($total -gt 0) { $label = '{0} ({1:N0}%)' -f $label, [math]::Min([double]99, [double](100 * ([double]$d.Size - [double]$d.FreeSpace) / $total)) }
+        if ($state.Seen -and $total -gt 0) {
+            $bytes = Get-DzCopyStateBytes -State $state
+            $percent = 100 * $bytes / $total
+            if ($percent -gt 99) { $percent = 99 }
+            $speed = if ($clock.Elapsed.TotalSeconds -gt 5) { $bytes / 1MB / $clock.Elapsed.TotalSeconds } else { 0 }
+            $label = if ($speed -gt 0) { '{0}: {1:N1} of {2:N1} GB, {3:N0} MB/s ({4:N0}%)' -f $label, ($bytes / 1GB), ($total / 1GB), $speed, $percent }
+            else { '{0}: {1:N1} of {2:N1} GB ({3:N0}%)' -f $label, ($bytes / 1GB), ($total / 1GB), $percent }
         }
-        catch { Write-Verbose $text }
         if ($Tick) { & $Tick $label }
     }.GetNewClosure()
-    $r = Invoke-DzProcess -FilePath (Join-Path $env:SystemRoot 'System32\robocopy.exe') -Arguments $arguments -Tick $progress
+    $r = Invoke-DzProcess -FilePath (Join-Path $env:SystemRoot 'System32\robocopy.exe') -Arguments $arguments -Tick $progress -OnLine $onLine
     # robocopy: 0-7 mean success (files copied / nothing to do / extras), 8 and up mean failures.
     if ($r.ExitCode -ge 8) { throw "Copying Windows to the USB stick failed (robocopy exit code $($r.ExitCode)): $((@($r.Output -split "`r?`n") | Select-Object -Last 4) -join ' ')" }
 }
@@ -864,6 +915,6 @@ Export-ModuleMember -Function @(
     'ConvertFrom-DzProductsXml', 'Test-DzWindowsDownloadEntry', 'Select-DzWindowsDownload', 'Find-DzCatalogXml', 'Get-DzWindowsCatalog',
     'Get-DzFileSha1', 'Save-DzLargeFile', 'Get-DzEsdImagePlan', 'Select-DzEsdEdition', 'New-DzMediaFromEsd',
     'Get-DzPreparedMedia', 'Get-DzWindowsMediaTree', 'Test-DzUsbDiskAllowed', 'Get-DzUsbDiskCandidate',
-    'New-DzDiskpartScript', 'Get-DzUsbPartitionSize', 'Get-DzMediaFitProblem', 'Get-DzFolderSize', 'Initialize-DzUsbDisk', 'ConvertTo-DzRobocopyPath', 'Copy-DzMediaTree',
+    'New-DzDiskpartScript', 'Get-DzUsbPartitionSize', 'Get-DzMediaFitProblem', 'Get-DzFolderSize', 'Initialize-DzUsbDisk', 'ConvertTo-DzRobocopyPath', 'Update-DzCopyState', 'Get-DzCopyStateBytes', 'Copy-DzMediaTree',
     'Invoke-DzWithMountedIso', 'Find-DzInstallImage', 'Copy-DzIsoToUsb', 'Set-DzUsbBootSector'
 )

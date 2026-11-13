@@ -261,6 +261,33 @@ Describe 'Does Windows fit the stick' {
     }
 }
 
+Describe 'Copy progress from robocopy output' {
+    It 'counts bytes really written, file by file' {
+        $s = @{ Done = [double]0; Current = [double]0; Percent = [double]0; Seen = $false }
+        Update-DzCopyState -State $s -Line ''
+        Update-DzCopyState -State $s -Line "`t`t     1000`tC:\media\setup.exe"
+        $s.Seen | Should -BeTrue
+        Get-DzCopyStateBytes -State $s | Should -Be 0
+        Update-DzCopyState -State $s -Line '100%  '
+        Get-DzCopyStateBytes -State $s | Should -Be 1000
+        Update-DzCopyState -State $s -Line "`t`t     4000000000`tC:\media\sources\install.swm"
+        Get-DzCopyStateBytes -State $s | Should -Be 1000
+        Update-DzCopyState -State $s -Line '  0.0%'
+        Update-DzCopyState -State $s -Line ' 25.5%'
+        Get-DzCopyStateBytes -State $s | Should -Be 1020001000
+        Update-DzCopyState -State $s -Line ' 50,0%'
+        Get-DzCopyStateBytes -State $s | Should -Be 2000001000
+        Update-DzCopyState -State $s -Line "`t`t     10`tC:\media\sources\last.txt"
+        Get-DzCopyStateBytes -State $s | Should -Be 4000001000
+    }
+    It 'ignores lines that are neither a file nor a percentage' {
+        $s = @{ Done = [double]0; Current = [double]0; Percent = [double]0; Seen = $false }
+        foreach ($l in @('------', 'ERROR 5 (0x00000005) Access denied', 'Waiting 3 seconds... Retrying...')) { Update-DzCopyState -State $s -Line $l }
+        $s.Seen | Should -BeFalse
+        Get-DzCopyStateBytes -State $s | Should -Be 0
+    }
+}
+
 Describe 'robocopy paths' {
     It 'passes a drive root bare (a quoted E:\ would swallow the closing quote)' {
         ConvertTo-DzRobocopyPath -Path 'E:\' | Should -Be 'E:\'
@@ -277,6 +304,15 @@ Describe 'Invoke-DzProcess' {
         $r = Invoke-DzProcess -FilePath $script:Pwsh -Arguments '-NoProfile -Command "Write-Output hello; exit 3"'
         $r.ExitCode | Should -Be 3
         $r.Output | Should -Match 'hello'
+    }
+    It 'hands every line to OnLine and keeps ticking while the program prints without a pause' {
+        $got = New-Object System.Collections.Generic.List[string]
+        $ticks = @{ n = 0 }
+        $r = Invoke-DzProcess -FilePath $script:Pwsh -OnLine { param($l) $got.Add($l) } -Tick { $ticks.n++ } -Arguments '-NoProfile -Command "$end = (Get-Date).AddMilliseconds(1200); while ((Get-Date) -lt $end) { Write-Output ''12.5%'' }; Write-Output last"'
+        $r.ExitCode | Should -Be 0
+        $got | Should -Contain '12.5%'
+        $got | Should -Contain 'last'
+        $ticks.n | Should -BeGreaterThan 2
     }
     It 'reports percentages to the status callback and keeps them out of the output' {
         $seen = New-Object System.Collections.Generic.List[string]
@@ -315,6 +351,11 @@ Describe 'Safety of the media module' {
         $body = [regex]::Match($script:Source, '(?s)function New-DzMediaFromEsd \{.*?\n\}\r?\n').Value
         $body | Should -Match '/Split-Image'
         $body | Should -Not -Match 'does not fit'
+    }
+    It 'copy progress uses closures, so it cannot pick up Invoke-DzProcess own $Tick and recurse' {
+        $body = [regex]::Match($script:Source, '(?s)function Copy-DzMediaTree \{.*?\n\}\r?\n').Value
+        [regex]::Matches($body, '\}\.GetNewClosure\(\)').Count | Should -Be 2
+        ($body -split "`n" | Where-Object { $_ -match '^\s*\$arguments = ' }) | Should -Not -Match '/NP\b|/NFL\b'
     }
     It 'checks size and SHA-1 before unpacking a download' {
         $body = [regex]::Match($script:Source, '(?s)function Get-DzWindowsMediaTree \{.*?\n\}\r?\n').Value
