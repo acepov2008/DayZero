@@ -70,6 +70,15 @@ Describe 'Write-DzKitToTarget' {
         Test-Path (Join-Path $script:root 'DayZero/Logs/old.log') | Should -BeTrue
     }
 
+    It 'keeps scripts already on the stick and copies the kit''s Scripts folder' {
+        [void](Invoke-TestWrite -Root $script:root -BuildId '11111111')
+        Test-Path (Join-Path $script:root 'DayZero/Scripts/README.txt') | Should -BeTrue
+        Set-Content -LiteralPath (Join-Path $script:root 'DayZero/Scripts/on-stick.cmd') -Value 'echo stick'
+        Set-Content -LiteralPath (Join-Path $script:root 'DayZero/Scripts/README.txt') -Value 'old readme'
+        [void](Invoke-TestWrite -Root $script:root -BuildId '22222222')
+        Test-Path (Join-Path $script:root 'DayZero/Scripts/on-stick.cmd') | Should -BeTrue
+        Get-Content -Raw (Join-Path $script:root 'DayZero/Scripts/README.txt') | Should -Match 'YOUR OWN SCRIPTS' -Because 'kit files replace same-named ones'
+    }
     It 'leaves exactly one build marker after a rebuild' {
         [void](Invoke-TestWrite -Root $script:root -BuildId '11111111')
         [void](Invoke-TestWrite -Root $script:root -BuildId '22222222')

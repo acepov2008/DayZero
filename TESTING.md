@@ -179,6 +179,13 @@ changing OOBE, so results can differ between builds.
       official page in your normal browser; Intel DSA installs by itself. The PC-brand tool
       (Dell/Lenovo/HP/ASUS) installs when ticked.
 
+**Your own scripts**
+- [ ] Builder: **Open the Scripts folder** opens `kit\Scripts`; after adding `01-test.cmd`
+      (e.g. `echo hello > C:\dayzero-test.txt`) the count next to the button shows it.
+- [ ] New PC: the review screen shows **Run your own scripts** ticked; the script runs in its own
+      window after the apps; `C:\dayzero-test.txt` exists; the summary lists it as done.
+- [ ] A script with `exit /b 3` shows as a warning; **Run my scripts** on the summary runs them again.
+
 **Design (monochrome theme)**
 - [ ] Builder and wizard: charcoal background, white title, gray text, a thin gray line under
       the header. No colourful glows anywhere.

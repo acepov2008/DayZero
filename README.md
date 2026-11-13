@@ -3,7 +3,7 @@
 A USB stick that installs Windows and then sets the PC up for you: think **Ninite + an
 unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 
-> **Status: v0.9.0, all six stages built.** 591 automated tests and static checks pass,
+> **Status: v0.10.0, all six stages built.** 616 automated tests and static checks pass,
 > including a complete dry run of every mode. **It has not run on real Windows yet**: the
 > GUI (WPF) and the Windows-only steps can only be tested on Windows. Do the VM test in
 > [TESTING.md](TESTING.md) before you use it on a real PC.
@@ -133,6 +133,20 @@ Mode tweaks:
 The Microsoft Store, Calculator, Photos, Notepad, Paint, Snipping Tool, winget, Windows
 Security, Xbox/Game Pass parts and app frameworks are never removed, whatever the level.
 
+## Your own scripts
+
+Put `.cmd`, `.bat` or `.ps1` files in `kit\Scripts\` (the builder's **Open the Scripts
+folder** button opens it) or in `DayZero\Scripts\` on the stick. On the new PC they run
+after Windows Update, drivers and the apps, before the final clean-up:
+
+* as administrator, one after another in name order (`01-...`, `02-...`), each in its own window;
+* a script that exits with a code other than 0 shows as a warning; the rest still run;
+* the review screen has a **Run your own scripts** switch (on), and the summary screen a
+  **Run my scripts** button to run them again; `C:\DayZero\RunScripts.cmd` does the same later.
+
+Scripts run again from the first one if the PC restarts in the middle, so make them safe to
+run twice. Don't put passwords in scripts you commit to GitHub.
+
 ## Drivers and Windows Update
 
 1. **`Drivers\` on the stick** (optional, put `.inf` driver folders there): installed first with
@@ -175,6 +189,7 @@ autounattend.xml          the answer file (an existing one is renamed to autouna
 DayZero-README.txt        plain-text explanation + security notes
 DayZero\                  the toolkit, copied to C:\DayZero during setup
 DayZero\Drivers\          optional: extra .inf drivers (kept when you rebuild)
+DayZero\Scripts\          optional: your own .cmd/.bat/.ps1 scripts (kept when you rebuild)
 DayZero\Logs\             logs from the builder and from every PC set up with this stick
 DayZero\bundled\          offline installers (winget, Office Deployment Tool), if ticked
 ```

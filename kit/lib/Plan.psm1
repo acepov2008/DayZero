@@ -7,7 +7,7 @@
        2. Drivers from the USB Drivers folder   7. GPU vendor app, PC-brand update tool
        3. Internet connection                   8. Remove apps (clean-up level), removals, tweaks
        4. Activation check                      9. Apps, Microsoft 365
-       5. Restore point, winget                10. Late tweaks (startup clean-up), final update check
+       5. Restore point, winget                10. Your own scripts, late tweaks, final update check
 
     Drivers from the stick come before the internet step on purpose: a missing network
     driver can come from the stick.
@@ -91,7 +91,8 @@ function Get-DzReviewModel {
         [AllowNull()][object]$System,
         [Parameter(Mandatory = $true)][hashtable]$Config,
         [AllowNull()][object]$Preselect = $null,
-        [AllowNull()][AllowEmptyString()][string]$DebloatLevel = $null
+        [AllowNull()][AllowEmptyString()][string]$DebloatLevel = $null,
+        [AllowEmptyCollection()][string[]]$UserScripts = @()
     )
     $isCustom = [bool](Get-DzProperty $Mode 'custom' $false)
     $isLaptop = ($null -ne $System -and [bool]$System.IsLaptop)
@@ -215,6 +216,13 @@ function Get-DzReviewModel {
                 })
         }
     }
+    if (@($UserScripts).Count -gt 0) {
+        $options.Add([pscustomobject]@{
+                Id = 'userScripts'; Kind = 'userScripts'; Title = 'Run your own scripts after the apps'; Name = 'Run your own scripts'
+                Description = ('From the Scripts folder, in this order: ' + (@($UserScripts) -join ', ')); Warning = ''
+                Group = 'Your scripts'; GroupId = 'userScripts'; Exclusive = $false; Checked = $true; LevelOwned = $false
+            })
+    }
     return [pscustomobject]@{ Apps = $apps.ToArray(); Options = $options.ToArray() }
 }
 
@@ -251,6 +259,9 @@ function ConvertTo-DzPlanOption {
         tweaks   = @($Options | Where-Object { $_.Checked -and $_.Kind -eq 'tweak' } | ForEach-Object { $_.Id })
         removals = @($Options | Where-Object { $_.Checked -and $_.Kind -eq 'removal' } | ForEach-Object { $_.Id })
         oemTool  = [bool](@($Options | Where-Object { $_.Checked -and $_.Kind -eq 'oemTool' }).Count -gt 0)
+    }
+    if (@($Options | Where-Object { $_.Kind -eq 'userScripts' }).Count -gt 0) {
+        $result.userScripts = [bool](@($Options | Where-Object { $_.Checked -and $_.Kind -eq 'userScripts' }).Count -gt 0)
     }
     if (@($Apps | Where-Object { (& $kindOf $_) -eq 'office' }).Count -gt 0) {
         $result.office = [bool](@($Apps | Where-Object { $_.Checked -and (& $kindOf $_) -eq 'office' }).Count -gt 0)
@@ -433,6 +444,8 @@ function New-DzPlan {
     $office = if ($opt.ContainsKey('office')) { [bool]$opt.office } else { [bool]$Mode.office }
     if ($office) { & $add 'office' 'Install Microsoft 365 Apps' 'office' 'Apps' @{} @('internet') }
 
+    # Your own scripts: after the apps, before the late clean-up (so their temp files go too).
+    if ($opt.ContainsKey('userScripts') -and [bool]$opt.userScripts) { & $add 'user-scripts' 'Run your own scripts' 'userScripts' 'Apps' }
     foreach ($item in $late) { & $add "tweak:$($item.id)" ([string]$item.title) 'tweak' 'Tweaks' @{ id = [string]$item.id } @('restorePoint') }
     & $add 'windows-update-final' 'Final Windows Update check' 'windowsUpdate' 'Windows' @{ final = $true } @('internet')
 

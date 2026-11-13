@@ -195,6 +195,12 @@
                             </CheckBox>
                             <TextBlock Text="Microsoft 365 plan (Office and Everything modes)" Style="{StaticResource DzLabel}"/>
                             <ComboBox x:Name="OfficePlanCombo" DisplayMemberPath="Label" SelectedValuePath="Value"/>
+                            <TextBlock Text="Your own scripts (run on the new PC after the apps)" Style="{StaticResource DzLabel}"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="OpenScriptsButton" Content="_Open the Scripts folder"
+                                        ToolTip="Put .cmd, .bat or .ps1 files there; they are copied to the stick and run in name order as administrator"/>
+                                <TextBlock x:Name="ScriptsCountText" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{StaticResource DzMuted}"/>
+                            </StackPanel>
                             <Button x:Name="CheckAppsButton" HorizontalAlignment="Left" Margin="0,12,0,0" Content="_Check the app list with winget"
                                     ToolTip="Runs 'winget show' for every app id on this PC. Read-only."/>
                             <Border Style="{StaticResource DzInfoBox}">

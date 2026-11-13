@@ -153,6 +153,7 @@ function Set-DzPage {
     Set-DzVisible $ui.OpenLogsButton ($Name -in @('Progress', 'Summary'))
     Set-DzVisible $ui.RetryButton $false
     Set-DzVisible $ui.OpenLinksButton $false
+    Set-DzVisible $ui.RunScriptsButton $false
     Set-DzVisible $ui.NextButton ($Name -ne 'Progress')
     $ui.NextButton.IsEnabled = $true
     switch ($Name) {
@@ -250,7 +251,8 @@ function Show-DzReview {
     if ($mode.custom -and $script:Settings.PSObject.Properties['customSelection']) { $preselect = $script:Settings.customSelection }
     # The clean-up level picked in the USB builder (separate from the mode); the mode's suggestion otherwise.
     $level = if ($script:Settings.PSObject.Properties['debloatLevel']) { [string]$script:Settings.debloatLevel } else { $null }
-    $review = Get-DzReviewModel -Mode $mode -System $script:System -Config $script:Config -Preselect $preselect -DebloatLevel $level
+    $scripts = @(Get-DzUserScript -Folder (Get-DzUserScriptFolder -KitRoot $script:Kit -BuildId ([string]$script:Settings.buildId)) | ForEach-Object { $_.Name })
+    $review = Get-DzReviewModel -Mode $mode -System $script:System -Config $script:Config -Preselect $preselect -DebloatLevel $level -UserScripts $scripts
     $ui.ReviewTitleText.Text = ("YOUR PC  {0}  {1} MODE" -f $script:Bullet, $mode.title)
 
     $sys = $script:System
@@ -478,6 +480,7 @@ function Show-DzSummary {
     Set-DzPage Summary
     Set-DzVisible $ui.RetryButton ($counts.failed -gt 0)
     Set-DzVisible $ui.OpenLinksButton (@(Get-DzFollowUpList).Count -gt 0)
+    Set-DzVisible $ui.RunScriptsButton (@(Get-DzUserScript -Folder (Join-Path $script:Kit 'Scripts')).Count -gt 0)
 }
 
 function Get-DzFollowUpList {
@@ -655,6 +658,14 @@ function Start-DzWizard {
     $ui.BackButton.Add_Click({ Invoke-DzSafe { Set-DzPage Mode } })
     $ui.RetryButton.Add_Click({ Invoke-DzSafe { Invoke-DzRetry } })
     $ui.OpenLinksButton.Add_Click({ Invoke-DzSafe { Open-DzFollowUp } })
+    $ui.RunScriptsButton.Add_Click({
+            Invoke-DzSafe {
+                # The wizard runs as administrator, so the runner (and your scripts) do too.
+                $runner = Join-Path $script:Kit 'RunScripts.ps1'
+                Write-DzLog -Message 'Running your scripts again (Run my scripts button).'
+                Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"{0}"' -f $runner))
+            }
+        })
     $ui.StopButton.Add_Click({
             Invoke-DzSafe {
                 if ($script:Sync) { $script:Sync.Cancel = $true }

@@ -252,6 +252,8 @@
                     <Button x:Name="OpenLogsButton" Margin="10,0,0,0" Content="Open _logs" Visibility="Collapsed"/>
                     <Button x:Name="OpenLinksButton" Margin="10,0,0,0" Content="Open _download pages" Visibility="Collapsed"
                             ToolTip="Opens the official download pages listed under WHAT NOW in your browser"/>
+                    <Button x:Name="RunScriptsButton" Margin="10,0,0,0" Content="Run _my scripts" Visibility="Collapsed"
+                            ToolTip="Runs the scripts in C:\DayZero\Scripts again, as administrator, in name order"/>
                     <Button x:Name="RetryButton" Margin="10,0,0,0" Content="_Retry failed steps" Visibility="Collapsed"/>
                     <Button x:Name="NextButton" Margin="10,0,0,0" Style="{StaticResource DzPrimaryButton}" Content="_NEXT"/>
                 </StackPanel>

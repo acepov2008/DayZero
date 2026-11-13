@@ -14,6 +14,8 @@ Set-StrictMode -Version 2.0
 $script:KitFolderName = 'DayZero'
 # Top-level kit folders that belong to the user and are never deleted or overwritten.
 $script:PreservedFolders = @('Drivers', 'Logs', 'bundled')
+# Merged: files from the kit replace same-named files on the stick, other stick files stay.
+$script:MergedFolders = @('Scripts')
 
 function Write-DzUtf8File {
     <# Writes text as UTF-8 without BOM (works the same on PowerShell 5.1 and 7). #>
@@ -67,6 +69,7 @@ function Get-DzReadmeText {
         '  autounattend.xml     the answer file Windows Setup reads automatically',
         '  DayZero\             the toolkit (copied to C:\DayZero during setup)',
         '  DayZero\Drivers\     optional: put extra drivers (.inf folders) here',
+        '  DayZero\Scripts\     optional: your own .cmd/.bat/.ps1 scripts, run after the apps',
         '  DayZero\Logs\        logs from the builder and from each PC set up with this stick'
     )
     return (($lines -join $nl) + $nl)
@@ -75,7 +78,8 @@ function Get-DzReadmeText {
 function Copy-DzKit {
     <#
         Copies the kit folder to <TargetRoot>\DayZero. Kit files are replaced so an old
-        version never lingers; the user's Drivers\, Logs\ and bundled\ folders are kept.
+        version never lingers; the user's Drivers\, Logs\ and bundled\ folders are kept,
+        and Scripts\ is merged (kit files replace same-named ones, the stick's others stay).
     #>
     [CmdletBinding()]
     param(
@@ -89,6 +93,12 @@ function Copy-DzKit {
     foreach ($item in @(Get-ChildItem -LiteralPath $KitSource -Force)) {
         if ($item.Name -like 'build-*.marker') { continue }
         $target = Join-Path $Destination $item.Name
+        if ($script:MergedFolders -contains $item.Name) {
+            if (-not (Test-Path -LiteralPath $target)) { [void](New-Item -ItemType Directory -Path $target -Force) }
+            foreach ($f in @(Get-ChildItem -LiteralPath $item.FullName -File -Force)) { Copy-Item -LiteralPath $f.FullName -Destination (Join-Path $target $f.Name) -Force }
+            if ($Log) { & $Log "Copied your $($item.Name)\ (scripts already on the stick were kept)." }
+            continue
+        }
         if ($script:PreservedFolders -contains $item.Name) {
             if (-not (Test-Path -LiteralPath $target)) { [void](New-Item -ItemType Directory -Path $target -Force) }
             # Only add our helper files (README, .gitkeep) if they are missing.

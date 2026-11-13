@@ -545,6 +545,13 @@ function Show-CustomPicker {
 # Actions
 # ------------------------------------------------------------------------------------
 
+function Update-ScriptsCount {
+    <# Shows how many of your scripts will go on the stick (refreshed when the window gets focus back). #>
+    $names = @(Get-ChildItem -LiteralPath (Join-Path $script:KitRoot 'Scripts') -File -ErrorAction SilentlyContinue |
+            Where-Object { @('.cmd', '.bat', '.ps1') -contains $_.Extension.ToLowerInvariant() } | Sort-Object Name | ForEach-Object { $_.Name })
+    $script:ui.ScriptsCountText.Text = if ($names.Count -eq 0) { 'none yet' } else { '{0} script(s): {1}' -f $names.Count, ($names -join ', ') }
+}
+
 function Show-ValidationErrors {
     param([Parameter(Mandatory = $true)][object]$InputData)
     $msg = "Please fix these first:`n`n - " + ($InputData.Errors -join "`n - ")
@@ -746,6 +753,16 @@ function Start-Builder {
     $ui.CustomizeButton.Add_Click({
             try { Show-CustomPicker } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
         })
+    Update-ScriptsCount
+    $ui.OpenScriptsButton.Add_Click({
+            try {
+                $dir = Join-Path $script:KitRoot 'Scripts'
+                if (-not (Test-Path -LiteralPath $dir)) { [void](New-Item -ItemType Directory -Path $dir -Force) }
+                Start-Process -FilePath 'explorer.exe' -ArgumentList ('"' + $dir + '"')
+            }
+            catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
+        })
+    $script:Window.Add_Activated({ try { Update-ScriptsCount } catch { Write-BuilderLog ('Scripts folder: ' + $_.Exception.Message) } })
     $ui.CheckAppsButton.Add_Click({
             try { Invoke-CheckApps } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
         })

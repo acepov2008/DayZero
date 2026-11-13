@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.0 - your own scripts
+- `kit\Scripts\` / `DayZero\Scripts\`: your .cmd, .bat and .ps1 files run on the new PC after
+  the apps, as administrator, in name order. Review switch, **Run my scripts** button on the
+  summary, `C:\DayZero\RunScripts.cmd`.
+- Builder: **Open the Scripts folder** button with a count of the scripts that go on the stick.
+- Rebuilding the stick keeps scripts that are already on it.
+
 ## 0.9.0 - monochrome redesign
 - Sleek, professional look: charcoal, gray and white instead of neon synthwave. Solid white
   primary buttons, thin borders, soft shadows, no glows, no animated sun or grid.
