@@ -3,7 +3,7 @@
     "DayZero modes. Edit freely; the wizard reads this file at start.",
     "apps:    ids from apps.json, installed and ticked by default on the review screen.",
     "tweaks:  ids from tweaks.json. Tweaks marked optional there only appear as switches on the review screen.",
-    "debloat: 'full', 'light' or 'none' (profiles are defined in debloat.json).",
+    "debloat: suggested clean-up level (clear, minimal, standard, advanced; see debloat.json). Only used when the USB builder did not pick one.",
     "office:  true installs Microsoft 365 Apps with the Office Deployment Tool (office.json).",
     "includes: other modes merged into this one (apps and tweaks are combined).",
     "custom:  true = nothing pre-ticked; the user picks everything (in the builder or on the review screen).",
@@ -16,21 +16,34 @@
       "title": "GAMING",
       "emoji": "🎮",
       "tagline": "Max FPS, zero clutter",
-      "description": "Game launchers, chat and capture tools, your graphics card's app, a full debloat and the gaming tweaks that actually do something.",
+      "description": "Game launchers, chat and capture tools, your graphics card's app and the gaming tweaks that actually do something.",
       "highlights": [
         "Steam, Epic, Discord, OBS, Afterburner, HWiNFO",
-        "Full debloat (Store, Calculator, Photos stay)",
+        "Game launchers stop auto-starting",
         "Game Mode, GPU scheduling, raw mouse input",
         "Performance power plan (asks first on laptops)"
       ],
-      "debloat": "full",
+      "debloat": "standard",
       "office": false,
-      "apps": ["chrome", "steam", "epic", "discord", "obs", "afterburner", "hwinfo", "wiztree"],
+      "apps": [
+        "chrome",
+        "steam",
+        "epic",
+        "discord",
+        "obs",
+        "afterburner",
+        "hwinfo",
+        "wiztree"
+      ],
       "tweaks": [
-        "game-mode", "gpu-scheduling", "mouse-accel-off", "background-apps-off",
-        "bing-search-off", "widgets-off", "news-interests-off", "copilot-off",
-        "telemetry-min", "promoted-apps-off", "startup-trim",
-        "power-plan", "memory-integrity-off", "game-bar-off"
+        "game-mode",
+        "gpu-scheduling",
+        "mouse-accel-off",
+        "background-apps-off",
+        "startup-trim",
+        "power-plan",
+        "memory-integrity-off",
+        "game-bar-off"
       ]
     },
     {
@@ -38,17 +51,26 @@
       "title": "OFFICE",
       "emoji": "💼",
       "tagline": "Work-ready in one go",
-      "description": "Microsoft 365 Apps plus the everyday essentials, a light debloat and no performance tweaks.",
+      "description": "Microsoft 365 Apps plus the everyday essentials, and no performance tweaks.",
       "highlights": [
         "Microsoft 365 Apps (sign in to activate)",
         "Chrome, Acrobat Reader, Spotify, VLC, 7-Zip",
         "Notepad++, Everything search, WizTree",
-        "Light debloat, LibreOffice optional"
+        "LibreOffice optional, no performance tweaks"
       ],
-      "debloat": "light",
+      "debloat": "minimal",
       "office": true,
-      "apps": ["chrome", "acrobat-reader", "spotify", "vlc", "7zip", "notepadplusplus", "everything-search", "wiztree"],
-      "tweaks": ["promoted-apps-off"]
+      "apps": [
+        "chrome",
+        "acrobat-reader",
+        "spotify",
+        "vlc",
+        "7zip",
+        "notepadplusplus",
+        "everything-search",
+        "wiztree"
+      ],
+      "tweaks": []
     },
     {
       "id": "everything",
@@ -60,10 +82,21 @@
         "Everything from Gaming and Office",
         "PowerToys, VS Code, Windows Terminal",
         "Visual C++, .NET 10 and DirectX runtimes",
-        "Full debloat + gaming tweaks"
+        "Gaming tweaks included"
       ],
-      "includes": ["gaming", "office"],
-      "apps": ["powertoys", "windows-terminal", "vscode", "vcredist-x64", "vcredist-x86", "dotnet-desktop-10", "directx"],
+      "includes": [
+        "gaming",
+        "office"
+      ],
+      "apps": [
+        "powertoys",
+        "windows-terminal",
+        "vscode",
+        "vcredist-x64",
+        "vcredist-x86",
+        "dotnet-desktop-10",
+        "directx"
+      ],
       "tweaks": []
     },
     {
@@ -71,18 +104,18 @@
       "title": "CUSTOM",
       "emoji": "🎛️",
       "tagline": "You pick every app",
-      "description": "Nothing is ticked until you tick it: choose your browsers, messengers, AI apps, Microsoft 365, the clean-up level and each tweak. Picks made in the USB builder arrive pre-ticked.",
+      "description": "Nothing is ticked until you tick it: choose your browsers, messengers, AI apps, Microsoft 365 and each tweak. Picks made in the USB builder arrive pre-ticked.",
       "highlights": [
         "Browsers, messaging, AI apps and more",
         "7-Zip or WinRAR, Microsoft 365 or LibreOffice",
-        "Choose the clean-up level and each tweak",
+        "Choose each tweak yourself",
         "Nothing happens that you didn't tick"
       ],
       "custom": true,
-      "debloat": "none",
       "office": false,
       "apps": [],
-      "tweaks": []
+      "tweaks": [],
+      "debloat": "clear"
     }
   ]
 }

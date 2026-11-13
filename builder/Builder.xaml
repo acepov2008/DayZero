@@ -185,7 +185,23 @@
 
                     <Border Style="{StaticResource DzCard}">
                         <StackPanel>
-                            <TextBlock Text="&#x2466;  OPTIONS" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock Text="&#x2466;  CLEAN-UP LEVEL" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock Style="{StaticResource DzHint}" Margin="0,0,0,6"
+                                       Text="How much of Windows' preinstalled extras and data collection to remove, for any mode. Modelled on Chris Titus Tech's WinUtil presets."/>
+                            <UniformGrid x:Name="LevelCardsPanel" Columns="2"/>
+                            <Border Style="{StaticResource DzInfoBox}">
+                                <StackPanel>
+                                    <TextBlock x:Name="LevelIncludesTitle" FontWeight="Bold" Foreground="{StaticResource DzCyan}" Text="WHAT THIS LEVEL DOES"/>
+                                    <TextBlock x:Name="LevelIncludesText" TextWrapping="Wrap" Margin="0,6,0,0" FontSize="12" LineHeight="18"/>
+                                </StackPanel>
+                            </Border>
+                            <TextBlock Style="{StaticResource DzHint}" Text="Pre-selected on the new PC, where every switch can still be changed. Everything is undone by DayZero.cmd -Undo."/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource DzCard}">
+                        <StackPanel>
+                            <TextBlock Text="&#x2467;  OPTIONS" Style="{StaticResource DzCardTitle}"/>
                             <CheckBox x:Name="DryRunCheck">
                                 <TextBlock TextWrapping="Wrap" Text="Dry run: the wizard on the new PC only logs what it would do and changes nothing (for testing)"/>
                             </CheckBox>

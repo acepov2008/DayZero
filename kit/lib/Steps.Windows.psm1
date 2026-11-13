@@ -94,7 +94,10 @@ function Invoke-DzStepActivation {
 function Invoke-DzStepDebloat {
     [CmdletBinding()]
     param([Parameter(Mandatory = $true)][hashtable]$Context)
-    return (Remove-DzBloatware -Context $Context -Profile ([string](Get-DzStepArg -Context $Context -Name 'profile' -Default 'light')))
+    # 'profile' is the argument name of DayZero 0.7 and earlier (light / full), kept for resumed runs.
+    $level = [string](Get-DzStepArg -Context $Context -Name 'level' -Default (Get-DzStepArg -Context $Context -Name 'profile' -Default 'minimal'))
+    $keep = @(Get-DzStepArg -Context $Context -Name 'keepApps' -Default @()) | Where-Object { $_ } | ForEach-Object { [string]$_ }
+    return (Remove-DzBloatware -Context $Context -Level $level -KeepApps @($keep))
 }
 
 function Invoke-DzStepRemoval {

@@ -239,13 +239,13 @@ Describe 'Shipped configuration' {
         foreach ($a in @($g.apps + $o.apps)) { @($e.apps) | Should -Contain $a }
         @($e.apps) | Should -Contain 'powertoys'
         $e.office | Should -BeTrue
-        $e.debloat | Should -Be 'full'
+        $e.debloat | Should -Be 'standard' -Because 'the most thorough level of its parts'
         @($e.modeIds) | Should -Be @('everything', 'gaming', 'office')
         @($e.apps | Group-Object | Where-Object { $_.Count -gt 1 }).Count | Should -Be 0
     }
-    It 'keeps Office light: light debloat and no gaming tweaks' {
+    It 'keeps Office simple: Minimal clean-up suggested and no gaming tweaks' {
         $o = Get-DzMode -Config $script:cfg -Id 'office'
-        $o.debloat | Should -Be 'light'
+        $o.debloat | Should -Be 'minimal'
         @($o.tweaks) | Should -Not -Contain 'game-mode'
     }
     It 'reports a mode that lists an unknown app' {
@@ -263,7 +263,8 @@ Describe 'Plan building' {
             modes   = ('{"defaultMode":"g","modes":[{"id":"g","debloat":"full","apps":["a1"],"tweaks":["t-early","t-late","t-opt","t-desk"]},{"id":"o","debloat":"light","office":true,"apps":["a2"],"tweaks":[]}]}' | ConvertFrom-Json)
             apps    = ('{"apps":[{"id":"a1","name":"App One","category":"Games"},{"id":"a2","name":"App Two"},{"id":"x1","name":"Extra","optional":true,"modes":["o"]},{"id":"w10","name":"Win10 only","optional":true,"modes":["g"],"appliesTo":{"windows":[10]}}]}' | ConvertFrom-Json)
             tweaks  = ('{"tweaks":[{"id":"t-early","title":"Early"},{"id":"t-late","title":"Late","phase":"late"},{"id":"t-opt","title":"Optional","optional":true,"default":true,"defaultLaptop":false,"laptopWarning":"battery!"},{"id":"t-desk","title":"Desktop only","appliesTo":{"formFactor":"desktop"}}]}' | ConvertFrom-Json)
-            debloat = ('{"optionalRemovals":[{"id":"onedrive","title":"Remove OneDrive","modes":["g"]}]}' | ConvertFrom-Json)
+            # Old level names in modes ("full", "light") must still work.
+            debloat = ('{"levels":[{"id":"clear"},{"id":"minimal"},{"id":"standard"}],"packages":[],"optionalRemovals":[{"id":"onedrive","title":"Remove OneDrive","modes":["g"]}]}' | ConvertFrom-Json)
             drivers = ('{"gpuApps":[{"vendor":"NVIDIA","name":"NVIDIA App"}],"oemTools":[{"brand":"Dell","name":"Dell Command Update"}]}' | ConvertFrom-Json)
             office  = $null
         }
@@ -308,7 +309,8 @@ Describe 'Plan building' {
         $office | Should -Not -BeNullOrEmpty
         @($office.requires) | Should -Contain 'internet'
         @(($plan | Where-Object { $_.id -eq 'app:a2' }).requires) | Should -Be @('internet', 'winget')
-        ($plan | Where-Object { $_.id -eq 'debloat' }).args.profile | Should -Be 'light'
+        ($plan | Where-Object { $_.id -eq 'debloat' }).args.level | Should -Be 'minimal'
+        @(($plan | Where-Object { $_.id -eq 'debloat' }).args.keepApps) | Should -Be @('a2')
     }
     It 'leaves out steps whose type is not available yet' {
         $mode = Get-DzMode -Config $script:cfg -Id 'g'

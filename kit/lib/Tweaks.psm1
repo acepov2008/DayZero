@@ -3,12 +3,16 @@
     DayZero - applies the documented tweaks from config\tweaks.json and undoes them.
 
     Every change is recorded in <kit>\backup\tweaks.json BEFORE it is made: the registry
-    value's old data and type, or the fact that it did not exist; the previous power plan.
-    Undo-DzTweak walks that list backwards and restores it.
+    value's old data and type, or the fact that it did not exist; the previous power plan;
+    a service's previous start type; a machine environment variable's previous value; the
+    registry key DayZero created. Undo-DzTweak walks that list backwards and restores it.
+    The two clean-up actions (temporary files, superseded Windows components) only delete
+    things Windows can do without, so there is nothing to put back.
 
     Hard safety rules, enforced here whatever the JSON says:
       * no registry path that belongs to Windows Update or Microsoft Defender
-      * only the action types below (no services, no scripts)
+      * no start-type change for Windows Update, Defender, firewall, Store or installer services
+      * only the action types below (no scripts)
 #>
 
 Set-StrictMode -Version 2.0
@@ -17,7 +21,17 @@ $script:ProtectedPatterns = @(
     '\\WindowsUpdate(\\|$)', '\\Windows Defender', '\\WinDefend', '\\wuauserv', '\\UsoSvc', '\\WaaSMedicSvc',
     '\\SecurityHealthService', '\\Sense(\\|$)', '\\WdNisSvc', '\\WdFilter', '\\MpsSvc', '\\mpssvc', '\\Microsoft Antimalware'
 )
-$script:ActionTypes = @('registry', 'powerPlan', 'startupDisable')
+$script:ActionTypes = @('registry', 'registryKey', 'service', 'environment', 'powerPlan', 'startupDisable', 'cleanTemp', 'componentCleanup')
+# Services DayZero never reconfigures: Windows Update and its helpers, Defender, the firewall,
+# the Store / app installers and the core plumbing they all need.
+$script:ProtectedServices = @(
+    'wuauserv', 'UsoSvc', 'WaaSMedicSvc', 'BITS', 'DoSvc', 'TrustedInstaller', 'CryptSvc', 'msiserver',
+    'WinDefend', 'WdNisSvc', 'WdNisDrv', 'WdFilter', 'WdBoot', 'Sense', 'SecurityHealthService', 'wscsvc', 'MDCoreSvc',
+    'mpssvc', 'BFE', 'AppXSvc', 'ClipSVC', 'InstallService', 'StateRepository', 'RpcSs', 'RpcEptMapper', 'DcomLaunch',
+    'EventLog', 'Winmgmt', 'Schedule', 'ProfSvc', 'LSM', 'SamSs', 'PlugPlay', 'Power'
+)
+$script:ServiceStartNames = @{ 0 = 'Boot'; 1 = 'System'; 2 = 'Automatic'; 3 = 'Manual'; 4 = 'Disabled' }
+$script:ScStartArgs = @{ Automatic = 'auto'; AutomaticDelayed = 'delayed-auto'; Manual = 'demand'; Disabled = 'disabled' }
 $script:ValueKinds = @('DWord', 'QWord', 'String', 'ExpandString', 'Binary', 'MultiString')
 $script:UltimateTemplate = 'e9a42b02-d5df-448d-aa00-03f14749eb61'
 $script:HighPerformance = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
@@ -224,6 +238,148 @@ function Select-DzStartupName {
 }
 
 # ---------------------------------------------------------------------------------------
+# Services, registry keys, environment variables, clean-up
+# ---------------------------------------------------------------------------------------
+
+function Test-DzProtectedService {
+    <# True for services DayZero never reconfigures (Windows Update, Defender, firewall, Store...). #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([Parameter(Mandatory = $true)][string]$Name)
+    foreach ($p in $script:ProtectedServices) { if ($Name -ieq $p) { return $true } }
+    return (Test-DzProtectedRegistryPath -Path ('\' + $Name))
+}
+
+function Get-DzServiceStart {
+    <# A service's start type from the registry: Automatic, AutomaticDelayed, Manual, Disabled, Boot, System; $null when it is not installed. #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory = $true)][string]$Name)
+    $key = "HKLM:\SYSTEM\CurrentControlSet\Services\$Name"
+    if (-not (Test-Path -LiteralPath $key)) { return $null }
+    $start = (Get-DzRegistryValue -Path $key -Name 'Start')
+    if (-not $start.Exists) { return $null }
+    $text = $script:ServiceStartNames[[int]$start.Value]
+    if ($text -eq 'Automatic') {
+        $delayed = Get-DzRegistryValue -Path $key -Name 'DelayedAutostart'
+        if ($delayed.Exists -and [int]$delayed.Value -eq 1) { $text = 'AutomaticDelayed' }
+    }
+    return $text
+}
+
+function Set-DzServiceStart {
+    <# Sets a service's start type with sc.exe (the service keeps running until the next restart). #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Name, [Parameter(Mandatory = $true)][string]$Startup)
+    if (Test-DzProtectedService -Name $Name) { throw "Refusing to change the $Name service: DayZero never touches Windows Update, Defender, firewall or Store services." }
+    if (-not $script:ScStartArgs.ContainsKey($Startup)) { throw "Unsupported start type '$Startup' for $Name." }
+    $out = & sc.exe config $Name start= $script:ScStartArgs[$Startup] 2>&1
+    if ($LASTEXITCODE -ne 0) { throw ("sc.exe config {0} failed ({1}): {2}" -f $Name, $LASTEXITCODE, (($out | Out-String).Trim())) }
+}
+
+function Get-DzMachineEnvironment {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Name)
+    return [Environment]::GetEnvironmentVariable($Name, [EnvironmentVariableTarget]::Machine)
+}
+
+function Set-DzMachineEnvironment {
+    <# Sets (or with $null / '' removes) a machine-wide environment variable. #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Name, [AllowNull()][object]$Value)
+    $text = if ($null -eq $Value -or [string]$Value -eq '') { [NullString]::Value } else { [string]$Value }
+    [Environment]::SetEnvironmentVariable($Name, $text, [EnvironmentVariableTarget]::Machine)
+}
+
+function Test-DzRegistryKey {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([Parameter(Mandatory = $true)][string]$Path)
+    return [bool](Test-Path -LiteralPath $Path)
+}
+
+function Get-DzParentRegistryPath {
+    <# 'HKCU:\A\B\C' -> 'HKCU:\A\B'; $null at the hive. Pure (works the same on every OS). #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory = $true)][string]$Path)
+    $trimmed = $Path.TrimEnd('\')
+    $i = $trimmed.LastIndexOf('\')
+    if ($i -lt 0 -or $trimmed.Substring(0, $i).EndsWith(':')) { return $null }
+    return $trimmed.Substring(0, $i)
+}
+
+function Get-DzMissingKeyRoot {
+    <# The top-most key of $Path that does not exist yet (what undo has to delete); $null when $Path exists. #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory = $true)][string]$Path)
+    if (Test-DzRegistryKey -Path $Path) { return $null }
+    $root = $Path.TrimEnd('\')
+    $parent = Get-DzParentRegistryPath -Path $root
+    while ($parent -and -not (Test-DzRegistryKey -Path $parent)) {
+        $root = $parent
+        $parent = Get-DzParentRegistryPath -Path $root
+    }
+    return $root
+}
+
+function New-DzRegistryKey {
+    <# Creates a key and sets its (Default) value. #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Path, [AllowEmptyString()][string]$DefaultValue = '')
+    if (Test-DzProtectedRegistryPath -Path $Path) { throw "Refusing to change $Path : DayZero never touches Windows Update or Defender settings." }
+    [void](New-Item -Path $Path -Force)
+    Set-ItemProperty -LiteralPath $Path -Name '(default)' -Value $DefaultValue
+}
+
+function Remove-DzRegistryKey {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Path)
+    if (Test-DzProtectedRegistryPath -Path $Path) { throw "Refusing to change $Path : DayZero never touches Windows Update or Defender settings." }
+    if (Test-Path -LiteralPath $Path) { Remove-Item -LiteralPath $Path -Recurse -Force }
+}
+
+function Get-DzTempFolder {
+    <# The folders the temp clean-up empties: the signed-in user's TEMP and Windows\Temp. #>
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param()
+    $list = New-Object System.Collections.Generic.List[string]
+    foreach ($p in @($env:TEMP, $(if ($env:SystemRoot) { Join-Path $env:SystemRoot 'Temp' }))) {
+        if ($p -and (Test-Path -LiteralPath $p) -and -not $list.Contains($p)) { $list.Add($p) }
+    }
+    return , $list.ToArray()
+}
+
+function Test-DzKeptTempItem {
+    <# DayZero's own working folders and log files stay (logs help when something failed). Pure. #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param([Parameter(Mandatory = $true)][string]$Name)
+    return ($Name -like 'DayZero*' -or $Name -like '*.log')
+}
+
+function Clear-DzTempFolder {
+    <# Deletes what can be deleted in the temp folders; files in use are skipped. Returns the MB freed. #>
+    [CmdletBinding()]
+    [OutputType([double])]
+    param()
+    $freed = 0L
+    foreach ($folder in (Get-DzTempFolder)) {
+        foreach ($item in @(Get-ChildItem -LiteralPath $folder -Force -ErrorAction SilentlyContinue)) {
+            if (Test-DzKeptTempItem -Name $item.Name) { continue }
+            $size = 0L
+            if ($item.PSIsContainer) { $size = [long](@(Get-ChildItem -LiteralPath $item.FullName -Recurse -Force -File -ErrorAction SilentlyContinue) | Measure-Object -Property Length -Sum).Sum }
+            else { $size = [long]$item.Length }
+            Remove-Item -LiteralPath $item.FullName -Recurse -Force -ErrorAction SilentlyContinue
+            if (-not (Test-Path -LiteralPath $item.FullName)) { $freed += $size }
+        }
+    }
+    return [math]::Round($freed / 1MB, 1)
+}
+
+# ---------------------------------------------------------------------------------------
 # Applying a tweak
 # ---------------------------------------------------------------------------------------
 
@@ -274,6 +430,7 @@ function Invoke-DzTweak {
     param([Parameter(Mandatory = $true)][object]$Tweak, [Parameter(Mandatory = $true)][hashtable]$Context)
     $changes = New-Object System.Collections.Generic.List[object]
     $notes = New-Object System.Collections.Generic.List[string]
+    $warnings = New-Object System.Collections.Generic.List[string]
     foreach ($a in @($Tweak.actions)) {
         $type = [string]$a.type
         if ($script:ActionTypes -notcontains $type) { throw "Tweak '$($Tweak.id)' uses unknown action type '$type'." }
@@ -282,6 +439,59 @@ function Invoke-DzTweak {
                 $value = Get-DzTweakTargetValue -Action $a -System $Context.System
                 $r = Invoke-DzRegistryChange -Path ([string]$a.path) -Name ([string]$a.name) -Value $value -Kind ([string]$a.kind)
                 if ($r) { $changes.Add($r) }
+            }
+            'registryKey' {
+                $path = [string]$a.path
+                if (Test-DzProtectedRegistryPath -Path $path) { throw "Refusing to change $path : DayZero never touches Windows Update or Defender settings." }
+                $root = Get-DzMissingKeyRoot -Path $path
+                if ($null -eq $root) { continue }   # already there
+                $default = [string](Get-DzProperty $a 'defaultValue' '')
+                Invoke-DzAction -Description ("Create {0} with an empty (Default) value" -f $path) -Action {
+                    New-DzRegistryKey -Path $path -DefaultValue $default
+                } | Out-Null
+                $changes.Add([ordered]@{ type = 'registryKey'; path = $path; created = $root })
+            }
+            'service' {
+                $name = [string]$a.name
+                $wanted = [string]$a.startup
+                if (Test-DzProtectedService -Name $name) { throw "Tweak '$($Tweak.id)' would change the $name service: DayZero never touches Windows Update, Defender, firewall or Store services." }
+                if (-not $script:ScStartArgs.ContainsKey($wanted)) { throw "Tweak '$($Tweak.id)': unsupported start type '$wanted' for $name." }
+                $previous = Get-DzServiceStart -Name $name
+                if ($null -eq $previous) { $notes.Add("$name is not on this PC"); continue }
+                if ($previous -eq $wanted) { continue }
+                if ($previous -in @('Boot', 'System')) { $notes.Add("$name left alone (driver)"); continue }
+                Invoke-DzAction -Description ("Service {0}: start type {1} -> {2}" -f $name, $previous, $wanted) -Action {
+                    Set-DzServiceStart -Name $name -Startup $wanted
+                } | Out-Null
+                $changes.Add([ordered]@{ type = 'service'; name = $name; previous = $previous; startup = $wanted })
+            }
+            'environment' {
+                $name = [string]$a.name
+                $value = [string]$a.value
+                $previous = Get-DzMachineEnvironment -Name $name
+                if ([string]$previous -eq $value) { continue }
+                Invoke-DzAction -Description ("Set machine environment variable {0}={1}" -f $name, $value) -Action {
+                    Set-DzMachineEnvironment -Name $name -Value $value
+                } | Out-Null
+                $changes.Add([ordered]@{ type = 'environment'; name = $name; previous = $previous })
+            }
+            'cleanTemp' {
+                if ($Context.Progress) { & $Context.Progress 'Deleting temporary files...' }
+                $mb = Invoke-DzAction -Description ('Delete temporary files in ' + ((Get-DzTempFolder) -join ', ') + ' (files in use, DayZero folders and .log files are kept)') -Action { Clear-DzTempFolder }
+                if ($null -ne $mb) { $notes.Add("freed $mb MB") }
+            }
+            'componentCleanup' {
+                if ($Context.Progress) { & $Context.Progress 'Cleaning up superseded Windows components (DISM, can take a while)...' }
+                $dism = $(if ($env:SystemRoot) { [string]$env:SystemRoot } else { 'C:\Windows' }) + '\System32\Dism.exe'
+                $dismArgs = @('/Online', '/Cleanup-Image', '/StartComponentCleanup')
+                $r = Invoke-DzAction -Description ('Run DISM ' + ($dismArgs -join ' ') + ' (no /ResetBase: installed updates stay uninstallable)') -Action {
+                    Invoke-DzProcess -FilePath $dism -Arguments $dismArgs -TimeoutSec 3600
+                }
+                if ($null -ne $r) {
+                    if ($r.TimedOut) { $warnings.Add('DISM component clean-up took over an hour and was stopped; Windows also does this by itself later.') }
+                    elseif ($r.ExitCode -ne 0) { $warnings.Add(('DISM component clean-up returned {0}; it usually works after the next restart (Windows also runs it by itself).' -f $r.ExitCode)) }
+                    else { $notes.Add('superseded Windows components cleaned up') }
+                }
             }
             'startupDisable' {
                 $patterns = @($a.names)
@@ -317,6 +527,7 @@ function Invoke-DzTweak {
     if ($notes.Count -gt 0) { $msg += ' ' + ($notes -join ', ') + '.' }
     if ([bool](Get-DzProperty $Tweak 'needsRestart' $false)) { $msg += ' Takes effect after a restart.'; $Context.Flags['RestartRecommended'] = $true }
     elseif ([bool](Get-DzProperty $Tweak 'needsSignOut' $false)) { $msg += ' Takes effect after signing out.' }
+    if ($warnings.Count -gt 0) { return (New-DzStepResult -Status Warn -Message (($msg + ' ' + ($warnings -join ' ')).Trim())) }
     return (New-DzStepResult -Status Done -Message $msg.Trim())
 }
 
@@ -352,6 +563,22 @@ function Undo-DzTweak {
                             } | Out-Null
                         }
                     }
+                    'registryKey' {
+                        Invoke-DzAction -Description ("Delete {0} (DayZero created it)" -f $c.created) -Action {
+                            Remove-DzRegistryKey -Path ([string]$c.created)
+                        } | Out-Null
+                    }
+                    'service' {
+                        Invoke-DzAction -Description ("Service {0}: start type back to {1}" -f $c.name, $c.previous) -Action {
+                            Set-DzServiceStart -Name ([string]$c.name) -Startup ([string]$c.previous)
+                        } | Out-Null
+                    }
+                    'environment' {
+                        $prev = if ($null -eq $c.previous) { $null } else { [string]$c.previous }
+                        Invoke-DzAction -Description ("Machine environment variable {0} back to '{1}'" -f $c.name, $prev) -Action {
+                            Set-DzMachineEnvironment -Name ([string]$c.name) -Value $prev
+                        } | Out-Null
+                    }
                     'powerPlan' {
                         Invoke-DzAction -Description ("Switch back to power plan {0}" -f $c.previous) -Action {
                             & powercfg.exe /setactive ([string]$c.previous) 2>&1 | Out-Null
@@ -375,5 +602,8 @@ Export-ModuleMember -Function @(
     'Test-DzProtectedRegistryPath', 'Get-DzRegistryValue', 'Set-DzRegistryValue', 'Remove-DzRegistryValue', 'Get-DzRegistryValueName',
     'Get-DzBackupPath', 'Read-DzBackup', 'Add-DzBackupEntry', 'Close-DzBackup',
     'ConvertFrom-DzPowercfgGuid', 'Get-DzPowerSchemeList', 'Set-DzPerformancePowerPlan', 'Select-DzStartupName',
+    'Test-DzProtectedService', 'Get-DzServiceStart', 'Set-DzServiceStart', 'Get-DzMachineEnvironment', 'Set-DzMachineEnvironment',
+    'Test-DzRegistryKey', 'Get-DzParentRegistryPath', 'Get-DzMissingKeyRoot', 'New-DzRegistryKey', 'Remove-DzRegistryKey',
+    'Get-DzTempFolder', 'Test-DzKeptTempItem', 'Clear-DzTempFolder',
     'Get-DzTweakTargetValue', 'Invoke-DzTweak', 'Undo-DzTweak'
 )

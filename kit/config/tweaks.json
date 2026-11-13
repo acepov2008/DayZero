@@ -1,23 +1,33 @@
 {
   "_doc": [
     "DayZero tweaks. Each one says WHAT it changes and WHY, and every change is reversible:",
-    "before a value is changed, the old value (or 'did not exist') is saved to C:\\DayZero\\backup\\tweaks.json,",
+    "before anything is changed, the old value (or 'did not exist') is saved to C:\\DayZero\\backup\\tweaks.json,",
     "and 'DayZero.cmd -Undo' puts everything back. A tweak whose value is already right is left alone.",
+    "",
+    "Which tweaks run: a mode's own tweaks (modes.json) plus the clean-up level's (debloat.json). The",
+    "review screen lists every tweak, so any of them can be ticked or unticked there.",
     "",
     "optional:      shown as a switch on the review screen instead of always applied (default / defaultLaptop).",
     "warning:       shown next to the switch. laptopWarning replaces it on laptops.",
-    "phase:         'late' = runs after the apps are installed (e.g. startup clean-up).",
+    "phase:         'late' = runs after the apps are installed (startup and disk clean-up).",
     "appliesTo:     windows [10,11], minBuild, formFactor desktop|laptop, gpuVendors, notVirtual, editions.",
     "needsRestart / needsSignOut: the change takes effect after a restart / signing out.",
+    "winutil:       the Chris Titus Tech WinUtil tweak this one is modelled on (see debloat.json).",
     "actions:",
-    "  registry:       path, name, kind (DWord|String|QWord|ExpandString|Binary), value,",
-    "                  optional valueByEdition {EditionID: value} for edition-specific values.",
-    "  powerPlan:      activates Ultimate Performance, or High performance where Ultimate is not offered.",
-    "  startupDisable: turns off matching startup entries (same switch as Task Manager > Startup apps).",
+    "  registry:         path, name, kind (DWord|String|QWord|ExpandString|Binary), value,",
+    "                    optional valueByEdition {EditionID: value} for edition-specific values.",
+    "  registryKey:      creates a key with an empty (Default) value; undo deletes what DayZero created.",
+    "  service:          name, startup (Manual|Disabled|Automatic|AutomaticDelayed); undo restores the old start type.",
+    "  environment:      name, value: a machine-wide environment variable.",
+    "  powerPlan:        activates Ultimate Performance, or High performance where Ultimate is not offered.",
+    "  startupDisable:   turns off matching startup entries (same switch as Task Manager > Startup apps).",
+    "  cleanTemp:        empties the user's and Windows' temp folders (files in use, DayZero folders and logs stay).",
+    "  componentCleanup: DISM /StartComponentCleanup without /ResetBase, so updates stay uninstallable.",
     "",
-    "Hard rules (enforced in code, not just here): no service changes, and no registry path that",
-    "belongs to Windows Update or Microsoft Defender. requireRestorePoint: tweaks and removals are",
-    "skipped when no restore point could be created."
+    "Hard rules (enforced in code, not just here): no scripts; no registry path that belongs to Windows",
+    "Update or Microsoft Defender; no start-type change for Windows Update, Defender, firewall, Store or",
+    "installer services. requireRestorePoint: tweaks and removals are skipped when no restore point",
+    "could be created."
   ],
   "requireRestorePoint": true,
   "tweaks": [
@@ -29,7 +39,13 @@
       "why": "While a game runs, Game Mode stops Windows Update from installing drivers and showing restart prompts, and gives the game priority. It is on by default on most PCs; this makes sure.",
       "risk": "low",
       "actions": [
-        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\GameBar", "name": "AutoGameModeEnabled", "kind": "DWord", "value": 1 }
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\GameBar",
+          "name": "AutoGameModeEnabled",
+          "kind": "DWord",
+          "value": 1
+        }
       ]
     },
     {
@@ -40,9 +56,23 @@
       "why": "The graphics card schedules its own memory work, which can lower latency. Windows simply ignores the setting on graphics cards or drivers that don't support it.",
       "risk": "low",
       "needsRestart": true,
-      "appliesTo": { "minBuild": 19041, "notVirtual": true, "gpuVendors": ["NVIDIA", "AMD", "Intel"] },
+      "appliesTo": {
+        "minBuild": 19041,
+        "notVirtual": true,
+        "gpuVendors": [
+          "NVIDIA",
+          "AMD",
+          "Intel"
+        ]
+      },
       "actions": [
-        { "type": "registry", "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers", "name": "HwSchMode", "kind": "DWord", "value": 2 }
+        {
+          "type": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers",
+          "name": "HwSchMode",
+          "kind": "DWord",
+          "value": 2
+        }
       ]
     },
     {
@@ -54,9 +84,27 @@
       "risk": "low",
       "needsSignOut": true,
       "actions": [
-        { "type": "registry", "path": "HKCU:\\Control Panel\\Mouse", "name": "MouseSpeed", "kind": "String", "value": "0" },
-        { "type": "registry", "path": "HKCU:\\Control Panel\\Mouse", "name": "MouseThreshold1", "kind": "String", "value": "0" },
-        { "type": "registry", "path": "HKCU:\\Control Panel\\Mouse", "name": "MouseThreshold2", "kind": "String", "value": "0" }
+        {
+          "type": "registry",
+          "path": "HKCU:\\Control Panel\\Mouse",
+          "name": "MouseSpeed",
+          "kind": "String",
+          "value": "0"
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Control Panel\\Mouse",
+          "name": "MouseThreshold1",
+          "kind": "String",
+          "value": "0"
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Control Panel\\Mouse",
+          "name": "MouseThreshold2",
+          "kind": "String",
+          "value": "0"
+        }
       ]
     },
     {
@@ -68,7 +116,13 @@
       "risk": "medium",
       "warning": "Store apps such as Phone Link can't sync or notify in the background.",
       "actions": [
-        { "type": "registry", "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy", "name": "LetAppsRunInBackground", "kind": "DWord", "value": 2 }
+        {
+          "type": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\AppPrivacy",
+          "name": "LetAppsRunInBackground",
+          "kind": "DWord",
+          "value": 2
+        }
       ]
     },
     {
@@ -80,9 +134,22 @@
       "risk": "low",
       "needsSignOut": true,
       "actions": [
-        { "type": "registry", "path": "HKCU:\\Software\\Policies\\Microsoft\\Windows\\Explorer", "name": "DisableSearchBoxSuggestions", "kind": "DWord", "value": 1 },
-        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Search", "name": "BingSearchEnabled", "kind": "DWord", "value": 0 }
-      ]
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Policies\\Microsoft\\Windows\\Explorer",
+          "name": "DisableSearchBoxSuggestions",
+          "kind": "DWord",
+          "value": 1
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Search",
+          "name": "BingSearchEnabled",
+          "kind": "DWord",
+          "value": 0
+        }
+      ],
+      "winutil": "Microsoft Store Recommended Search Results - Disable (DayZero's documented alternative)"
     },
     {
       "id": "widgets-off",
@@ -91,10 +158,21 @@
       "what": "Group Policy 'Allow widgets' = disabled (Dsh AllowNewsAndInterests = 0).",
       "why": "Removes the Widgets board and its news feed from the taskbar; it uses memory and network in the background.",
       "risk": "low",
-      "appliesTo": { "windows": [11] },
+      "appliesTo": {
+        "windows": [
+          11
+        ]
+      },
       "actions": [
-        { "type": "registry", "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Dsh", "name": "AllowNewsAndInterests", "kind": "DWord", "value": 0 }
-      ]
+        {
+          "type": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Dsh",
+          "name": "AllowNewsAndInterests",
+          "kind": "DWord",
+          "value": 0
+        }
+      ],
+      "winutil": "Widgets - Remove (turned off by policy instead of uninstalling the Web Experience Pack)"
     },
     {
       "id": "news-interests-off",
@@ -103,35 +181,452 @@
       "what": "Group Policy 'Enable news and interests on the taskbar' = disabled (Windows Feeds EnableFeeds = 0).",
       "why": "Windows 10's version of Widgets: removes the weather/news feed from the taskbar.",
       "risk": "low",
-      "appliesTo": { "windows": [10] },
+      "appliesTo": {
+        "windows": [
+          10
+        ]
+      },
       "actions": [
-        { "type": "registry", "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Feeds", "name": "EnableFeeds", "kind": "DWord", "value": 0 }
+        {
+          "type": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Windows Feeds",
+          "name": "EnableFeeds",
+          "kind": "DWord",
+          "value": 0
+        }
       ]
     },
     {
       "id": "copilot-off",
       "title": "Hide Copilot",
       "category": "Performance",
-      "what": "Hides the Copilot taskbar button (ShowCopilotButton = 0) and sets the older 'Turn off Windows Copilot' policy. The Copilot app itself is removed by the full debloat (Gaming and Everything).",
-      "why": "Keeps Copilot out of the way on a gaming PC. You can install it again from the Microsoft Store.",
+      "what": "Hides the Copilot taskbar button (ShowCopilotButton = 0) and sets the older 'Turn off Windows Copilot' policy. The Copilot app itself is removed by the Standard and Advanced clean-up.",
+      "why": "Keeps Copilot out of the way. You can install it again from the Microsoft Store.",
       "risk": "low",
-      "appliesTo": { "windows": [11] },
+      "appliesTo": {
+        "windows": [
+          11
+        ]
+      },
       "actions": [
-        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "name": "ShowCopilotButton", "kind": "DWord", "value": 0 },
-        { "type": "registry", "path": "HKCU:\\Software\\Policies\\Microsoft\\Windows\\WindowsCopilot", "name": "TurnOffWindowsCopilot", "kind": "DWord", "value": 1 }
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "ShowCopilotButton",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Policies\\Microsoft\\Windows\\WindowsCopilot",
+          "name": "TurnOffWindowsCopilot",
+          "kind": "DWord",
+          "value": 1
+        }
+      ],
+      "winutil": "Windows AI - Disable And Remove (Copilot part)"
+    },
+    {
+      "id": "telemetry-off",
+      "title": "Telemetry off (lowest level this edition allows)",
+      "category": "Privacy",
+      "winutil": "Telemetry - Disable",
+      "what": "Diagnostic data policy at its minimum (Required on Home/Pro, off on Enterprise/Education); advertising ID, tailored experiences, online speech recognition, inking and typing personalisation and contact harvesting off; no 'most used apps' tracking; Windows never asks for feedback; the Connected User Experiences and Telemetry (DiagTrack) and Windows Error Reporting services disabled; PowerShell 7 telemetry opt-out.",
+      "why": "Sends Microsoft only the minimum Windows needs to stay secure and up to date, and stops ad tracking. Windows Update and Defender keep working normally.",
+      "risk": "low",
+      "needsRestart": true,
+      "warning": "Crash reports are no longer sent to Microsoft or app makers, and the Run box (Win+R) stops remembering what you typed.",
+      "actions": [
+        {
+          "type": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection",
+          "name": "AllowTelemetry",
+          "kind": "DWord",
+          "value": 1,
+          "valueByEdition": {
+            "Enterprise": 0,
+            "EnterpriseN": 0,
+            "Education": 0,
+            "EducationN": 0
+          }
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo",
+          "name": "Enabled",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Privacy",
+          "name": "TailoredExperiencesWithDiagnosticDataEnabled",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Speech_OneCore\\Settings\\OnlineSpeechPrivacy",
+          "name": "HasAccepted",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Input\\TIPC",
+          "name": "Enabled",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\InputPersonalization",
+          "name": "RestrictImplicitInkCollection",
+          "kind": "DWord",
+          "value": 1
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\InputPersonalization",
+          "name": "RestrictImplicitTextCollection",
+          "kind": "DWord",
+          "value": 1
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\InputPersonalization\\TrainedDataStore",
+          "name": "HarvestContacts",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Personalization\\Settings",
+          "name": "AcceptedPrivacyPolicy",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "Start_TrackProgs",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Siuf\\Rules",
+          "name": "NumberOfSIUFInPeriod",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "service",
+          "name": "DiagTrack",
+          "startup": "Disabled"
+        },
+        {
+          "type": "service",
+          "name": "WerSvc",
+          "startup": "Disabled"
+        },
+        {
+          "type": "environment",
+          "name": "POWERSHELL_TELEMETRY_OPTOUT",
+          "value": "1"
+        }
       ]
     },
     {
-      "id": "telemetry-min",
-      "title": "Diagnostic data at the lowest level this edition allows",
+      "id": "consumer-features-off",
+      "title": "Turn off Microsoft consumer experiences (policy)",
       "category": "Privacy",
-      "what": "Group Policy 'Allow Diagnostic Data' (DataCollection AllowTelemetry): 1 = Required diagnostic data, which is the lowest Home and Pro support; 0 = off on Enterprise and Education.",
-      "why": "Sends Microsoft only the minimum Windows needs to stay secure and up to date. Windows Update and Defender keep working normally.",
+      "winutil": "ConsumerFeatures - Disable",
+      "what": "Group Policy 'Turn off Microsoft consumer experiences' (CloudContent DisableWindowsConsumerFeatures = 1).",
+      "why": "Stops promoted app installs and Store app suggestions. Windows only honours this policy on Enterprise and Education; on Home and Pro 'Stop suggested and auto-installed promoted apps' does the same job.",
+      "risk": "low",
+      "appliesTo": {
+        "editions": [
+          "Enterprise",
+          "EnterpriseN",
+          "Education",
+          "EducationN",
+          "EnterpriseS",
+          "EnterpriseSN",
+          "IoTEnterprise",
+          "IoTEnterpriseS",
+          "ProfessionalEducation",
+          "ProfessionalEducationN"
+        ]
+      },
+      "actions": [
+        {
+          "type": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableWindowsConsumerFeatures",
+          "kind": "DWord",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "wpbt-off",
+      "title": "Don't run programs stored in the firmware (WPBT)",
+      "category": "Privacy",
+      "winutil": "Windows Platform Binary Table (WPBT) - Disable",
+      "what": "Session Manager DisableWpbtExecution = 1: Windows no longer runs the program a PC maker can put in the firmware's Windows Platform Binary Table.",
+      "why": "Some PC makers use WPBT to install their utilities (or anti-theft agents) on every fresh Windows install without asking.",
+      "risk": "low",
+      "needsRestart": true,
+      "warning": "Firmware-based anti-theft (e.g. Absolute/Computrace) and vendor tools that install themselves this way stop doing that.",
+      "actions": [
+        {
+          "type": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager",
+          "name": "DisableWpbtExecution",
+          "kind": "DWord",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "services-manual",
+      "title": "Trim background services",
+      "category": "Performance",
+      "winutil": "Services - Set to Manual",
+      "what": "Connected User Experiences and Telemetry (DiagTrack) and Offline Files (CscService) disabled; Downloaded Maps Manager (MapsBroker) and Storage Service (StorSvc) start only when needed (Manual).",
+      "why": "Fewer services running all the time. Windows starts the Manual ones by itself when something needs them.",
+      "risk": "low",
+      "needsRestart": true,
+      "warning": "Offline Files (offline copies of network-share folders, mostly used in offices) stops working.",
+      "actions": [
+        {
+          "type": "service",
+          "name": "DiagTrack",
+          "startup": "Disabled"
+        },
+        {
+          "type": "service",
+          "name": "CscService",
+          "startup": "Disabled"
+        },
+        {
+          "type": "service",
+          "name": "MapsBroker",
+          "startup": "Manual"
+        },
+        {
+          "type": "service",
+          "name": "StorSvc",
+          "startup": "Manual"
+        }
+      ]
+    },
+    {
+      "id": "activity-history-off",
+      "title": "Activity history off",
+      "category": "Privacy",
+      "winutil": "Activity History - Disable",
+      "what": "Group Policy: don't publish or upload user activities (System PublishUserActivities = 0, UploadUserActivities = 0).",
+      "why": "Windows stops recording and syncing which apps, files and websites you used. Clipboard history keeps working.",
       "risk": "low",
       "actions": [
         {
-          "type": "registry", "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection", "name": "AllowTelemetry", "kind": "DWord", "value": 1,
-          "valueByEdition": { "Enterprise": 0, "EnterpriseN": 0, "Education": 0, "EducationN": 0 }
+          "type": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+          "name": "PublishUserActivities",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+          "name": "UploadUserActivities",
+          "kind": "DWord",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "location-off",
+      "title": "Location off",
+      "category": "Privacy",
+      "winutil": "Location Tracking - Disable",
+      "what": "Location access set to Deny for the whole PC, the location sensor override off, Maps' automatic updates off, and the Geolocation service (lfsvc) disabled.",
+      "why": "Apps and Windows can no longer see where the PC is.",
+      "risk": "medium",
+      "needsRestart": true,
+      "warning": "Automatic time zone, Find my device, local weather and maps can no longer use your location.",
+      "actions": [
+        {
+          "type": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location",
+          "name": "Value",
+          "kind": "String",
+          "value": "Deny"
+        },
+        {
+          "type": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Sensor\\Overrides\\{BFA794E4-F964-4FDB-90F6-51056BFE4B44}",
+          "name": "SensorPermissionState",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "registry",
+          "path": "HKLM:\\SYSTEM\\Maps",
+          "name": "AutoUpdateEnabled",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "service",
+          "name": "lfsvc",
+          "startup": "Disabled"
+        }
+      ]
+    },
+    {
+      "id": "delivery-optimization-off",
+      "title": "Don't share updates with other PCs (Delivery Optimization)",
+      "category": "Privacy",
+      "winutil": "Delivery Optimization - Disable",
+      "what": "Group Policy 'Download Mode' = 0 (HTTP only, no peering).",
+      "why": "Windows Update downloads straight from Microsoft and no longer uploads updates to other PCs on your network or the internet. Updates keep working.",
+      "risk": "low",
+      "actions": [
+        {
+          "type": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization",
+          "name": "DODownloadMode",
+          "kind": "DWord",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "folder-discovery-off",
+      "title": "Stop File Explorer guessing folder types",
+      "category": "Performance",
+      "winutil": "File Explorer Automatic Folder Discovery - Disable",
+      "what": "Sets every folder's type to 'General items' (Shell\\Bags\\AllFolders\\Shell FolderType = NotSpecified).",
+      "why": "Explorer no longer scans a folder's contents to pick a 'Pictures' or 'Music' view, which makes big folders open faster.",
+      "risk": "low",
+      "needsSignOut": true,
+      "warning": "Folders lose their automatic layouts, e.g. Downloads is no longer grouped by date.",
+      "actions": [
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\Shell\\Bags\\AllFolders\\Shell",
+          "name": "FolderType",
+          "kind": "String",
+          "value": "NotSpecified"
+        }
+      ]
+    },
+    {
+      "id": "end-task-taskbar",
+      "title": "'End task' when right-clicking a taskbar app",
+      "category": "Usability",
+      "winutil": "End Task With Right Click - Enable",
+      "what": "TaskbarDeveloperSettings TaskbarEndTask = 1 (the 'End task' switch in Settings > System > For developers).",
+      "why": "Close a frozen app from the taskbar without opening Task Manager.",
+      "risk": "low",
+      "appliesTo": {
+        "windows": [
+          11
+        ],
+        "minBuild": 22631
+      },
+      "actions": [
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\TaskbarDeveloperSettings",
+          "name": "TaskbarEndTask",
+          "kind": "DWord",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "temp-files-clean",
+      "title": "Delete temporary files",
+      "category": "Clean-up",
+      "phase": "late",
+      "winutil": "Temporary Files - Remove",
+      "what": "Empties your TEMP folder and C:\\Windows\\Temp after the apps are installed. Files in use, DayZero's own folders and .log files stay.",
+      "why": "Installers leave hundreds of MB behind on a fresh PC. Nothing to undo: only temporary files are deleted.",
+      "risk": "low",
+      "actions": [
+        {
+          "type": "cleanTemp"
+        }
+      ]
+    },
+    {
+      "id": "disk-cleanup",
+      "title": "Clean up old Windows Update files",
+      "category": "Clean-up",
+      "phase": "late",
+      "winutil": "Disk Cleanup - Run",
+      "what": "DISM /Online /Cleanup-Image /StartComponentCleanup after Windows Update: removes the Windows components that updates replaced.",
+      "why": "Frees disk space right away (Windows otherwise does it on its own schedule). Run without /ResetBase, so installed updates can still be uninstalled.",
+      "risk": "low",
+      "actions": [
+        {
+          "type": "componentCleanup"
+        }
+      ]
+    },
+    {
+      "id": "windows-ai-off",
+      "title": "Windows AI features off (Recall, Notepad AI)",
+      "category": "Privacy",
+      "winutil": "Windows AI - Disable And Remove",
+      "what": "Group Policy 'Turn off saving snapshots for use with Recall' (WindowsAI DisableAIDataAnalysis = 1) and Notepad's AI features off (WindowsNotepad DisableAIFeatures = 1). Copilot is hidden by its own tweak and its app removed by the Standard clean-up.",
+      "why": "Keeps Recall from taking screenshots of what you do, and removes the AI buttons from Notepad.",
+      "risk": "low",
+      "appliesTo": {
+        "windows": [
+          11
+        ]
+      },
+      "actions": [
+        {
+          "type": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsAI",
+          "name": "DisableAIDataAnalysis",
+          "kind": "DWord",
+          "value": 1
+        },
+        {
+          "type": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\WindowsNotepad",
+          "name": "DisableAIFeatures",
+          "kind": "DWord",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "classic-context-menu",
+      "title": "Classic right-click menu in File Explorer",
+      "category": "Usability",
+      "winutil": "Right-Click Menu Previous Layout - Enable",
+      "what": "Creates HKCU\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32 with an empty value, so Explorer shows the full Windows 10 style menu instead of 'Show more options'.",
+      "why": "Every command in one right-click, without the extra click. Undo deletes the key.",
+      "risk": "low",
+      "needsSignOut": true,
+      "appliesTo": {
+        "windows": [
+          11
+        ]
+      },
+      "actions": [
+        {
+          "type": "registryKey",
+          "path": "HKCU:\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32",
+          "defaultValue": ""
         }
       ]
     },
@@ -143,13 +638,50 @@
       "why": "Stops Windows from quietly adding sponsored apps and showing ads in Start and Settings.",
       "risk": "low",
       "actions": [
-        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager", "name": "SilentInstalledAppsEnabled", "kind": "DWord", "value": 0 },
-        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager", "name": "SystemPaneSuggestionsEnabled", "kind": "DWord", "value": 0 },
-        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager", "name": "SubscribedContent-338388Enabled", "kind": "DWord", "value": 0 },
-        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager", "name": "SubscribedContent-353694Enabled", "kind": "DWord", "value": 0 },
-        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager", "name": "SubscribedContent-353696Enabled", "kind": "DWord", "value": 0 },
-        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced", "name": "Start_IrisRecommendations", "kind": "DWord", "value": 0 }
-      ]
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SilentInstalledAppsEnabled",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SystemPaneSuggestionsEnabled",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-338388Enabled",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-353694Enabled",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-353696Enabled",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "Start_IrisRecommendations",
+          "kind": "DWord",
+          "value": 0
+        }
+      ],
+      "winutil": "ConsumerFeatures - Disable (works on Home and Pro too)"
     },
     {
       "id": "startup-trim",
@@ -160,7 +692,16 @@
       "why": "Faster sign-in and less running in the background. Start them when you need them, or switch them back on in Task Manager. Apps that only add their startup entry on first launch will show up there later.",
       "risk": "low",
       "actions": [
-        { "type": "startupDisable", "names": ["Steam", "EpicGamesLauncher", "Discord", "Spotify", "MicrosoftEdgeAutoLaunch_*"] }
+        {
+          "type": "startupDisable",
+          "names": [
+            "Steam",
+            "EpicGamesLauncher",
+            "Discord",
+            "Spotify",
+            "MicrosoftEdgeAutoLaunch_*"
+          ]
+        }
       ]
     },
     {
@@ -174,7 +715,11 @@
       "what": "Activates the Ultimate Performance power plan (copied from Windows' built-in template), or High performance where Ultimate isn't offered.",
       "why": "The CPU stops dropping to low clocks between frames, which removes small stutters. Costs a little more power on desktops.",
       "risk": "low",
-      "actions": [ { "type": "powerPlan" } ]
+      "actions": [
+        {
+          "type": "powerPlan"
+        }
+      ]
     },
     {
       "id": "memory-integrity-off",
@@ -188,8 +733,20 @@
       "why": "Virtualization-based security costs some CPU performance in games on some PCs.",
       "needsRestart": true,
       "actions": [
-        { "type": "registry", "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity", "name": "Enabled", "kind": "DWord", "value": 0 },
-        { "type": "registry", "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard", "name": "EnableVirtualizationBasedSecurity", "kind": "DWord", "value": 0 }
+        {
+          "type": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity",
+          "name": "Enabled",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard",
+          "name": "EnableVirtualizationBasedSecurity",
+          "kind": "DWord",
+          "value": 0
+        }
       ]
     },
     {
@@ -203,9 +760,27 @@
       "what": "Turns off game capture (AppCaptureEnabled = 0, GameDVR_Enabled = 0) and opening Game Bar with the controller (UseNexusForGameBarEnabled = 0). The app stays installed.",
       "why": "Background game recording costs a little performance.",
       "actions": [
-        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR", "name": "AppCaptureEnabled", "kind": "DWord", "value": 0 },
-        { "type": "registry", "path": "HKCU:\\System\\GameConfigStore", "name": "GameDVR_Enabled", "kind": "DWord", "value": 0 },
-        { "type": "registry", "path": "HKCU:\\Software\\Microsoft\\GameBar", "name": "UseNexusForGameBarEnabled", "kind": "DWord", "value": 0 }
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR",
+          "name": "AppCaptureEnabled",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\System\\GameConfigStore",
+          "name": "GameDVR_Enabled",
+          "kind": "DWord",
+          "value": 0
+        },
+        {
+          "type": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\GameBar",
+          "name": "UseNexusForGameBarEnabled",
+          "kind": "DWord",
+          "value": 0
+        }
       ]
     }
   ]

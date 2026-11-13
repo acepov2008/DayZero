@@ -195,6 +195,27 @@ function Add-DzChoiceGroup {
     return $controls.ToArray()
 }
 
+function Enable-DzLevelPreset {
+    <#
+        Clean-up level radios act like WinUtil's preset buttons: picking one re-ticks the
+        level-owned switches (Set-DzReviewLevel decides which); everything else stays as it is.
+    #>
+    [CmdletBinding()]
+    param([AllowEmptyCollection()][object[]]$Controls = @())
+    $all = @($Controls)
+    foreach ($c in $all) {
+        if (-not ($c -is [System.Windows.Controls.RadioButton]) -or [string]$c.Tag.Kind -ne 'debloat') { continue }
+        $c.Add_Checked({
+                param($src)
+                $items = @($all | ForEach-Object { $_.Tag } | Where-Object { $_.Kind -in @('debloat', 'tweak', 'removal') })
+                Set-DzReviewLevel -Options $items -LevelId ([string]$src.Tag.Id)
+                foreach ($x in $all) {
+                    if ($x.Tag.PSObject.Properties['LevelOwned'] -and $x.Tag.LevelOwned) { $x.IsChecked = [bool]$x.Tag.Checked }
+                }
+            }.GetNewClosure())
+    }
+}
+
 function Update-DzChoiceItem {
     <# Copies each control's ticked state back into its item (Tag). #>
     [CmdletBinding()]
@@ -204,5 +225,5 @@ function Update-DzChoiceItem {
 
 Export-ModuleMember -Function @(
     'Initialize-DzWpf', 'Import-DzXaml', 'Initialize-DzTheme', 'Get-DzNamedElement', 'Show-DzMessage', 'Invoke-DzUiRefresh',
-    'Get-DzResource', 'New-DzChoiceControl', 'Add-DzChoiceGroup', 'Update-DzChoiceItem'
+    'Get-DzResource', 'New-DzChoiceControl', 'Add-DzChoiceGroup', 'Enable-DzLevelPreset', 'Update-DzChoiceItem'
 )

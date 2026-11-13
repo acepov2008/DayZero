@@ -5,7 +5,7 @@
     Order (each line only appears when its step type exists and it applies to this PC):
        1. Check this PC                        6. Windows Update (incl. drivers)
        2. Drivers from the USB Drivers folder   7. GPU vendor app, PC-brand update tool
-       3. Internet connection                   8. Remove bloat, optional removals, tweaks
+       3. Internet connection                   8. Remove apps (clean-up level), removals, tweaks
        4. Activation check                      9. Apps, Microsoft 365
        5. Restore point, winget                10. Late tweaks (startup clean-up), final update check
 
@@ -72,18 +72,26 @@ function Get-DzReviewModel {
         customSelection) lists. Categories with pickOne get radio buttons plus "None".
         Microsoft 365 is an item in "Office & documents" (Kind 'office').
 
-        Options: the clean-up level (radio: none / light / full), every tweak as a switch
-        (a mode's own tweaks ticked; optional ones follow their default / defaultLaptop),
-        optional removals, and the PC-brand tool.
+        Options:
+          * the clean-up level (radio: Clear / Minimal / Standard / Advanced, from debloat.json),
+            -DebloatLevel (the builder's pick) > Custom picks from older builders > the mode's
+            suggestion > debloat.json defaultLevel;
+          * 'Privacy and clean-up': every tweak and removal some level uses (LevelOwned). The
+            chosen level's are ticked; Set-DzReviewLevel re-ticks them when the level changes;
+          * 'Tweaks': the rest (a mode's own tweaks ticked; optional ones follow their
+            default / defaultLaptop; Custom: the builder's picks);
+          * the PC-brand tool.
 
-        Every item: Id, Kind, Name/Title, Description, Warning, Group, GroupId, Exclusive, Checked.
+        Every item: Id, Kind, Name/Title, Description, Warning, Group, GroupId, Exclusive,
+        Checked, LevelOwned. Level items also carry Tweaks and Removals (cumulative).
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)][object]$Mode,
         [AllowNull()][object]$System,
         [Parameter(Mandatory = $true)][hashtable]$Config,
-        [AllowNull()][object]$Preselect = $null
+        [AllowNull()][object]$Preselect = $null,
+        [AllowNull()][AllowEmptyString()][string]$DebloatLevel = $null
     )
     $isCustom = [bool](Get-DzProperty $Mode 'custom' $false)
     $isLaptop = ($null -ne $System -and [bool]$System.IsLaptop)
@@ -134,34 +142,32 @@ function Get-DzReviewModel {
     }
 
     $options = New-Object System.Collections.Generic.List[object]
-    if ($Config.debloat) {
-        $level = if ($isCustom) { [string](Get-DzSelectionValue $Preselect 'debloat' 'none') } else { [string]$Mode.debloat }
-        if ($level -notin @('none', 'light', 'full')) { $level = 'none' }
-        $levels = @(
-            @{ Id = 'none'; Title = "Don't remove preinstalled apps"; Description = '' },
-            @{ Id = 'light'; Title = 'Light clean-up'; Description = 'Removes ads and promo apps (Candy Crush, Clipchamp, News, Solitaire...).' },
-            @{ Id = 'full'; Title = 'Full clean-up'; Description = 'Also removes Microsoft extras (Weather, Phone Link, Copilot, new Outlook...). The Store, Calculator and Photos stay.' }
-        )
-        foreach ($l in $levels) {
-            $options.Add([pscustomobject]@{
-                    Id = $l.Id; Kind = 'debloat'; Title = $l.Title; Name = $l.Title; Description = $l.Description; Warning = ''
-                    Group = 'Clean-up'; GroupId = 'debloat'; Exclusive = $true; Checked = ($l.Id -eq $level)
-                })
-        }
-        foreach ($r in @(Get-DzProperty $Config.debloat 'optionalRemovals' @())) {
-            if (Test-DzApplicable -Item $r -System $System) { continue }
-            $checked = if ($isCustom) { @(Get-DzSelectionValue $Preselect 'removals' @()) -contains [string]$r.id } else { [bool](Get-DzProperty $r 'default' $false) }
-            $options.Add([pscustomobject]@{
-                    Id = [string]$r.id; Kind = 'removal'; Title = [string]$r.title; Name = [string]$r.title
-                    Description = [string](Get-DzProperty $r 'what' ''); Warning = [string](Get-DzProperty $r 'warning' '')
-                    Group = 'Clean-up'; GroupId = 'removals'; Exclusive = $false; Checked = [bool]$checked
-                })
-        }
+    $levels = @(Get-DzDebloatLevelList -Config $Config)
+    $levelId = Resolve-DzDebloatLevelId -Config $Config -Id $DebloatLevel
+    if (-not $levelId -and $isCustom) { $levelId = Resolve-DzDebloatLevelId -Config $Config -Id ([string](Get-DzSelectionValue $Preselect 'debloat' '')) }
+    if (-not $levelId) { $levelId = Resolve-DzDebloatLevelId -Config $Config -Id ([string](Get-DzProperty $Mode 'debloat' '')) }
+    if (-not $levelId) { $levelId = Get-DzDefaultDebloatLevel -Config $Config }
+    $level = @($levels | Where-Object { $_.id -eq $levelId }) | Select-Object -First 1
+    $levelTweaks = if ($level) { @($level.tweaks) } else { @() }
+    $levelRemovals = if ($level) { @($level.removals) } else { @() }
+    $ownedTweaks = @($levels | ForEach-Object { $_.tweaks } | Select-Object -Unique)
+    $ownedRemovals = @($levels | ForEach-Object { $_.removals } | Select-Object -Unique)
+    $cleanGroup = 'Privacy and clean-up'
+
+    foreach ($l in $levels) {
+        $title = if ($l.tagline) { '{0} - {1}' -f $l.title, $l.tagline } else { $l.title }
+        $options.Add([pscustomobject]@{
+                Id = $l.id; Kind = 'debloat'; Title = $title; Name = [string]$l.title; Description = $l.description; Warning = ''
+                Group = 'Clean-up level'; GroupId = 'debloat'; Exclusive = $true; Checked = ($l.id -eq $levelId); LevelOwned = $false
+                Tweaks = @($l.tweaks); Removals = @($l.removals)
+            })
     }
+    $tweakItems = New-Object System.Collections.Generic.List[object]
     if ($Config.tweaks) {
         foreach ($t in @($Config.tweaks.tweaks)) {
             if (Test-DzApplicable -Item $t -System $System) { continue }
             $id = [string]$t.id
+            $owned = $ownedTweaks -contains $id
             $optional = [bool](Get-DzProperty $t 'optional' $false)
             if ($isCustom) { $checked = ($pickTweaks -contains $id) }
             elseif (@($Mode.tweaks) -contains $id) {
@@ -172,27 +178,62 @@ function Get-DzReviewModel {
                 }
             }
             else { $checked = $false }
+            if ($levelTweaks -contains $id) { $checked = $true }
             $warning = [string](Get-DzProperty $t 'warning' '')
             $lw = [string](Get-DzProperty $t 'laptopWarning' '')
             if ($isLaptop -and $lw) { $warning = $lw }
-            $options.Add([pscustomobject]@{
+            $tweakItems.Add([pscustomobject]@{
                     Id = $id; Kind = 'tweak'; Title = [string]$t.title; Name = [string]$t.title
                     Description = [string](Get-DzProperty $t 'what' ''); Warning = $warning
-                    Group = 'Tweaks'; GroupId = 'tweaks'; Exclusive = $false; Checked = [bool]$checked
+                    Group = $(if ($owned) { $cleanGroup } else { 'Tweaks' }); GroupId = $(if ($owned) { 'cleanup' } else { 'tweaks' })
+                    Exclusive = $false; Checked = [bool]$checked; LevelOwned = $owned
                 })
         }
     }
+    foreach ($i in @($tweakItems | Where-Object { $_.LevelOwned })) { $options.Add($i) }
+    if ($Config.debloat) {
+        foreach ($r in @(Get-DzProperty $Config.debloat 'optionalRemovals' @())) {
+            if (Test-DzApplicable -Item $r -System $System) { continue }
+            $id = [string]$r.id
+            $checked = if ($isCustom) { @(Get-DzSelectionValue $Preselect 'removals' @()) -contains $id } else { [bool](Get-DzProperty $r 'default' $false) }
+            if ($levelRemovals -contains $id) { $checked = $true }
+            $options.Add([pscustomobject]@{
+                    Id = $id; Kind = 'removal'; Title = [string]$r.title; Name = [string]$r.title
+                    Description = [string](Get-DzProperty $r 'what' ''); Warning = [string](Get-DzProperty $r 'warning' '')
+                    Group = $cleanGroup; GroupId = 'cleanup'; Exclusive = $false; Checked = [bool]$checked; LevelOwned = ($ownedRemovals -contains $id)
+                })
+        }
+    }
+    foreach ($i in @($tweakItems | Where-Object { -not $_.LevelOwned })) { $options.Add($i) }
     if ($Config.drivers -and $null -ne $System -and -not $System.IsVirtualMachine) {
         $tool = @(Get-DzProperty $Config.drivers 'oemTools' @()) | Where-Object { $_.brand -eq $System.Brand } | Select-Object -First 1
         if ($tool) {
             $options.Add([pscustomobject]@{
                     Id = 'oemTool'; Kind = 'oemTool'; Title = "Install $($tool.name)"; Name = "Install $($tool.name)"
                     Description = [string](Get-DzProperty $tool 'what' "$($System.Brand)'s official driver and firmware update app."); Warning = ''
-                    Group = 'Drivers'; GroupId = 'drivers'; Exclusive = $false; Checked = $true
+                    Group = 'Drivers'; GroupId = 'drivers'; Exclusive = $false; Checked = $true; LevelOwned = $false
                 })
         }
     }
     return [pscustomobject]@{ Apps = $apps.ToArray(); Options = $options.ToArray() }
+}
+
+function Set-DzReviewLevel {
+    <#
+        Picking a clean-up level works like WinUtil's preset buttons: it ticks exactly that
+        level's tweaks and removals among the level-owned switches (the others stay as they are).
+        Changes the items' Checked in place; the UI then copies them to the switches.
+    #>
+    [CmdletBinding()]
+    param([AllowEmptyCollection()][object[]]$Options = @(), [Parameter(Mandatory = $true)][string]$LevelId)
+    $level = @($Options | Where-Object { $_.Kind -eq 'debloat' -and $_.Id -eq $LevelId }) | Select-Object -First 1
+    if ($null -eq $level) { return }
+    foreach ($o in $Options) {
+        if ($o.Kind -eq 'debloat') { $o.Checked = ($o.Id -eq $LevelId); continue }
+        if (-not ($o.PSObject.Properties['LevelOwned'] -and $o.LevelOwned)) { continue }
+        if ($o.Kind -eq 'tweak') { $o.Checked = (@($level.Tweaks) -contains $o.Id) }
+        elseif ($o.Kind -eq 'removal') { $o.Checked = (@($level.Removals) -contains $o.Id) }
+    }
 }
 
 function ConvertTo-DzPlanOption {
@@ -217,7 +258,7 @@ function ConvertTo-DzPlanOption {
     $levels = @($Options | Where-Object { $_.Kind -eq 'debloat' })
     if ($levels.Count -gt 0) {
         $picked = @($levels | Where-Object { $_.Checked }) | Select-Object -First 1
-        $result.debloat = if ($picked) { [string]$picked.Id } else { 'none' }
+        $result.debloat = if ($picked) { [string]$picked.Id } else { 'clear' }
     }
     if (@($Options | Where-Object { $_.Kind -eq 'tweak' }).Count -gt 0) { $result.explicitTweaks = $true }
     return $result
@@ -226,7 +267,8 @@ function ConvertTo-DzPlanOption {
 function Get-DzModeSummary {
     <#
         Plain-text "what this mode includes" for the builder: ticked apps per category,
-        Microsoft 365, clean-up level, tweaks (and which ones stay off unless ticked).
+        Microsoft 365, the mode's own tweaks (and which ones stay off unless ticked). The
+        clean-up level is picked and described separately (Get-DzDebloatLevelSummary).
         Built from the same review model the wizard uses, so it can't drift from it.
     #>
     [CmdletBinding()]
@@ -238,7 +280,9 @@ function Get-DzModeSummary {
     )
     $nl = [Environment]::NewLine
     $bullet = [string][char]0x2022
-    $r = Get-DzReviewModel -Mode $Mode -System $null -Config $Config -Preselect $Preselect
+    # Clear level: only the mode's own tweaks show; the clean-up level is described separately.
+    $clear = @(Get-DzDebloatLevelList -Config $Config) | Select-Object -First 1
+    $r = Get-DzReviewModel -Mode $Mode -System $null -Config $Config -Preselect $Preselect -DebloatLevel $(if ($clear) { $clear.id } else { $null })
     $lines = New-Object System.Collections.Generic.List[string]
     $pickedApps = @($r.Apps | Where-Object { $_.Checked -and $_.Kind -ne 'none' })
     if ($Mode.custom -and $pickedApps.Count -eq 0 -and @($r.Options | Where-Object { $_.Checked -and $_.Kind -eq 'tweak' }).Count -eq 0) {
@@ -253,8 +297,6 @@ function Get-DzModeSummary {
         }
         if ($pickedApps.Count -eq 0) { $lines.Add("$bullet No apps") }
     }
-    $level = @($r.Options | Where-Object { $_.Kind -eq 'debloat' -and $_.Checked }) | Select-Object -First 1
-    if ($level) { $lines.Add(("{0} Clean-up: {1}" -f $bullet, $level.Title)) }
     $on = @($r.Options | Where-Object { $_.Kind -eq 'tweak' -and $_.Checked })
     if ($on.Count -gt 0) {
         $names = foreach ($t in $on) {
@@ -268,8 +310,43 @@ function Get-DzModeSummary {
         $offered = @($r.Options | Where-Object { $_.Kind -eq 'tweak' -and -not $_.Checked -and @($Mode.tweaks) -contains $_.Id })
         if ($offered.Count -gt 0) { $lines.Add(("{0} Offered but off unless you tick them: {1}" -f $bullet, (($offered | ForEach-Object { $_.Title }) -join '; '))) }
     }
+    $lines.Add(("{0} Clean-up and privacy: the level you pick below." -f $bullet))
     $lines.Add(("{0} Always: Windows Update with drivers, restore point first, activation check, graphics-card app, PC-brand tool (you're asked), Windows 10 ESU reminder." -f $bullet))
     $lines.Add('Everything can still be ticked or unticked on the new PC before DayZero starts.')
+    return ($lines -join $nl)
+}
+
+function Get-DzDebloatLevelSummary {
+    <# Plain-text "what this clean-up level does" for the builder. #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory = $true)][hashtable]$Config, [Parameter(Mandatory = $true)][string]$LevelId)
+    $nl = [Environment]::NewLine
+    $bullet = [string][char]0x2022
+    $level = Get-DzDebloatLevel -Config $Config -Id $LevelId
+    if ($null -eq $level) { return "Unknown clean-up level '$LevelId'." }
+    $lines = New-Object System.Collections.Generic.List[string]
+    $lines.Add($level.description)
+    if ($level.rank -eq 0) {
+        $lines.Add('You can still tick single privacy tweaks on the new PC.')
+        return ($lines -join $nl)
+    }
+    $titles = foreach ($id in $level.tweaks) {
+        $t = Get-DzCatalogItem -Catalog $Config.tweaks -Collection 'tweaks' -Id $id
+        if ($t) { [string]$t.title }
+    }
+    if (@($titles).Count -gt 0) { $lines.Add(("{0} Changes: {1}" -f $bullet, (@($titles) -join '; '))) }
+    $apps = @(Get-DzProperty $Config.debloat 'packages' @() | Where-Object {
+            $l = Get-DzDebloatLevel -Config $Config -Id ([string](Get-DzProperty $_ 'level' ''))
+            $l -and $l.rank -le $level.rank
+        } | ForEach-Object { ([string]$_.title) -replace '\s*\(.*\)$', '' })
+    if ($apps.Count -gt 0) { $lines.Add(("{0} Removes {1} preinstalled app(s): {2}" -f $bullet, $apps.Count, ($apps -join ', '))) }
+    foreach ($rid in $level.removals) {
+        $r = @(Get-DzProperty $Config.debloat 'optionalRemovals' @()) | Where-Object { $_.id -eq $rid } | Select-Object -First 1
+        if ($r) { $lines.Add(("{0} {1}" -f $bullet, $r.title)) }
+    }
+    $lines.Add(("{0} Never removed: Microsoft Store, Calculator, Photos, Notepad, Paint, Snipping Tool, Camera, Clock, Sticky Notes, Xbox apps, Windows Security." -f $bullet))
+    $lines.Add("Based on Chris Titus Tech's WinUtil presets. Every change is recorded and undone by DayZero.cmd -Undo.")
     return ($lines -join $nl)
 }
 
@@ -311,23 +388,31 @@ function New-DzPlan {
         }
     }
 
-    $debloat = if ($opt.ContainsKey('debloat') -and $opt.debloat) { [string]$opt.debloat } else { [string]$Mode.debloat }
-    if ($debloat -and $debloat -ne 'none') {
-        & $add 'debloat' ("Remove preinstalled bloat ({0})" -f $debloat) 'debloat' 'Tweaks' @{ profile = $debloat } @('restorePoint')
+    $explicit = $opt.ContainsKey('explicitTweaks') -and [bool]$opt.explicitTweaks
+    $levelId = $null
+    if ($opt.ContainsKey('debloat')) { $levelId = Resolve-DzDebloatLevelId -Config $Config -Id ([string]$opt.debloat) }
+    if (-not $levelId) { $levelId = Resolve-DzDebloatLevelId -Config $Config -Id ([string](Get-DzProperty $Mode 'debloat' '')) }
+    if (-not $levelId -and $Config.debloat) { $levelId = Get-DzDefaultDebloatLevel -Config $Config }
+    $level = if ($levelId) { Get-DzDebloatLevel -Config $Config -Id $levelId } else { $null }
+    if ($level -and $level.rank -gt 0) {
+        $keepApps = @($(if ($opt.ContainsKey('apps')) { $opt.apps } else { @() }) | Where-Object { $_ })
+        & $add 'debloat' ("Remove preinstalled apps ({0} clean-up)" -f $level.title) 'debloat' 'Tweaks' @{ level = $level.id; keepApps = $keepApps } @('restorePoint')
     }
-    foreach ($rid in @($(if ($opt.ContainsKey('removals')) { $opt.removals } else { @() }))) {
-        if (-not $rid) { continue }
+    $removalIds = New-Object System.Collections.Generic.List[string]
+    foreach ($rid in @($(if ($opt.ContainsKey('removals')) { $opt.removals } else { @() }))) { if ($rid -and -not $removalIds.Contains([string]$rid)) { $removalIds.Add([string]$rid) } }
+    if (-not $explicit -and $level) { foreach ($rid in @($level.removals)) { if (-not $removalIds.Contains([string]$rid)) { $removalIds.Add([string]$rid) } } }
+    foreach ($rid in $removalIds) {
         $r = @(Get-DzProperty $Config.debloat 'optionalRemovals' @()) | Where-Object { $_.id -eq $rid } | Select-Object -First 1
         if ($r) { & $add "remove:$rid" ([string]$r.title) 'removal' 'Tweaks' @{ id = $rid } @('restorePoint') }
     }
 
     $tweakIds = New-Object System.Collections.Generic.List[string]
-    $explicit = $opt.ContainsKey('explicitTweaks') -and [bool]$opt.explicitTweaks
     if (-not $explicit) {
         foreach ($t in @($Mode.tweaks)) {
             $item = Get-DzCatalogItem -Catalog $Config.tweaks -Collection 'tweaks' -Id $t
             if ($item -and -not [bool](Get-DzProperty $item 'optional' $false) -and -not $tweakIds.Contains($t)) { $tweakIds.Add($t) }
         }
+        if ($level) { foreach ($t in @($level.tweaks)) { if (-not $tweakIds.Contains([string]$t)) { $tweakIds.Add([string]$t) } } }
     }
     foreach ($t in @($(if ($opt.ContainsKey('tweaks')) { $opt.tweaks } else { @() }))) { if ($t -and -not $tweakIds.Contains($t)) { $tweakIds.Add($t) } }
     $late = New-Object System.Collections.Generic.List[object]
@@ -354,4 +439,7 @@ function New-DzPlan {
     return , $steps.ToArray()
 }
 
-Export-ModuleMember -Function @('Test-DzApplicable', 'Test-DzInMode', 'Get-DzSelectionValue', 'Get-DzReviewModel', 'Get-DzModeSummary', 'ConvertTo-DzPlanOption', 'New-DzPlan')
+Export-ModuleMember -Function @(
+    'Test-DzApplicable', 'Test-DzInMode', 'Get-DzSelectionValue', 'Get-DzReviewModel', 'Set-DzReviewLevel', 'Get-DzModeSummary',
+    'Get-DzDebloatLevelSummary', 'ConvertTo-DzPlanOption', 'New-DzPlan'
+)

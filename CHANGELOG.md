@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.8.0 - clean-up levels from WinUtil
+- New **clean-up level** choice in the builder, separate from the mode: **Clear**, **Minimal**,
+  **Standard** (default) and **Advanced**, modelled on Chris Titus Tech's WinUtil presets.
+  On the new PC the level is pre-selected and works like WinUtil's preset buttons.
+- New tweaks from WinUtil's presets: telemetry off, trimmed services, WPBT off, activity
+  history, location and Delivery Optimization sharing off, 'End task' on the taskbar, generic
+  folder views, temp and component clean-up, Recall/Notepad AI off, classic right-click menu.
+- New reversible action types: service start type, registry key, machine environment
+  variable; temp and DISM component clean-up. Windows Update, Defender, firewall and Store
+  services are refused in code.
+- App removal lists per level (WinUtil's default AppX selection at Standard); Teams is kept
+  when you install it. Calculator, Clock, Sticky Notes, Sound Recorder and Quick Assist stay.
+- Privacy tweaks moved from the modes into the levels. Old level names (none/light/full) and
+  Custom picks from 0.7 builders still work.
+
 ## 0.7.0 - Custom mode and the full app catalog
 - New **Custom** mode: pick every app, Microsoft 365, clean-up and tweaks in the builder
   (**CHOOSE APPS...**); the picks arrive pre-ticked on the new PC and can still be changed.

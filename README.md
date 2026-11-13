@@ -3,7 +3,7 @@
 A USB stick that installs Windows and then sets the PC up for you: think **Ninite + an
 unattended Windows installer + a tweak tool**, in a neon synthwave GUI.
 
-> **Status: v0.7.0, all six stages built.** 543 automated tests and static checks pass,
+> **Status: v0.8.0, all six stages built.** 586 automated tests and static checks pass,
 > including a complete dry run of every mode. **It has not run on real Windows yet**: the
 > GUI (WPF) and the Windows-only steps can only be tested on Windows. Do the VM test in
 > [TESTING.md](TESTING.md) before you use it on a real PC.
@@ -26,18 +26,21 @@ unattended Windows installer + a tweak tool**, in a neon synthwave GUI.
 2. Get DayZero: in GitHub Desktop **Clone** `acepov2008/DayZero`, or on GitHub use
    **Code > Download ZIP** (then right-click the ZIP > **Properties** > tick **Unblock** before extracting).
 3. Double-click **`Build-DayZeroUSB.cmd`** and accept the admin prompt.
-4. Pick the stick, fill in your account, region and default mode, press **WRITE TO USB**.
+4. Pick the stick, fill in your account, region, default mode and clean-up level, press **WRITE TO USB**.
 5. Boot the target PC from the stick (boot menu key: often F12, F11, F8 or Esc), pick the disk
    when Setup asks, and let it run.
 
 ## The four modes
 
-| | Apps | Tweaks | Debloat |
-| --- | --- | --- | --- |
-| 🎮 **Gaming** | Chrome, Steam, Epic Games Launcher, Discord, OBS Studio, MSI Afterburner, HWiNFO, WizTree + your graphics card's app | all gaming tweaks (below) | full |
-| 💼 **Office** | Microsoft 365 Apps (Word, Excel, PowerPoint, Outlook, OneNote), Chrome, Acrobat Reader, Spotify, VLC, 7-Zip, Notepad++, Everything, WizTree. *Optional: LibreOffice* | no promoted apps | light |
-| 🧰 **Everything** | Gaming + Office + PowerToys, VS Code, Windows Terminal (Windows 10), Visual C++ 2015-2022, .NET 10, DirectX runtime. *Optional: .NET 8* | Gaming's | full |
-| 🎛️ **Custom** | You pick every app in the builder (**CHOOSE APPS...**) or on the new PC | the ones you tick | the level you pick |
+| | Apps | Mode tweaks |
+| --- | --- | --- |
+| 🎮 **Gaming** | Chrome, Steam, Epic Games Launcher, Discord, OBS Studio, MSI Afterburner, HWiNFO, WizTree + your graphics card's app | all gaming tweaks (below) |
+| 💼 **Office** | Microsoft 365 Apps (Word, Excel, PowerPoint, Outlook, OneNote), Chrome, Acrobat Reader, Spotify, VLC, 7-Zip, Notepad++, Everything, WizTree. *Optional: LibreOffice* | none |
+| 🧰 **Everything** | Gaming + Office + PowerToys, VS Code, Windows Terminal (Windows 10), Visual C++ 2015-2022, .NET 10, DirectX runtime. *Optional: .NET 8* | Gaming's |
+| 🎛️ **Custom** | You pick every app in the builder (**CHOOSE APPS...**) or on the new PC | the ones you tick |
+
+How much bloat and data collection to remove is a **separate choice**, the clean-up level
+(below), so any mode can be combined with any level.
 
 The review screen on the new PC always shows the **whole catalog by category**, with the
 mode's apps ticked, so any mode can be adjusted: web browsers (Chrome, Firefox, Opera, Brave,
@@ -62,6 +65,7 @@ Everything is in editable JSON: `kit\config\modes.json`, `apps.json`, `office.js
 | **Edition: my product key** | Your key picks the edition and activates. Stored in plain text on the stick. |
 | **Password** | Stored in `autounattend.xml` as **base64, which is not encryption**. Use **Generate a temporary password**; Windows asks for a new one after DayZero finishes. |
 | **Sign in automatically** | Lets the wizard carry on after restarts. DayZero turns it off and deletes the stored password at the end. |
+| **Clean-up level** | Clear, Minimal, Standard *(default)* or Advanced, for any mode; the box below the cards lists what the level changes and removes. |
 | **Dry run** | The wizard only logs what it would do. |
 | **Offline installers** | Puts App Installer (winget) and Microsoft's Office Deployment Tool on the stick (~250 MB). |
 | **Microsoft 365 plan** | Personal/Family, Business or Enterprise. You activate by signing in. |
@@ -75,18 +79,45 @@ summary (activation status, **Retry failed steps**, download links, Finish). Res
 announced with a countdown and the wizard picks up where it left off. You can pause, or close
 the window; it continues at the next sign-in.
 
-## Tweaks, debloat and undo
+## Clean-up levels (from Chris Titus Tech's WinUtil)
 
-Every tweak in `tweaks.json` says **what** it changes and **why**. The old value is saved to
-`C:\DayZero\backup\tweaks.json` before anything changes, and
+The four buttons of [WinUtil](https://github.com/ChrisTitusTech/winutil)'s tweaks tab, as a
+choice in the builder. Each level also does everything the levels above it do. On the new PC
+the level is pre-selected on the review screen, and picking another one there re-ticks its
+switches, like WinUtil's preset buttons; every switch can still be changed by hand.
+
+| Level | Changes | Removes |
+| --- | --- | --- |
+| **Clear** | nothing | nothing |
+| **Minimal** | telemetry off (lowest level the edition allows, no ad ID, no tailored experiences, DiagTrack and Error Reporting services off), background services trimmed, no promoted apps, no programs from the firmware (WPBT) | third-party promo apps: Candy Crush, TikTok, Netflix/Disney+/Prime links, Facebook, Instagram, LinkedIn... |
+| **Standard** *(default)* | + activity history, location and Delivery Optimization sharing off, "End task" on the taskbar, generic folder views, temp files and superseded update files cleaned | + Clipchamp, News, Weather, Bing Search, Copilot, Microsoft 365 hub, Solitaire, Get Help, Feedback Hub, Power Automate, To Do, Dev Home, Tips, Cortana, Skype... |
+| **Advanced** | + Copilot hidden, Recall snapshots and Notepad AI off, Widgets off, no Bing results in Start, classic right-click menu | + OneDrive, new Outlook, preinstalled Teams (kept if you install Teams), Phone Link, Movies & TV, Maps, Family Safety |
+
+Where DayZero differs from WinUtil, on purpose (full list in `debloat.json` > `winutil`):
+
+* **Defender's sample submission stays on** (WinUtil's Telemetry turns it off): DayZero never weakens Defender.
+* **Internet Connection Sharing stays on** (WinUtil's Services disables it): it would break Mobile hotspot.
+* **Disk clean-up keeps updates uninstallable** (no `/ResetBase`), and skips `cleanmgr`, which waits for a click.
+* **Calculator, Clock, Sticky Notes, Sound Recorder and Quick Assist are kept** (WinUtil's default AppX list removes them).
+* **Policies instead of hacks**: Widgets and Windows AI are turned off with documented Group Policy
+  settings; no file-permission trick on the Store's database, no undocumented Start menu flag.
+
+## Tweaks and undo
+
+Every tweak in `tweaks.json` says **what** it changes and **why**. The old value (registry
+value, service start type, environment variable) is saved to `C:\DayZero\backup\tweaks.json`
+before anything changes, and
 
 ```
 C:\DayZero\DayZero.cmd -Undo
 ```
 
 puts every tweak back and reinstalls removed apps. If no restore point can be made, no tweak
-or removal runs. DayZero **never** touches services, Windows Update or Microsoft Defender
-(enforced in code, not just in the JSON). No placebo "registry boosters".
+or removal runs. DayZero **never** touches Windows Update, Microsoft Defender, the firewall or
+the Store's services or settings (enforced in code, not just in the JSON), and runs no scripts
+from the JSON. No placebo "registry boosters".
+
+Mode tweaks:
 
 | Tweak | Gaming | Office | Notes |
 | --- | :-: | :-: | --- |
@@ -94,18 +125,13 @@ or removal runs. DayZero **never** touches services, Windows Update or Microsoft
 | Hardware-accelerated GPU scheduling | ✅ | | real GPUs only; restart |
 | Mouse acceleration off | ✅ | | sign out |
 | Store apps not running in the background | ✅ | | desktop programs unaffected |
-| No Bing web results in Start | ✅ | | |
-| Widgets / News and interests off, Copilot hidden | ✅ | | |
-| Diagnostic data at the lowest level the edition allows | ✅ | | Required on Home/Pro |
-| No auto-installed promoted apps or Start suggestions | ✅ | ✅ | |
 | Launchers and chat apps don't auto-start | ✅ | | same switch as Task Manager |
 | Ultimate/High performance power plan | ✅ desktops | | **laptops: off by default, battery warning** |
 | Memory Integrity / VBS off | optional, off | | **security trade-off warning** |
 | Xbox Game Bar off | optional, off | | warning |
 
-**Debloat:** full for Gaming/Everything, light for Office. The Microsoft Store, Calculator,
-Photos, winget, Windows Security, Xbox/Game Pass parts and app frameworks are always kept.
-Removing OneDrive is an optional switch (off).
+The Microsoft Store, Calculator, Photos, Notepad, Paint, Snipping Tool, winget, Windows
+Security, Xbox/Game Pass parts and app frameworks are never removed, whatever the level.
 
 ## Drivers and Windows Update
 
@@ -139,6 +165,7 @@ once (digital licence). The summary shows the result. No activators or bypass sc
 * Only documented answer-file settings; no BypassNRO or other OOBE hacks.
 * Passwords in the answer file are base64 (warned about); temporary-password option.
 * Restore point before tweaks; every tweak recorded and reversible; dry-run mode.
+* Windows Update, Defender, the firewall and the Store are never reconfigured, at any clean-up level.
 * Downloads come only from Microsoft or the vendor; installers must be signed by them.
 
 ## What is on the stick
@@ -190,3 +217,9 @@ every mode, and static checks: PowerShell 5.1 compatibility, CRLF batch files, a
 control, resource and animation target in the XAML.
 
 See [CHANGELOG.md](CHANGELOG.md) for what each stage added.
+
+## Credits
+
+The clean-up levels are modelled on the presets of Chris Titus Tech's
+[WinUtil](https://github.com/ChrisTitusTech/winutil) (MIT licence); DayZero's code is its own.
+See `THIRD-PARTY-NOTICES.md`.

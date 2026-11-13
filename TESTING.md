@@ -130,6 +130,17 @@ changing OOBE, so results can differ between builds.
 - [ ] Builder: clicking each mode card updates "What this mode includes"; Custom shows
       **CHOOSE APPS...**, and the picks (e.g. Telegram, WinRAR, Claude) appear pre-ticked on
       the new PC's review screen.
+- [ ] Builder: each CLEAN-UP LEVEL card updates "What this level does"; the level you pick is
+      pre-selected on the new PC's review screen ("Clean-up level").
+- [ ] Review screen: picking Minimal / Standard / Advanced / Clear re-ticks the switches under
+      "Privacy and clean-up" (like WinUtil's preset buttons) and leaves the mode's tweaks alone.
+- [ ] After a Standard run: Settings > Privacy & security > Location is off; Settings > System >
+      For developers > End task is on; `sc qc DiagTrack` shows DISABLED; Clipchamp and News are
+      gone, Calculator and Sticky Notes are still there.
+- [ ] After an Advanced run: right-click in Explorer shows the full classic menu (after signing
+      out); OneDrive is uninstalled; Mobile hotspot still works (Settings > Network & internet).
+- [ ] `DayZero.cmd -Undo` after a Standard run: DiagTrack is Automatic again
+      (`sc qc DiagTrack`), location is allowed again, removed apps reinstall from the Store.
 - [ ] Review screen: compression allows only one of 7-Zip / WinRAR / None; WhatsApp installs
       from the Microsoft Store; Telegram, Claude, Spotify and Discord install for the signed-in
       user (they appear in that user's Start menu).

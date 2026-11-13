@@ -26,6 +26,8 @@ $script:GeneratedPassword = $null
 $script:ThisPcFirmware = $null
 $script:BuilderConfig = $null
 $script:SelectedMode = 'gaming'
+$script:SelectedLevel = 'standard'
+$script:LevelCards = @()
 $script:ModeCards = @()
 $script:CustomSelection = $null
 $script:ui = $null
@@ -374,6 +376,7 @@ function Get-BuilderInput {
         autoLogon         = $autoLogon
         autoLogonCount    = 10
         defaultMode       = $mode
+        debloatLevel      = [string]$script:SelectedLevel
         dryRun            = $dryRun
         officePlan        = [string]$ui.OfficePlanCombo.SelectedValue
         uiLanguage        = $display
@@ -398,40 +401,50 @@ function Get-BuilderInput {
 # Default mode, "what's included" and the Custom picker
 # ------------------------------------------------------------------------------------
 
+function New-BuilderCard {
+    <# One big radio card (mode or clean-up level). #>
+    param([string]$Group, [string]$Id, [string]$Emoji, [string]$Title, [string]$Tagline, [string]$AccessibleName)
+    $rb = New-Object System.Windows.Controls.RadioButton
+    $rb.GroupName = $Group
+    $rb.Style = Get-DzResource 'DzModeCard'
+    $rb.Tag = $Id
+    $rb.Margin = New-Object System.Windows.Thickness(5)
+    $panel = New-Object System.Windows.Controls.StackPanel
+    if ($Emoji) {
+        $e = New-Object System.Windows.Controls.TextBlock
+        $e.Text = $Emoji
+        $e.FontSize = 26
+        $e.FontFamily = Get-DzResource 'DzEmoji'
+        $e.HorizontalAlignment = 'Center'
+        [void]$panel.Children.Add($e)
+    }
+    $t = New-Object System.Windows.Controls.TextBlock
+    $t.Text = $Title
+    $t.FontSize = 14
+    $t.FontWeight = [System.Windows.FontWeights]::Black
+    $t.HorizontalAlignment = 'Center'
+    $t.Margin = New-Object System.Windows.Thickness(0, 4, 0, 0)
+    [void]$panel.Children.Add($t)
+    $g = New-Object System.Windows.Controls.TextBlock
+    $g.Text = $Tagline
+    $g.FontSize = 11
+    $g.Foreground = Get-DzResource 'DzMuted'
+    $g.TextWrapping = [System.Windows.TextWrapping]::Wrap
+    $g.TextAlignment = 'Center'
+    [void]$panel.Children.Add($g)
+    $rb.Content = $panel
+    [System.Windows.Automation.AutomationProperties]::SetName($rb, $AccessibleName)
+    return $rb
+}
+
 function Initialize-BuilderModeCards {
     $ui = $script:ui
     $ui.ModeCardsPanel.Children.Clear()
     $cards = New-Object System.Collections.Generic.List[object]
-    $style = Get-DzResource 'DzModeCard'
     foreach ($m in @(Get-DzModeList -Config $script:BuilderConfig)) {
-        $rb = New-Object System.Windows.Controls.RadioButton
-        $rb.GroupName = 'Mode'
-        $rb.Style = $style
-        $rb.Tag = [string]$m.id
-        $rb.Margin = New-Object System.Windows.Thickness(5)
-        $panel = New-Object System.Windows.Controls.StackPanel
-        $emoji = New-Object System.Windows.Controls.TextBlock
-        $emoji.Text = [string](Get-DzProperty $m 'emoji' '')
-        $emoji.FontSize = 26
-        $emoji.FontFamily = Get-DzResource 'DzEmoji'
-        $emoji.HorizontalAlignment = 'Center'
-        [void]$panel.Children.Add($emoji)
-        $title = New-Object System.Windows.Controls.TextBlock
-        $title.Text = [string](Get-DzProperty $m 'title' $m.id)
-        $title.FontSize = 14
-        $title.FontWeight = [System.Windows.FontWeights]::Black
-        $title.HorizontalAlignment = 'Center'
-        $title.Margin = New-Object System.Windows.Thickness(0, 4, 0, 0)
-        [void]$panel.Children.Add($title)
-        $tag = New-Object System.Windows.Controls.TextBlock
-        $tag.Text = [string](Get-DzProperty $m 'tagline' '')
-        $tag.FontSize = 11
-        $tag.Foreground = Get-DzResource 'DzMuted'
-        $tag.TextWrapping = [System.Windows.TextWrapping]::Wrap
-        $tag.TextAlignment = 'Center'
-        [void]$panel.Children.Add($tag)
-        $rb.Content = $panel
-        [System.Windows.Automation.AutomationProperties]::SetName($rb, ('{0} mode: {1}' -f $title.Text, $tag.Text))
+        $title = [string](Get-DzProperty $m 'title' $m.id)
+        $tagline = [string](Get-DzProperty $m 'tagline' '')
+        $rb = New-BuilderCard -Group 'Mode' -Id ([string]$m.id) -Emoji ([string](Get-DzProperty $m 'emoji' '')) -Title $title -Tagline $tagline -AccessibleName ('{0} mode: {1}' -f $title, $tagline)
         $rb.Add_Checked({
                 param($src)
                 try { Select-BuilderMode -Id ([string]$src.Tag) } catch { Write-BuilderLog ('Mode preview failed: ' + $_.Exception.Message) }
@@ -440,6 +453,31 @@ function Initialize-BuilderModeCards {
         $cards.Add($rb)
     }
     $script:ModeCards = $cards.ToArray()
+}
+
+function Initialize-BuilderLevelCards {
+    $ui = $script:ui
+    $ui.LevelCardsPanel.Children.Clear()
+    $cards = New-Object System.Collections.Generic.List[object]
+    foreach ($l in @(Get-DzDebloatLevelList -Config $script:BuilderConfig)) {
+        $rb = New-BuilderCard -Group 'Level' -Id ([string]$l.id) -Emoji '' -Title ([string]$l.title).ToUpperInvariant() -Tagline ([string]$l.tagline) -AccessibleName ('{0} clean-up: {1}' -f $l.title, $l.tagline)
+        $rb.Add_Checked({
+                param($src)
+                try { Select-BuilderLevel -Id ([string]$src.Tag) } catch { Write-BuilderLog ('Clean-up level preview failed: ' + $_.Exception.Message) }
+            })
+        [void]$ui.LevelCardsPanel.Children.Add($rb)
+        $cards.Add($rb)
+    }
+    $script:LevelCards = $cards.ToArray()
+}
+
+function Select-BuilderLevel {
+    param([Parameter(Mandatory = $true)][string]$Id)
+    $script:SelectedLevel = $Id
+    foreach ($c in $script:LevelCards) { if ([string]$c.Tag -eq $Id -and -not $c.IsChecked) { $c.IsChecked = $true } }
+    $level = Get-DzDebloatLevel -Config $script:BuilderConfig -Id $Id
+    $script:ui.LevelIncludesTitle.Text = ('WHAT {0} DOES' -f ([string]$level.title).ToUpperInvariant())
+    $script:ui.LevelIncludesText.Text = Get-DzDebloatLevelSummary -Config $script:BuilderConfig -LevelId $Id
 }
 
 function Select-BuilderMode {
@@ -460,12 +498,14 @@ function Update-ModeIncludes {
 
 function Show-CustomPicker {
     $mode = Get-DzMode -Config $script:BuilderConfig -Id $script:SelectedMode
-    $model = Get-DzReviewModel -Mode $mode -System $null -Config $script:BuilderConfig -Preselect $script:CustomSelection
+    $model = Get-DzReviewModel -Mode $mode -System $null -Config $script:BuilderConfig -Preselect $script:CustomSelection -DebloatLevel $script:SelectedLevel
     $path = Join-Path $script:BuilderRoot 'PickerWindow.xaml'
     $picker = Import-DzXaml -Path $path
     $names = Get-DzNamedElement -Root $picker -XamlPath $path
+    # The clean-up level and its privacy switches are picked on the main window (CLEAN-UP LEVEL).
+    $pickerOptions = @($model.Options | Where-Object { $_.Kind -eq 'removal' -or ($_.Kind -eq 'tweak' -and -not $_.LevelOwned) })
     $controls = @(Add-DzChoiceGroup -Panel $names.PickerAppsPanel -Items @($model.Apps) -GroupWidth 235 -RadioPrefix 'papp') +
-    @(Add-DzChoiceGroup -Panel $names.PickerOptionsPanel -Items @($model.Options) -RadioPrefix 'popt')
+    @(Add-DzChoiceGroup -Panel $names.PickerOptionsPanel -Items $pickerOptions -RadioPrefix 'popt')
     $countText = $names.PickerCountText
     $updateCount = {
         $n = @($controls | Where-Object { $_.IsChecked -eq $true -and $_.Tag.Kind -in @('app', 'office') }).Count
@@ -475,7 +515,7 @@ function Show-CustomPicker {
     & $updateCount
     $names.PickerNoneButton.Add_Click({
             foreach ($c in $controls) {
-                if ($c -is [System.Windows.Controls.RadioButton]) { $c.IsChecked = ($c.Tag.Kind -eq 'none' -or ($c.Tag.Kind -eq 'debloat' -and $c.Tag.Id -eq 'none')) }
+                if ($c -is [System.Windows.Controls.RadioButton]) { $c.IsChecked = ($c.Tag.Kind -eq 'none') }
                 else { $c.IsChecked = $false }
             }
             & $updateCount
@@ -487,15 +527,14 @@ function Show-CustomPicker {
     if ([string]$picker.Tag -ne 'ok') { return }
 
     Update-DzChoiceItem -Controls $controls
-    $opt = ConvertTo-DzPlanOption -Apps @($model.Apps) -Options @($model.Options)
+    $opt = ConvertTo-DzPlanOption -Apps @($model.Apps) -Options $pickerOptions
     $script:CustomSelection = [ordered]@{
         apps     = @($opt.apps)
         office   = [bool]$opt.office
-        debloat  = [string]$opt.debloat
         tweaks   = @($opt.tweaks)
         removals = @($opt.removals)
     }
-    Write-BuilderLog ("Custom picks: {0} app(s){1}, clean-up {2}, {3} tweak(s)." -f @($opt.apps).Count, $(if ($opt.office) { ' + Microsoft 365' } else { '' }), $opt.debloat, @($opt.tweaks).Count)
+    Write-BuilderLog ("Custom picks: {0} app(s){1}, {2} tweak(s), {3} removal(s)." -f @($opt.apps).Count, $(if ($opt.office) { ' + Microsoft 365' } else { '' }), @($opt.tweaks).Count, @($opt.removals).Count)
     Update-ModeIncludes
 }
 
@@ -549,7 +588,7 @@ function Invoke-Write {
     if ($script:GeneratedPassword -and $script:ui.PasswordBox1.Password -ceq $script:GeneratedPassword) {
         $summary.Add("Temporary password: $($script:GeneratedPassword)   <- write it down")
     }
-    $summary.Add(("Default mode: {0}{1}" -f $data.Settings.defaultMode, $(if ($data.Settings.dryRun) { ' (DRY RUN)' } else { '' })))
+    $summary.Add(("Default mode: {0}, clean-up level: {1}{2}" -f $data.Settings.defaultMode, $data.Settings.debloatLevel, $(if ($data.Settings.dryRun) { ' (DRY RUN)' } else { '' })))
     $summary.Add('')
     $summary.Add('Booting a PC from this stick starts an automatic Windows install, but Setup will always stop and let you choose the disk.')
     if ($data.Warnings.Count -gt 0) {
@@ -675,6 +714,9 @@ function Start-Builder {
     Initialize-BuilderModeCards
     $defaultMode = [string](Get-DzProperty $script:BuilderConfig.modes 'defaultMode' 'gaming')
     Select-BuilderMode -Id $defaultMode
+    Initialize-BuilderLevelCards
+    $defaultLevel = Get-DzDefaultDebloatLevel -Config $script:BuilderConfig
+    if ($defaultLevel) { Select-BuilderLevel -Id $defaultLevel }
     $ui.OfficePlanCombo.ItemsSource = @(
         (New-ListItem -Label 'Microsoft 365 Personal / Family' -Value 'personal'),
         (New-ListItem -Label 'Microsoft 365 Business Standard / Premium' -Value 'business'),

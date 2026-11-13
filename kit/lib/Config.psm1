@@ -58,8 +58,9 @@ function Get-DzModeList {
 function Get-DzMode {
     <#
         Returns one mode with "includes" resolved: Everything = Gaming + Office + its own
-        extras. Apps and tweaks are de-duplicated, in order. Debloat takes the most
-        thorough profile ('full' beats 'light'); office is on if any part has it.
+        extras. Apps and tweaks are de-duplicated, in order. debloat is the mode's suggested
+        clean-up level (the most thorough of its parts, '' when none is set); the builder's
+        choice overrides it. office is on if any part has it.
     #>
     [CmdletBinding()]
     param(
@@ -70,7 +71,9 @@ function Get-DzMode {
     $visited = New-Object System.Collections.Generic.List[string]
     $apps = New-Object System.Collections.Generic.List[string]
     $tweaks = New-Object System.Collections.Generic.List[string]
-    $state = @{ debloat = 'none'; office = $false }
+    $state = @{ debloat = ''; office = $false }
+    $rank = @{}
+    foreach ($l in @(Get-DzDebloatLevelList -Config $Config)) { $rank[[string]$l.id] = [int]$l.rank }
 
     $collect = $null
     $collect = {
@@ -82,9 +85,8 @@ function Get-DzMode {
         foreach ($inc in @(Get-DzProperty $m 'includes' @())) { & $collect $inc }
         foreach ($a in @(Get-DzProperty $m 'apps' @())) { if (-not $apps.Contains($a)) { $apps.Add($a) } }
         foreach ($t in @(Get-DzProperty $m 'tweaks' @())) { if (-not $tweaks.Contains($t)) { $tweaks.Add($t) } }
-        $d = [string](Get-DzProperty $m 'debloat' 'none')
-        $rank = @{ none = 0; light = 1; full = 2 }
-        if ($rank.ContainsKey($d) -and $rank[$d] -gt $rank[$state.debloat]) { $state.debloat = $d }
+        $d = Resolve-DzDebloatLevelId -Config $Config -Id ([string](Get-DzProperty $m 'debloat' ''))
+        if ($d -and ($state.debloat -eq '' -or $rank[$d] -gt $rank[$state.debloat])) { $state.debloat = $d }
         if ([bool](Get-DzProperty $m 'office' $false)) { $state.office = $true }
     }
     & $collect $Id
@@ -104,6 +106,79 @@ function Get-DzMode {
         debloat     = $state.debloat
         office      = $state.office
     }
+}
+
+# ---------------------------------------------------------------------------------------
+# Clean-up levels (debloat.json), modelled on WinUtil's Clear / Minimal / Standard / Advanced
+# ---------------------------------------------------------------------------------------
+
+$script:BuiltInLevelAliases = @{ none = 'clear'; light = 'minimal'; full = 'standard' }
+
+function Get-DzDebloatLevelList {
+    <#
+        The clean-up levels in order. Each level also does what the levels before it do, so
+        tweaks and removals here are cumulative. rank: 0 = the first level (Clear).
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][hashtable]$Config)
+    $tweaks = New-Object System.Collections.Generic.List[string]
+    $removals = New-Object System.Collections.Generic.List[string]
+    $out = New-Object System.Collections.Generic.List[object]
+    $rank = 0
+    foreach ($l in @(Get-DzProperty $Config.debloat 'levels' @())) {
+        if ($null -eq $l) { continue }
+        foreach ($t in @(Get-DzProperty $l 'tweaks' @())) { if ($t -and -not $tweaks.Contains([string]$t)) { $tweaks.Add([string]$t) } }
+        foreach ($r in @(Get-DzProperty $l 'removals' @())) { if ($r -and -not $removals.Contains([string]$r)) { $removals.Add([string]$r) } }
+        $out.Add([pscustomobject]@{
+                id          = [string]$l.id
+                title       = [string](Get-DzProperty $l 'title' $l.id)
+                tagline     = [string](Get-DzProperty $l 'tagline' '')
+                description = [string](Get-DzProperty $l 'description' '')
+                rank        = $rank
+                ownTweaks   = @(Get-DzProperty $l 'tweaks' @())
+                tweaks      = $tweaks.ToArray()
+                removals    = $removals.ToArray()
+            })
+        $rank++
+    }
+    # No leading comma: callers wrap the result in @().
+    return $out.ToArray()
+}
+
+function Resolve-DzDebloatLevelId {
+    <# A level id (or an old name: none / light / full) -> the level's id; $null when unknown or empty. #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory = $true)][hashtable]$Config, [AllowNull()][AllowEmptyString()][string]$Id)
+    if (-not $Id) { return $null }
+    $ids = @(Get-DzDebloatLevelList -Config $Config | ForEach-Object { $_.id })
+    $match = @($ids | Where-Object { $_ -ieq $Id }) | Select-Object -First 1
+    if ($match) { return [string]$match }
+    $alias = Get-DzProperty (Get-DzProperty $Config.debloat 'aliases' $null) $Id.ToLowerInvariant() $null
+    if (-not $alias -and $script:BuiltInLevelAliases.ContainsKey($Id.ToLowerInvariant())) { $alias = $script:BuiltInLevelAliases[$Id.ToLowerInvariant()] }
+    if ($alias -and ($ids -contains [string]$alias)) { return [string]$alias }
+    return $null
+}
+
+function Get-DzDefaultDebloatLevel {
+    <# debloat.json defaultLevel, or the first level. $null when there are no levels. #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory = $true)][hashtable]$Config)
+    $d = Resolve-DzDebloatLevelId -Config $Config -Id ([string](Get-DzProperty $Config.debloat 'defaultLevel' ''))
+    if ($d) { return $d }
+    $first = @(Get-DzDebloatLevelList -Config $Config) | Select-Object -First 1
+    if ($first) { return [string]$first.id }
+    return $null
+}
+
+function Get-DzDebloatLevel {
+    <# One level (cumulative tweaks / removals), by id or old name; $null when unknown. #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][hashtable]$Config, [AllowNull()][AllowEmptyString()][string]$Id)
+    $resolved = Resolve-DzDebloatLevelId -Config $Config -Id $Id
+    if (-not $resolved) { return $null }
+    return (@(Get-DzDebloatLevelList -Config $Config | Where-Object { $_.id -eq $resolved }) | Select-Object -First 1)
 }
 
 function Get-DzCatalogItem {
@@ -172,8 +247,29 @@ function Test-DzConfig {
                 if (-not $tweakIds.ContainsKey([string]$t)) { $problems.Add("Mode '$($m.id)' lists unknown tweak '$t'.") }
             }
         }
-        $d = [string](Get-DzProperty $m 'debloat' 'none')
-        if ($d -notin @('none', 'light', 'full')) { $problems.Add("Mode '$($m.id)' has unknown debloat profile '$d'.") }
+        $d = [string](Get-DzProperty $m 'debloat' '')
+        if ($d -and $Config.debloat -and -not (Resolve-DzDebloatLevelId -Config $Config -Id $d)) { $problems.Add("Mode '$($m.id)' has unknown clean-up level '$d'.") }
+    }
+    if ($Config.debloat) {
+        $levels = @(Get-DzDebloatLevelList -Config $Config)
+        $levelIds = @($levels | ForEach-Object { $_.id })
+        if ($levels.Count -eq 0) { $problems.Add('debloat.json has no levels.') }
+        if (@($levelIds | Group-Object | Where-Object { $_.Count -gt 1 }).Count -gt 0) { $problems.Add('debloat.json has duplicate level ids.') }
+        $dl = [string](Get-DzProperty $Config.debloat 'defaultLevel' '')
+        if ($dl -and -not (Resolve-DzDebloatLevelId -Config $Config -Id $dl)) { $problems.Add("debloat.json defaultLevel '$dl' is not a level.") }
+        $removalIds = @(@(Get-DzProperty $Config.debloat 'optionalRemovals' @()) | ForEach-Object { [string]$_.id })
+        foreach ($l in @(Get-DzProperty $Config.debloat 'levels' @())) {
+            if ($Config.tweaks) {
+                foreach ($t in @(Get-DzProperty $l 'tweaks' @())) { if (-not $tweakIds.ContainsKey([string]$t)) { $problems.Add("Clean-up level '$($l.id)' lists unknown tweak '$t'.") } }
+            }
+            foreach ($r in @(Get-DzProperty $l 'removals' @())) { if ($removalIds -notcontains [string]$r) { $problems.Add("Clean-up level '$($l.id)' lists unknown removal '$r'.") } }
+        }
+        foreach ($p in @(Get-DzProperty $Config.debloat 'packages' @())) {
+            $pl = [string](Get-DzProperty $p 'level' '')
+            if ($levelIds -notcontains $pl) { $problems.Add("debloat.json package '$($p.name)' has unknown level '$pl'.") }
+            $ua = [string](Get-DzProperty $p 'unlessApp' '')
+            if ($ua -and $Config.apps -and -not $appIds.ContainsKey($ua)) { $problems.Add("debloat.json package '$($p.name)' refers to unknown app '$ua'.") }
+        }
     }
     if ($modes.Count -gt 0) {
         $default = [string](Get-DzProperty $Config.modes 'defaultMode' '')
@@ -185,4 +281,7 @@ function Test-DzConfig {
     return , $problems.ToArray()
 }
 
-Export-ModuleMember -Function @('Get-DzConfig', 'Get-DzProperty', 'Get-DzModeList', 'Get-DzMode', 'Get-DzCatalogItem', 'Test-DzConfig')
+Export-ModuleMember -Function @(
+    'Get-DzConfig', 'Get-DzProperty', 'Get-DzModeList', 'Get-DzMode', 'Get-DzCatalogItem', 'Test-DzConfig',
+    'Get-DzDebloatLevelList', 'Resolve-DzDebloatLevelId', 'Get-DzDefaultDebloatLevel', 'Get-DzDebloatLevel'
+)

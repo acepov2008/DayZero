@@ -242,7 +242,9 @@ function Show-DzReview {
     $mode = Get-DzMode -Config $script:Config -Id $script:SelectedMode
     $preselect = $null
     if ($mode.custom -and $script:Settings.PSObject.Properties['customSelection']) { $preselect = $script:Settings.customSelection }
-    $review = Get-DzReviewModel -Mode $mode -System $script:System -Config $script:Config -Preselect $preselect
+    # The clean-up level picked in the USB builder (separate from the mode); the mode's suggestion otherwise.
+    $level = if ($script:Settings.PSObject.Properties['debloatLevel']) { [string]$script:Settings.debloatLevel } else { $null }
+    $review = Get-DzReviewModel -Mode $mode -System $script:System -Config $script:Config -Preselect $preselect -DebloatLevel $level
     $ui.ReviewTitleText.Text = ("YOUR PC  {0}  {1} MODE" -f $script:Bullet, $mode.title)
 
     $sys = $script:System
@@ -267,6 +269,7 @@ function Show-DzReview {
     foreach ($c in @(Add-DzChoiceGroup -Panel $ui.OptionsPanel -Items @($review.Options) -RadioPrefix 'opt')) { $controls.Add($c) }
     foreach ($c in @(Add-DzChoiceGroup -Panel $ui.AppsPanel -Items @($review.Apps) -GroupWidth 215 -RadioPrefix 'app')) { $controls.Add($c) }
     $script:ReviewControls = $controls.ToArray()
+    Enable-DzLevelPreset -Controls $script:ReviewControls
     Set-DzVisible $ui.NoOptionsText (@($review.Options).Count -eq 0)
     Set-DzVisible $ui.NoAppsText (@($review.Apps).Count -eq 0)
     $script:Review = $review

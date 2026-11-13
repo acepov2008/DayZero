@@ -157,7 +157,7 @@
                             <StackPanel>
                                 <TextBlock Text="OPTIONS" Style="{StaticResource DzCardTitle}"/>
                                 <TextBlock Style="{StaticResource DzHint}" Margin="0,0,0,8"
-                                           Text="Clean-up level, every tweak and the PC-brand tool. Switches with a warning are off unless you turn them on. Every tweak can be undone with DayZero.cmd -Undo."/>
+                                           Text="Clean-up level (Clear / Minimal / Standard / Advanced, like WinUtil's presets: picking one re-ticks its switches), every tweak and the PC-brand tool. Switches with a warning are off unless you turn them on. Every tweak can be undone with DayZero.cmd -Undo."/>
                                 <StackPanel x:Name="OptionsPanel"/>
                                 <TextBlock x:Name="NoOptionsText" Style="{StaticResource DzHint}" Text="No extra choices for this mode." Visibility="Collapsed"/>
                             </StackPanel>

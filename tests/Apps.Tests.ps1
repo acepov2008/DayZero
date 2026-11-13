@@ -252,7 +252,8 @@ Describe 'Shipped app catalog' {
 Describe 'Review screen: whole catalog, Custom mode and pick-one groups' {
     BeforeAll {
         $script:pc = [pscustomobject]@{ WindowsVersion = 11; Build = 26200; IsLaptop = $false; IsVirtualMachine = $false; GpuVendors = @('NVIDIA'); Architecture = 'amd64'; EditionId = 'Professional'; Brand = 'Other' }
-        function Get-Review { param([string]$Mode, $Pre = $null) Get-DzReviewModel -Mode (Get-DzMode -Config $script:Config -Id $Mode) -System $script:pc -Config $script:Config -Preselect $Pre }
+        function Get-Review { param([string]$Mode, $Pre = $null, [string]$Level = $null) Get-DzReviewModel -Mode (Get-DzMode -Config $script:Config -Id $Mode) -System $script:pc -Config $script:Config -Preselect $Pre -DebloatLevel $Level }
+        function Get-Plan { param([string]$Mode, $R) New-DzPlan -Mode (Get-DzMode -Config $script:Config -Id $Mode) -Options (ConvertTo-DzPlanOption -Apps @($R.Apps) -Options @($R.Options)) -System $script:pc -Config $script:Config | ForEach-Object { $_.id } }
         function Get-Ticked { param($R) @($R.Apps | Where-Object { $_.Checked -and $_.Kind -ne 'none' } | ForEach-Object { $_.Id }) }
     }
     It 'shows the whole catalog in every mode, with only the mode''s apps ticked' {
@@ -277,31 +278,84 @@ Describe 'Review screen: whole catalog, Custom mode and pick-one groups' {
         $r = Get-Review 'custom' @{ apps = @('7zip', 'winrar') }
         @($r.Apps | Where-Object { $_.GroupId -eq 'compression' -and $_.Checked }).Count | Should -Be 1
     }
-    It 'starts Custom with nothing ticked and no clean-up' {
+    It 'starts Custom with nothing ticked and the Clear level when the builder picked no level' {
         $r = Get-Review 'custom'
         @(Get-Ticked $r).Count | Should -Be 0
-        @($r.Options | Where-Object { $_.Kind -eq 'tweak' -and $_.Checked }).Count | Should -Be 0
-        (@($r.Options | Where-Object { $_.Kind -eq 'debloat' -and $_.Checked })[0]).Id | Should -Be 'none'
+        @($r.Options | Where-Object { $_.Kind -in 'tweak', 'removal' -and $_.Checked }).Count | Should -Be 0
+        (@($r.Options | Where-Object { $_.Kind -eq 'debloat' -and $_.Checked })[0]).Id | Should -Be 'clear'
     }
-    It 'pre-ticks the builder''s Custom picks and turns them into the right plan' {
+    It 'pre-ticks the builder''s Custom picks and level, and turns them into the right plan' {
         foreach ($t in @('preflight', 'app', 'office', 'tweak', 'debloat', 'winget')) { if (-not (Test-DzStepType -Type $t)) { throw "missing step type $t" } }
-        $pre = @{ apps = @('chrome', 'telegram', 'whatsapp', 'claude', 'winrar'); office = $true; debloat = 'light'; tweaks = @('game-mode') }
-        $r = Get-Review 'custom' $pre
+        $pre = @{ apps = @('chrome', 'telegram', 'whatsapp', 'claude', 'winrar'); office = $true; tweaks = @('game-mode') }
+        $r = Get-Review 'custom' $pre 'minimal'
         $t = Get-Ticked $r
         foreach ($id in 'chrome', 'telegram', 'whatsapp', 'claude', 'winrar', 'microsoft-365') { $t | Should -Contain $id }
         $opt = ConvertTo-DzPlanOption -Apps @($r.Apps) -Options @($r.Options)
         $opt.office | Should -BeTrue
-        $opt.debloat | Should -Be 'light'
+        $opt.debloat | Should -Be 'minimal'
         $opt.explicitTweaks | Should -BeTrue
         $ids = @(New-DzPlan -Mode (Get-DzMode -Config $script:Config -Id 'custom') -Options $opt -System $script:pc -Config $script:Config | ForEach-Object { $_.id })
-        foreach ($id in 'app:chrome', 'app:telegram', 'app:whatsapp', 'app:claude', 'app:winrar', 'office', 'tweak:game-mode', 'debloat') { $ids | Should -Contain $id }
+        foreach ($id in 'app:chrome', 'app:telegram', 'app:whatsapp', 'app:claude', 'app:winrar', 'office', 'tweak:game-mode', 'debloat', 'tweak:telemetry-off', 'tweak:wpbt-off') { $ids | Should -Contain $id }
         $ids | Should -Not -Contain 'app:microsoft-365'
         $ids | Should -Not -Contain 'app:steam'
-        $ids | Should -Not -Contain 'tweak:telemetry-min'
+        $ids | Should -Not -Contain 'tweak:location-off'
+    }
+    It 'reads the clean-up level of Custom picks from older builders (light = Minimal)' {
+        $r = Get-Review 'custom' @{ apps = @('chrome'); debloat = 'light' }
+        (@($r.Options | Where-Object { $_.Kind -eq 'debloat' -and $_.Checked })[0]).Id | Should -Be 'minimal'
+    }
+    It 'uses the builder''s clean-up level for any mode, the mode''s suggestion otherwise' {
+        (@((Get-Review 'office').Options | Where-Object { $_.Kind -eq 'debloat' -and $_.Checked })[0]).Id | Should -Be 'minimal'
+        (@((Get-Review 'office' $null 'advanced').Options | Where-Object { $_.Kind -eq 'debloat' -and $_.Checked })[0]).Id | Should -Be 'advanced'
+        (@((Get-Review 'gaming' $null 'nonsense').Options | Where-Object { $_.Kind -eq 'debloat' -and $_.Checked })[0]).Id | Should -Be 'standard'
+    }
+    It 'groups the level''s switches under Privacy and clean-up, the mode''s under Tweaks' {
+        $r = Get-Review 'gaming' $null 'standard'
+        ($r.Options | Where-Object { $_.Id -eq 'telemetry-off' }).Group | Should -Be 'Privacy and clean-up'
+        ($r.Options | Where-Object { $_.Id -eq 'telemetry-off' }).LevelOwned | Should -BeTrue
+        ($r.Options | Where-Object { $_.Id -eq 'onedrive' }).Group | Should -Be 'Privacy and clean-up'
+        ($r.Options | Where-Object { $_.Id -eq 'game-mode' }).Group | Should -Be 'Tweaks'
+        ($r.Options | Where-Object { $_.Id -eq 'game-mode' }).LevelOwned | Should -BeFalse
+    }
+    It 'shows the edition-only consumer-experiences policy only on Enterprise and Education' {
+        @((Get-Review 'gaming').Options | ForEach-Object { $_.Id }) | Should -Not -Contain 'consumer-features-off'
+        $edu = [pscustomobject]@{ WindowsVersion = 11; Build = 26200; IsLaptop = $false; IsVirtualMachine = $false; GpuVendors = @(); Architecture = 'amd64'; EditionId = 'Education'; Brand = 'Other' }
+        $r = Get-DzReviewModel -Mode (Get-DzMode -Config $script:Config -Id 'gaming') -System $edu -Config $script:Config
+        ($r.Options | Where-Object { $_.Id -eq 'consumer-features-off' }).Checked | Should -BeTrue
+    }
+    It 'works like WinUtil''s preset buttons: picking a level re-ticks only its switches' {
+        $r = Get-Review 'gaming' $null 'minimal'
+        $opt = { param($id) $r.Options | Where-Object { $_.Id -eq $id } }
+        (& $opt 'telemetry-off').Checked | Should -BeTrue
+        (& $opt 'location-off').Checked | Should -BeFalse
+        (& $opt 'game-mode').Checked = $false     # the user unticks a mode tweak
+        Set-DzReviewLevel -Options @($r.Options) -LevelId 'advanced'
+        foreach ($id in 'telemetry-off', 'location-off', 'classic-context-menu', 'copilot-off', 'onedrive') { (& $opt $id).Checked | Should -BeTrue -Because $id }
+        (& $opt 'game-mode').Checked | Should -BeFalse -Because 'mode tweaks are not part of a level'
+        (& $opt 'advanced').Checked | Should -BeTrue
+        (& $opt 'minimal').Checked | Should -BeFalse
+        Set-DzReviewLevel -Options @($r.Options) -LevelId 'clear'
+        @($r.Options | Where-Object { $_.LevelOwned -and $_.Checked }).Count | Should -Be 0
+        (& $opt 'power-plan').Checked | Should -BeTrue
+        $ids = @(Get-Plan 'gaming' $r)
+        $ids | Should -Not -Contain 'debloat'
+        $ids | Should -Contain 'tweak:power-plan'
+        $ids | Should -Not -Contain 'tweak:telemetry-off'
+    }
+    It 'plans Advanced: OneDrive removal, the extra tweaks, temp and update clean-up last' {
+        $ids = @(Get-Plan 'gaming' (Get-Review 'gaming' $null 'advanced'))
+        foreach ($id in 'debloat', 'remove:onedrive', 'tweak:classic-context-menu', 'tweak:windows-ai-off', 'tweak:temp-files-clean', 'tweak:disk-cleanup') { $ids | Should -Contain $id }
+        [array]::IndexOf($ids, 'tweak:disk-cleanup') | Should -BeGreaterThan ([array]::IndexOf($ids, 'app:steam'))
+        $ids[-1] | Should -Be 'windows-update-final'
+    }
+    It 'keeps the preinstalled Teams when the Teams app is picked' {
+        $r = Get-Review 'custom' @{ apps = @('teams') } 'advanced'
+        $plan = New-DzPlan -Mode (Get-DzMode -Config $script:Config -Id 'custom') -Options (ConvertTo-DzPlanOption -Apps @($r.Apps) -Options @($r.Options)) -System $script:pc -Config $script:Config
+        @(($plan | Where-Object { $_.id -eq 'debloat' }).args.keepApps) | Should -Contain 'teams'
     }
     It 'lets any mode drop its clean-up and tweaks on the review screen' {
         $r = Get-Review 'gaming'
-        foreach ($o in $r.Options) { $o.Checked = ($o.Kind -eq 'debloat' -and $o.Id -eq 'none') }
+        foreach ($o in $r.Options) { $o.Checked = ($o.Kind -eq 'debloat' -and $o.Id -eq 'clear') }
         $opt = ConvertTo-DzPlanOption -Apps @($r.Apps) -Options @($r.Options)
         $ids = @(New-DzPlan -Mode (Get-DzMode -Config $script:Config -Id 'gaming') -Options $opt -System $script:pc -Config $script:Config | ForEach-Object { $_.id })
         $ids | Should -Not -Contain 'debloat'
@@ -312,8 +366,22 @@ Describe 'Review screen: whole catalog, Custom mode and pick-one groups' {
         $g | Should -Match 'Steam'
         $g | Should -Match 'off on laptops'
         $g | Should -Match 'Memory Integrity'
+        $g | Should -Match 'level you pick'
+        $g | Should -Not -Match 'Telemetry' -Because 'privacy tweaks belong to the clean-up level'
         Get-DzModeSummary -Mode (Get-DzMode -Config $script:Config -Id 'custom') -Config $script:Config | Should -Match 'Nothing is ticked yet'
         Get-DzModeSummary -Mode (Get-DzMode -Config $script:Config -Id 'custom') -Config $script:Config -Preselect @{ apps = @('claude') } | Should -Match 'AI assistants: Claude'
+    }
+    It 'describes what each clean-up level does for the builder' {
+        Get-DzDebloatLevelSummary -Config $script:Config -LevelId 'clear' | Should -Match 'exactly as Microsoft ships it'
+        $std = Get-DzDebloatLevelSummary -Config $script:Config -LevelId 'standard'
+        $std | Should -Match 'Telemetry off'
+        $std | Should -Match 'Clipchamp'
+        $std | Should -Match 'Calculator'
+        $std | Should -Not -Match 'Outlook'
+        $adv = Get-DzDebloatLevelSummary -Config $script:Config -LevelId 'advanced'
+        $adv | Should -Match 'Outlook'
+        $adv | Should -Match 'Remove OneDrive'
+        $adv | Should -Match 'Classic right-click menu'
     }
 }
 

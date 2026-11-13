@@ -1,64 +1,321 @@
 {
   "_doc": [
-    "Preinstalled apps DayZero removes. 'light' is used by Office mode, 'full' by Gaming and Everything.",
-    "name:   the app package name (wildcards allowed for publisher-prefixed promo apps).",
-    "Removal = the app is removed for your account and for new accounts (deprovisioned).",
-    "Undo: 'DayZero.cmd -Undo' reinstalls each removed app from the Microsoft Store by its exact name;",
-    "you can also search the Store for the title yourself.",
-    "keep:   never removed, whatever the lists say (the code has its own copy of the essentials,",
-    "        including the Store, Calculator, Photos, App Installer/winget and Windows Security).",
-    "optionalRemovals: shown as switches on the review screen."
+    "DayZero clean-up levels, modelled on the presets of Chris Titus Tech's WinUtil",
+    "(https://github.com/ChrisTitusTech/winutil, MIT licence): Clear, Minimal, Standard and Advanced.",
+    "The level is picked in the USB builder (separately from the mode) and pre-selected on the new PC's",
+    "review screen, where picking a level ticks its tweaks and every switch can still be changed.",
+    "",
+    "levels:   in order; each level ALSO does everything the levels above it do.",
+    "          tweaks   = tweak ids from tweaks.json the level adds,",
+    "          removals = optionalRemovals ids the level adds.",
+    "packages: preinstalled apps removed; 'level' is the first level that removes it (wildcards allowed).",
+    "          unlessApp: not removed when that app from apps.json is being installed (e.g. Teams).",
+    "          Removal = removed for your account and for new accounts (deprovisioned).",
+    "          Undo: 'DayZero.cmd -Undo' reinstalls each removed app from the Microsoft Store by its exact name.",
+    "keep:     never removed, whatever the lists say (the code has its own copy of the essentials,",
+    "          including the Store, Calculator, Photos, App Installer/winget and Windows Security).",
+    "winutil:  how each item of WinUtil's presets maps to DayZero, including what DayZero leaves out and why.",
+    "aliases:  level names from DayZero 0.7 and earlier."
+  ],
+  "defaultLevel": "standard",
+  "aliases": {
+    "none": "clear",
+    "light": "minimal",
+    "full": "standard"
+  },
+  "levels": [
+    {
+      "id": "clear",
+      "title": "Clear",
+      "tagline": "Change nothing",
+      "description": "Windows stays exactly as Microsoft ships it: no apps removed, no privacy or clean-up tweaks.",
+      "tweaks": [],
+      "removals": []
+    },
+    {
+      "id": "minimal",
+      "title": "Minimal",
+      "tagline": "Privacy basics",
+      "description": "WinUtil's Minimal preset: telemetry off, background services trimmed, no promoted apps, no firmware-installed programs. Removes only the third-party promo apps (Candy Crush, TikTok, Netflix links...).",
+      "tweaks": [
+        "telemetry-off",
+        "services-manual",
+        "wpbt-off",
+        "consumer-features-off",
+        "promoted-apps-off"
+      ],
+      "removals": []
+    },
+    {
+      "id": "standard",
+      "title": "Standard",
+      "tagline": "Recommended",
+      "description": "WinUtil's Standard preset: Minimal plus activity history, location and Delivery Optimization sharing off, 'End task' on the taskbar, generic folder views, temp files and old update files cleaned. Removes Microsoft's extras too (Clipchamp, News, Weather, Copilot, Solitaire, To Do, Get Help...).",
+      "tweaks": [
+        "activity-history-off",
+        "location-off",
+        "delivery-optimization-off",
+        "folder-discovery-off",
+        "end-task-taskbar",
+        "temp-files-clean",
+        "disk-cleanup"
+      ],
+      "removals": []
+    },
+    {
+      "id": "advanced",
+      "title": "Advanced",
+      "tagline": "Everything WinUtil offers",
+      "description": "WinUtil's Advanced preset: Standard plus Copilot, Recall and Notepad AI off, Widgets off, no Bing results in Start search, the classic right-click menu, and OneDrive removed. Also removes new Outlook, preinstalled Teams, Phone Link, Movies & TV, Maps and Family Safety.",
+      "tweaks": [
+        "copilot-off",
+        "windows-ai-off",
+        "widgets-off",
+        "news-interests-off",
+        "bing-search-off",
+        "classic-context-menu"
+      ],
+      "removals": [
+        "onedrive"
+      ]
+    }
   ],
   "keep": [
-    "Microsoft.WindowsStore", "Microsoft.StorePurchaseApp", "Microsoft.WindowsCalculator", "Microsoft.Windows.Photos",
-    "Microsoft.DesktopAppInstaller", "Microsoft.SecHealthUI", "Microsoft.WindowsTerminal", "Microsoft.WindowsNotepad",
-    "Microsoft.Paint", "Microsoft.ScreenSketch", "Microsoft.WindowsCamera", "Microsoft.WindowsAlarms",
-    "Microsoft.MicrosoftStickyNotes", "Microsoft.WindowsSoundRecorder", "Microsoft.ZuneMusic", "MicrosoftCorporationII.QuickAssist",
-    "Microsoft.GamingApp", "Microsoft.XboxGamingOverlay", "Microsoft.XboxIdentityProvider", "Microsoft.Xbox.TCUI",
-    "Microsoft.XboxSpeechToTextOverlay", "Microsoft.XboxGameOverlay"
+    "Microsoft.WindowsStore",
+    "Microsoft.StorePurchaseApp",
+    "Microsoft.WindowsCalculator",
+    "Microsoft.Windows.Photos",
+    "Microsoft.DesktopAppInstaller",
+    "Microsoft.SecHealthUI",
+    "Microsoft.WindowsTerminal",
+    "Microsoft.WindowsNotepad",
+    "Microsoft.Paint",
+    "Microsoft.ScreenSketch",
+    "Microsoft.WindowsCamera",
+    "Microsoft.WindowsAlarms",
+    "Microsoft.MicrosoftStickyNotes",
+    "Microsoft.WindowsSoundRecorder",
+    "Microsoft.ZuneMusic",
+    "MicrosoftCorporationII.QuickAssist",
+    "Microsoft.GamingApp",
+    "Microsoft.XboxGamingOverlay",
+    "Microsoft.XboxIdentityProvider",
+    "Microsoft.Xbox.TCUI",
+    "Microsoft.XboxSpeechToTextOverlay",
+    "Microsoft.XboxGameOverlay"
   ],
   "packages": [
-    { "name": "Clipchamp.Clipchamp", "title": "Clipchamp", "profiles": ["light", "full"] },
-    { "name": "Microsoft.BingNews", "title": "Microsoft News", "profiles": ["light", "full"] },
-    { "name": "Microsoft.MicrosoftSolitaireCollection", "title": "Microsoft Solitaire Collection", "profiles": ["light", "full"] },
-    { "name": "Microsoft.Getstarted", "title": "Tips", "profiles": ["light", "full"] },
-    { "name": "Microsoft.549981C3F5F10", "title": "Cortana", "profiles": ["light", "full"] },
-    { "name": "Microsoft.MicrosoftOfficeHub", "title": "Microsoft 365 (Office) hub app", "profiles": ["full"] },
-    { "name": "Microsoft.BingWeather", "title": "Weather", "profiles": ["full"] },
-    { "name": "Microsoft.BingSearch", "title": "Bing Search", "profiles": ["full"] },
-    { "name": "Microsoft.GetHelp", "title": "Get Help", "profiles": ["full"] },
-    { "name": "Microsoft.OutlookForWindows", "title": "Outlook (new)", "profiles": ["full"] },
-    { "name": "Microsoft.PowerAutomateDesktop", "title": "Power Automate", "profiles": ["light", "full"] },
-    { "name": "Microsoft.Todos", "title": "Microsoft To Do", "profiles": ["full"] },
-    { "name": "Microsoft.WindowsFeedbackHub", "title": "Feedback Hub", "profiles": ["full"] },
-    { "name": "Microsoft.WindowsMaps", "title": "Windows Maps", "profiles": ["full"] },
-    { "name": "Microsoft.ZuneVideo", "title": "Movies & TV", "profiles": ["full"] },
-    { "name": "Microsoft.YourPhone", "title": "Phone Link", "profiles": ["full"] },
-    { "name": "Microsoft.Copilot", "title": "Microsoft Copilot", "profiles": ["full"] },
-    { "name": "MicrosoftTeams", "title": "Microsoft Teams (personal)", "profiles": ["light", "full"] },
-    { "name": "MSTeams", "title": "Microsoft Teams", "profiles": ["full"] },
-    { "name": "Microsoft.Windows.DevHome", "title": "Dev Home", "profiles": ["full"] },
-    { "name": "MicrosoftCorporationII.MicrosoftFamily", "title": "Microsoft Family Safety", "profiles": ["full"] },
-    { "name": "Microsoft.People", "title": "People", "profiles": ["full"] },
-    { "name": "Microsoft.SkypeApp", "title": "Skype", "profiles": ["light", "full"] },
-    { "name": "Microsoft.MixedReality.Portal", "title": "Mixed Reality Portal", "profiles": ["light", "full"] },
-    { "name": "Microsoft.Microsoft3DViewer", "title": "3D Viewer", "profiles": ["light", "full"] },
-    { "name": "Microsoft.Print3D", "title": "Print 3D", "profiles": ["light", "full"] },
-    { "name": "Microsoft.MSPaint", "title": "Paint 3D", "profiles": ["full"] },
-    { "name": "Microsoft.Wallet", "title": "Wallet", "profiles": ["full"] },
-    { "name": "Microsoft.Messaging", "title": "Messaging", "profiles": ["full"] },
-    { "name": "Microsoft.OneConnect", "title": "Mobile Plans", "profiles": ["light", "full"] },
-    { "name": "Microsoft.Office.OneNote", "title": "OneNote for Windows 10 (Store version)", "profiles": ["full"] },
-    { "name": "king.com.*", "title": "Candy Crush and other King games", "profiles": ["light", "full"] },
-    { "name": "*.Netflix", "title": "Netflix (preinstalled link)", "profiles": ["light", "full"] },
-    { "name": "SpotifyAB.SpotifyMusic", "title": "Spotify (Store link; the desktop app is installed separately)", "profiles": ["light", "full"] },
-    { "name": "Disney.37853FC22B2CE", "title": "Disney+ (preinstalled link)", "profiles": ["light", "full"] },
-    { "name": "BytedancePte.Ltd.TikTok", "title": "TikTok (preinstalled link)", "profiles": ["light", "full"] },
-    { "name": "Facebook.Facebook", "title": "Facebook (preinstalled link)", "profiles": ["light", "full"] },
-    { "name": "Facebook.InstagramBeta", "title": "Instagram (preinstalled link)", "profiles": ["light", "full"] },
-    { "name": "AmazonVideo.PrimeVideo", "title": "Prime Video (preinstalled link)", "profiles": ["light", "full"] },
-    { "name": "7EE7776C.LinkedInforWindows", "title": "LinkedIn (preinstalled link)", "profiles": ["light", "full"] },
-    { "name": "AdobeSystemsIncorporated.AdobePhotoshopExpress", "title": "Photoshop Express (preinstalled link)", "profiles": ["light", "full"] }
+    {
+      "name": "king.com.*",
+      "title": "Candy Crush and other King games",
+      "level": "minimal"
+    },
+    {
+      "name": "*.Netflix",
+      "title": "Netflix (preinstalled link)",
+      "level": "minimal"
+    },
+    {
+      "name": "SpotifyAB.SpotifyMusic",
+      "title": "Spotify (Store link; the desktop app is installed separately)",
+      "level": "minimal"
+    },
+    {
+      "name": "Disney.37853FC22B2CE",
+      "title": "Disney+ (preinstalled link)",
+      "level": "minimal"
+    },
+    {
+      "name": "BytedancePte.Ltd.TikTok",
+      "title": "TikTok (preinstalled link)",
+      "level": "minimal"
+    },
+    {
+      "name": "Facebook.Facebook",
+      "title": "Facebook (preinstalled link)",
+      "level": "minimal"
+    },
+    {
+      "name": "Facebook.InstagramBeta",
+      "title": "Instagram (preinstalled link)",
+      "level": "minimal"
+    },
+    {
+      "name": "AmazonVideo.PrimeVideo",
+      "title": "Prime Video (preinstalled link)",
+      "level": "minimal"
+    },
+    {
+      "name": "7EE7776C.LinkedInforWindows",
+      "title": "LinkedIn (preinstalled link)",
+      "level": "minimal"
+    },
+    {
+      "name": "AdobeSystemsIncorporated.AdobePhotoshopExpress",
+      "title": "Photoshop Express (preinstalled link)",
+      "level": "minimal"
+    },
+    {
+      "name": "Microsoft.OneConnect",
+      "title": "Mobile Plans",
+      "level": "minimal"
+    },
+    {
+      "name": "Clipchamp.Clipchamp",
+      "title": "Clipchamp",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.BingNews",
+      "title": "Microsoft News",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.BingWeather",
+      "title": "Weather",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.BingSearch",
+      "title": "Bing Search",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.Copilot",
+      "title": "Microsoft Copilot",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.MicrosoftOfficeHub",
+      "title": "Microsoft 365 (Office) hub app",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.MicrosoftSolitaireCollection",
+      "title": "Microsoft Solitaire Collection",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.GetHelp",
+      "title": "Get Help",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.WindowsFeedbackHub",
+      "title": "Feedback Hub",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.PowerAutomateDesktop",
+      "title": "Power Automate",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.Todos",
+      "title": "Microsoft To Do",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.Windows.DevHome",
+      "title": "Dev Home",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.StartExperiencesApp",
+      "title": "Start Experiences App",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.Getstarted",
+      "title": "Tips",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.549981C3F5F10",
+      "title": "Cortana",
+      "level": "standard"
+    },
+    {
+      "name": "MicrosoftTeams",
+      "title": "Microsoft Teams (personal, Windows 11 Chat)",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.SkypeApp",
+      "title": "Skype",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.People",
+      "title": "People",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.Messaging",
+      "title": "Messaging",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.Wallet",
+      "title": "Wallet",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.MixedReality.Portal",
+      "title": "Mixed Reality Portal",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.Microsoft3DViewer",
+      "title": "3D Viewer",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.Print3D",
+      "title": "Print 3D",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.MSPaint",
+      "title": "Paint 3D",
+      "level": "standard"
+    },
+    {
+      "name": "Microsoft.OutlookForWindows",
+      "title": "Outlook (new)",
+      "level": "advanced"
+    },
+    {
+      "name": "MSTeams",
+      "title": "Microsoft Teams (preinstalled)",
+      "level": "advanced",
+      "unlessApp": "teams"
+    },
+    {
+      "name": "Microsoft.YourPhone",
+      "title": "Phone Link",
+      "level": "advanced"
+    },
+    {
+      "name": "Microsoft.ZuneVideo",
+      "title": "Movies & TV",
+      "level": "advanced"
+    },
+    {
+      "name": "Microsoft.WindowsMaps",
+      "title": "Windows Maps",
+      "level": "advanced"
+    },
+    {
+      "name": "MicrosoftCorporationII.MicrosoftFamily",
+      "title": "Microsoft Family Safety",
+      "level": "advanced"
+    },
+    {
+      "name": "Microsoft.Office.OneNote",
+      "title": "OneNote for Windows 10 (Store version)",
+      "level": "advanced"
+    }
   ],
   "optionalRemovals": [
     {
@@ -69,6 +326,122 @@
       "default": false,
       "type": "winget",
       "winget": "Microsoft.OneDrive"
+    }
+  ],
+  "winutil": [
+    {
+      "preset": "Minimal",
+      "item": "Telemetry - Disable",
+      "dayzero": "telemetry-off",
+      "note": "Without Defender's 'automatic sample submission off': DayZero never weakens Defender (its cloud 'block at first sight' needs samples)."
+    },
+    {
+      "preset": "Minimal",
+      "item": "Services - Set to Manual",
+      "dayzero": "services-manual",
+      "note": "Without disabling Internet Connection Sharing (SharedAccess): that would break Mobile hotspot."
+    },
+    {
+      "preset": "Minimal",
+      "item": "ConsumerFeatures - Disable",
+      "dayzero": "consumer-features-off + promoted-apps-off",
+      "note": "The policy only works on Enterprise/Education; promoted-apps-off does it on Home and Pro."
+    },
+    {
+      "preset": "Minimal",
+      "item": "Windows Platform Binary Table (WPBT) - Disable",
+      "dayzero": "wpbt-off",
+      "note": ""
+    },
+    {
+      "preset": "Standard",
+      "item": "Activity History - Disable",
+      "dayzero": "activity-history-off",
+      "note": ""
+    },
+    {
+      "preset": "Standard",
+      "item": "Location Tracking - Disable",
+      "dayzero": "location-off",
+      "note": ""
+    },
+    {
+      "preset": "Standard",
+      "item": "Delivery Optimization - Disable",
+      "dayzero": "delivery-optimization-off",
+      "note": "Windows Update keeps working; only peer-to-peer sharing stops."
+    },
+    {
+      "preset": "Standard",
+      "item": "File Explorer Automatic Folder Discovery - Disable",
+      "dayzero": "folder-discovery-off",
+      "note": "Sets the generic folder type but does not wipe saved folder views (that could not be undone)."
+    },
+    {
+      "preset": "Standard",
+      "item": "End Task With Right Click - Enable",
+      "dayzero": "end-task-taskbar",
+      "note": ""
+    },
+    {
+      "preset": "Standard",
+      "item": "Temporary Files - Remove",
+      "dayzero": "temp-files-clean",
+      "note": "Keeps DayZero's folders and .log files."
+    },
+    {
+      "preset": "Standard",
+      "item": "Disk Cleanup - Run",
+      "dayzero": "disk-cleanup",
+      "note": "DISM component clean-up without /ResetBase (updates stay uninstallable); cleanmgr is not run because it waits for a click."
+    },
+    {
+      "preset": "Standard",
+      "item": "Restore Point - Create",
+      "dayzero": "always",
+      "note": "DayZero always creates one before any change."
+    },
+    {
+      "preset": "Advanced",
+      "item": "Windows AI - Disable And Remove",
+      "dayzero": "windows-ai-off + copilot-off + Copilot app removal",
+      "note": "Uses the documented Recall and Notepad policies instead of WinUtil's package end-of-life trick."
+    },
+    {
+      "preset": "Advanced",
+      "item": "Widgets - Remove",
+      "dayzero": "widgets-off",
+      "note": "Turned off by policy; the Windows Web Experience Pack (a Windows component) stays installed."
+    },
+    {
+      "preset": "Advanced",
+      "item": "Microsoft OneDrive - Remove",
+      "dayzero": "onedrive removal",
+      "note": "Files in your OneDrive folder stay on the PC and online."
+    },
+    {
+      "preset": "Advanced",
+      "item": "Right-Click Menu Previous Layout - Enable",
+      "dayzero": "classic-context-menu",
+      "note": ""
+    },
+    {
+      "preset": "Advanced",
+      "item": "Microsoft Store Recommended Search Results - Disable",
+      "dayzero": "bing-search-off",
+      "note": "WinUtil denies everyone access to the Store's database file; DayZero does not, and turns off Bing web results in Start search instead."
+    },
+    {
+      "preset": "Advanced",
+      "item": "Start Menu Previous Layout - Enable",
+      "dayzero": "not included",
+      "note": "An undocumented feature flag that WinUtil itself says no longer works on current Windows."
+    },
+    {
+      "preset": "AppX default",
+      "item": "Calculator, Clock, Sticky Notes, Sound Recorder, Quick Assist",
+      "dayzero": "kept",
+      "note": "Small built-in tools DayZero never removes."
     }
   ]
 }

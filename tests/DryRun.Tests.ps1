@@ -5,10 +5,11 @@
 
 BeforeDiscovery {
     # Custom mode arrives with the builder's picks (settings.json customSelection).
+    # Level = the clean-up level picked in the builder ($null: the mode's suggestion).
     $script:Modes = @(
-        @{ Mode = 'gaming'; Form = 'desktop'; Pre = $null }, @{ Mode = 'gaming'; Form = 'laptop'; Pre = $null },
-        @{ Mode = 'office'; Form = 'desktop'; Pre = $null }, @{ Mode = 'everything'; Form = 'desktop'; Pre = $null },
-        @{ Mode = 'custom'; Form = 'desktop'; Pre = @{ apps = @('chrome', 'telegram', 'whatsapp', 'claude', 'winrar'); office = $true; debloat = 'light'; tweaks = @() } }
+        @{ Mode = 'gaming'; Form = 'desktop'; Pre = $null; Level = $null }, @{ Mode = 'gaming'; Form = 'laptop'; Pre = $null; Level = 'advanced' },
+        @{ Mode = 'office'; Form = 'desktop'; Pre = $null; Level = 'clear' }, @{ Mode = 'everything'; Form = 'desktop'; Pre = $null; Level = $null },
+        @{ Mode = 'custom'; Form = 'desktop'; Pre = @{ apps = @('chrome', 'telegram', 'whatsapp', 'claude', 'winrar'); office = $true; tweaks = @() }; Level = 'minimal' }
     )
 }
 
@@ -25,7 +26,7 @@ BeforeAll {
     $script:Config = Get-DzConfig -KitRoot $script:SourceKit
 }
 
-Describe 'Dry run of <Mode> on a <Form>' -ForEach $script:Modes {
+Describe 'Dry run of <Mode> on a <Form> (clean-up level: <Level>)' -ForEach $script:Modes {
     BeforeAll {
         $script:kit = Join-Path $TestDrive "$Mode-$Form"
         [void](New-Item -ItemType Directory -Path (Join-Path $script:kit 'Drivers') -Force)
@@ -54,6 +55,15 @@ Describe 'Dry run of <Mode> on a <Form>' -ForEach $script:Modes {
         Mock -ModuleName WindowsUpdate Install-DzUpdate { throw 'REAL CHANGE: Windows Update install' }
         Mock -ModuleName Debloat Remove-AppxPackage { throw 'REAL CHANGE: Remove-AppxPackage' }
         Mock -ModuleName Debloat Remove-AppxProvisionedPackage { throw 'REAL CHANGE: Remove-AppxProvisionedPackage' }
+        Mock -ModuleName Tweaks Get-DzServiceStart { 'Automatic' }
+        Mock -ModuleName Tweaks Get-DzMachineEnvironment { $null }
+        Mock -ModuleName Tweaks Test-DzRegistryKey { $false }
+        Mock -ModuleName Tweaks Set-DzServiceStart { throw "REAL CHANGE: service $Name" }
+        Mock -ModuleName Tweaks Set-DzMachineEnvironment { throw "REAL CHANGE: environment $Name" }
+        Mock -ModuleName Tweaks New-DzRegistryKey { throw "REAL CHANGE: registry key $Path" }
+        Mock -ModuleName Tweaks Remove-DzRegistryKey { throw "REAL CHANGE: registry key delete $Path" }
+        Mock -ModuleName Tweaks Clear-DzTempFolder { throw 'REAL CHANGE: temp files' }
+        Mock -ModuleName Tweaks Invoke-DzProcess { throw "REAL CHANGE: process $FilePath" }
         Mock -ModuleName Steps.Windows Checkpoint-Computer { throw 'REAL CHANGE: restore point' }
         Mock -ModuleName Steps.Windows Enable-ComputerRestore { throw 'REAL CHANGE: system protection' }
         Mock -ModuleName Winget Add-AppxPackage { throw 'REAL CHANGE: Add-AppxPackage' }
@@ -65,7 +75,7 @@ Describe 'Dry run of <Mode> on a <Form>' -ForEach $script:Modes {
             IsLaptop = ($Form -eq 'laptop'); GpuVendors = @('NVIDIA', 'Intel'); GpuNames = @('RTX', 'UHD'); MemoryGB = 32; FreeDiskGB = 400
         }
         $modeObj = Get-DzMode -Config $script:Config -Id $Mode   # not $mode: PowerShell names ignore case
-        $review = Get-DzReviewModel -Mode $modeObj -System $script:sys -Config $script:Config -Preselect $Pre
+        $review = Get-DzReviewModel -Mode $modeObj -System $script:sys -Config $script:Config -Preselect $Pre -DebloatLevel $Level
         $script:review = $review
         $options = ConvertTo-DzPlanOption -Apps @($review.Apps) -Options @($review.Options)
         $plan = New-DzPlan -Mode $modeObj -Options $options -System $script:sys -Config $script:Config
@@ -101,7 +111,11 @@ Describe 'Dry run of <Mode> on a <Form>' -ForEach $script:Modes {
     }
     It 'plans the right big steps' {
         $ids = @($script:final.steps | ForEach-Object { $_.id })
-        foreach ($must in 'preflight', 'drivers-usb', 'network', 'activation', 'restore-point', 'winget', 'windows-update', 'debloat', 'windows-update-final') { $ids | Should -Contain $must }
+        foreach ($must in 'preflight', 'drivers-usb', 'network', 'activation', 'restore-point', 'winget', 'windows-update', 'windows-update-final') { $ids | Should -Contain $must }
+        if ($Level -eq 'clear') { $ids | Should -Not -Contain 'debloat'; @($ids | Where-Object { $_ -in 'tweak:telemetry-off', 'tweak:temp-files-clean' }).Count | Should -Be 0 }
+        else { $ids | Should -Contain 'debloat'; $ids | Should -Contain 'tweak:telemetry-off' }
+        if ($Level -in $null, 'advanced' -and $Mode -ne 'office') { $ids | Should -Contain 'tweak:disk-cleanup'; $ids | Should -Contain 'tweak:location-off' }
+        if ($Level -eq 'advanced') { $ids | Should -Contain 'tweak:classic-context-menu'; $ids | Should -Contain 'remove:onedrive' }
         $ids | Should -Contain 'gpu-nvidia'
         $ids | Should -Contain 'gpu-intel'
         $ids | Should -Contain 'oem-tool'
@@ -113,7 +127,8 @@ Describe 'Dry run of <Mode> on a <Form>' -ForEach $script:Modes {
             foreach ($id in 'app:telegram', 'app:whatsapp', 'app:claude', 'app:winrar') { $ids | Should -Contain $id }
             $ids | Should -Not -Contain 'app:steam'
             $ids | Should -Not -Contain 'app:7zip'
-            @($ids | Where-Object { $_ -like 'tweak:*' }).Count | Should -Be 0
+            @($ids | Where-Object { $_ -in 'tweak:game-mode', 'tweak:power-plan' }).Count | Should -Be 0
+            $ids | Should -Not -Contain 'tweak:location-off' -Because 'Minimal level'
         }
     }
     It 'adds the performance power plan on desktops only (laptops: unticked)' {
@@ -126,7 +141,7 @@ Describe 'Dry run of <Mode> on a <Form>' -ForEach $script:Modes {
         $ids = @($script:final.steps | ForEach-Object { $_.id })
         $ids | Should -Not -Contain 'tweak:memory-integrity-off'
         $ids | Should -Not -Contain 'tweak:game-bar-off'
-        $ids | Should -Not -Contain 'remove:onedrive'
+        if ($Level -ne 'advanced') { $ids | Should -Not -Contain 'remove:onedrive' }
     }
     It 'leaves the NVIDIA app as a link on the summary' {
         @($script:final.followUps | ForEach-Object { $_.url }) | Should -Contain 'https://www.nvidia.com/en-us/software/nvidia-app/'

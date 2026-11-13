@@ -30,6 +30,28 @@ BeforeAll {
         Mock -ModuleName Tweaks Get-DzRegistryValueName {
             @($script:Reg.Keys | Where-Object { $_.StartsWith("$Path|") } | ForEach-Object { $_.Substring($Path.Length + 1) })
         }
+        # Services, machine environment variables and registry keys, in memory too.
+        $script:Svc = @{ DiagTrack = 'Automatic'; WerSvc = 'Manual'; CscService = 'Manual'; MapsBroker = 'AutomaticDelayed'; StorSvc = 'Automatic'; lfsvc = 'Manual' }
+        Mock -ModuleName Tweaks Get-DzServiceStart { if ($script:Svc.ContainsKey($Name)) { $script:Svc[$Name] } else { $null } }
+        Mock -ModuleName Tweaks Set-DzServiceStart {
+            if (Test-DzProtectedService -Name $Name) { throw 'protected service' }
+            $script:Svc[$Name] = $Startup
+        }
+        $script:EnvVars = @{}
+        Mock -ModuleName Tweaks Get-DzMachineEnvironment { if ($script:EnvVars.ContainsKey($Name)) { $script:EnvVars[$Name] } else { $null } }
+        Mock -ModuleName Tweaks Set-DzMachineEnvironment { if ($null -eq $Value -or [string]$Value -eq '') { [void]$script:EnvVars.Remove($Name) } else { $script:EnvVars[$Name] = $Value } }
+        $script:Keys = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+        foreach ($k in 'HKCU:\Software', 'HKCU:\Software\Classes', 'HKCU:\Software\Classes\CLSID') { [void]$script:Keys.Add($k) }
+        Mock -ModuleName Tweaks Test-DzRegistryKey { $script:Keys.Contains($Path) }
+        Mock -ModuleName Tweaks New-DzRegistryKey {
+            $p = $Path
+            while ($p -and -not $p.EndsWith(':')) { [void]$script:Keys.Add($p); $i = $p.LastIndexOf('\'); $p = if ($i -gt 0) { $p.Substring(0, $i) } else { $null } }
+            $script:Reg["$Path|(default)"] = @{ Value = $DefaultValue; Kind = 'String' }
+        }
+        Mock -ModuleName Tweaks Remove-DzRegistryKey {
+            foreach ($k in @($script:Keys | Where-Object { $_ -eq $Path -or $_.StartsWith("$Path\") })) { [void]$script:Keys.Remove($k) }
+            foreach ($k in @($script:Reg.Keys | Where-Object { $_.StartsWith("$Path\") -or $_.StartsWith("$Path|") })) { [void]$script:Reg.Remove($k) }
+        }
     }
     function New-TestKitRoot {
         $dir = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
@@ -48,18 +70,26 @@ Describe 'tweaks.json is documented and safe' {
         $Tweak.why | Should -Not -BeNullOrEmpty
         @($Tweak.actions).Count | Should -BeGreaterThan 0
         foreach ($a in $Tweak.actions) {
-            $a.type | Should -BeIn @('registry', 'powerPlan', 'startupDisable')
-            if ($a.type -eq 'registry') {
+            $a.type | Should -BeIn @('registry', 'registryKey', 'service', 'environment', 'powerPlan', 'startupDisable', 'cleanTemp', 'componentCleanup')
+            if ($a.type -in @('registry', 'registryKey')) {
                 $a.path | Should -Match '^HK(CU|LM):\\'
-                $a.kind | Should -BeIn @('DWord', 'QWord', 'String', 'ExpandString', 'Binary', 'MultiString')
                 Test-DzProtectedRegistryPath -Path $a.path | Should -BeFalse -Because 'Windows Update and Defender are off limits'
+            }
+            if ($a.type -eq 'registry') { $a.kind | Should -BeIn @('DWord', 'QWord', 'String', 'ExpandString', 'Binary', 'MultiString') }
+            if ($a.type -eq 'service') {
+                Test-DzProtectedService -Name $a.name | Should -BeFalse -Because 'Windows Update, Defender, firewall and Store services are off limits'
+                $a.startup | Should -BeIn @('Manual', 'Disabled', 'Automatic', 'AutomaticDelayed')
             }
         }
     }
-    It 'has no service changes and never disables Windows Update or Defender' {
+    It 'never disables Windows Update or Defender, or weakens Defender' {
         $text = Get-Content -Raw (Join-Path $script:SourceKit 'config/tweaks.json')
-        $text | Should -Not -Match '"type"\s*:\s*"service"'
-        $text | Should -Not -Match 'wuauserv|WinDefend|DisableAntiSpyware|NoAutoUpdate|DisableRealtimeMonitoring'
+        $text | Should -Not -Match 'wuauserv|WinDefend|DisableAntiSpyware|NoAutoUpdate|DisableRealtimeMonitoring|SubmitSamplesConsent|Set-MpPreference|SpynetReporting'
+    }
+    It 'leaves Internet Connection Sharing alone (Mobile hotspot needs it)' {
+        $services = @($script:Config.tweaks.tweaks | ForEach-Object { @($_.actions) } | Where-Object { $_.type -eq 'service' } | ForEach-Object { $_.name })
+        $services | Should -Not -Contain 'SharedAccess'
+        $services | Should -Contain 'DiagTrack'
     }
     It 'keeps the security trade-offs off by default, with a warning' {
         foreach ($id in 'memory-integrity-off', 'game-bar-off') {
@@ -76,14 +106,17 @@ Describe 'tweaks.json is documented and safe' {
         $t.defaultLaptop | Should -BeFalse
         $t.laptopWarning | Should -Match 'battery'
     }
-    It 'gives every gaming tweak the user asked for' {
+    It 'gives every gaming tweak the user asked for (privacy ones through the clean-up level)' {
         $g = Get-DzMode -Config $script:Config -Id 'gaming'
-        foreach ($id in 'game-mode', 'gpu-scheduling', 'mouse-accel-off', 'background-apps-off', 'startup-trim', 'bing-search-off', 'widgets-off', 'copilot-off', 'telemetry-min', 'power-plan', 'memory-integrity-off', 'game-bar-off') {
+        foreach ($id in 'game-mode', 'gpu-scheduling', 'mouse-accel-off', 'background-apps-off', 'startup-trim', 'power-plan', 'memory-integrity-off', 'game-bar-off') {
             @($g.tweaks) | Should -Contain $id
         }
+        $g.debloat | Should -Be 'standard'
+        @((Get-DzDebloatLevel -Config $script:Config -Id 'standard').tweaks) | Should -Contain 'telemetry-off'
+        foreach ($id in 'bing-search-off', 'widgets-off', 'copilot-off') { @((Get-DzDebloatLevel -Config $script:Config -Id 'advanced').tweaks) | Should -Contain $id }
     }
     It 'uses the lowest telemetry level per edition (Required on Home/Pro, off on Enterprise/Education)' {
-        $a = @((Get-Tweak 'telemetry-min').actions)[0]
+        $a = @((Get-Tweak 'telemetry-off').actions)[0]
         Get-DzTweakTargetValue -Action $a -System ([pscustomobject]@{ EditionId = 'Core' }) | Should -Be 1
         Get-DzTweakTargetValue -Action $a -System ([pscustomobject]@{ EditionId = 'Professional' }) | Should -Be 1
         Get-DzTweakTargetValue -Action $a -System ([pscustomobject]@{ EditionId = 'Enterprise' }) | Should -Be 0
@@ -122,13 +155,18 @@ Describe 'Applying and undoing tweaks' {
     It 'undo restores old values and removes values that did not exist' {
         $script:Reg['HKCU:\Control Panel\Mouse|MouseSpeed'] = @{ Value = '1'; Kind = 'String' }
         [void](Invoke-DzTweak -Tweak (Get-Tweak 'mouse-accel-off') -Context $script:ctx)
-        [void](Invoke-DzTweak -Tweak (Get-Tweak 'telemetry-min') -Context $script:ctx)
+        [void](Invoke-DzTweak -Tweak (Get-Tweak 'telemetry-off') -Context $script:ctx)
+        $script:Svc['DiagTrack'] | Should -Be 'Disabled'
+        $script:EnvVars['POWERSHELL_TELEMETRY_OPTOUT'] | Should -Be '1'
         $u = Undo-DzTweak
         $u.Failed | Should -Be 0
-        $u.Restored | Should -Be 4
+        $u.Restored | Should -Be 17 -Because '3 mouse values + 11 telemetry values, 2 services, 1 environment variable'
         $script:Reg['HKCU:\Control Panel\Mouse|MouseSpeed'].Value | Should -Be '1'
         $script:Reg.ContainsKey('HKCU:\Control Panel\Mouse|MouseThreshold1') | Should -BeFalse
         $script:Reg.ContainsKey('HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection|AllowTelemetry') | Should -BeFalse
+        $script:Svc['DiagTrack'] | Should -Be 'Automatic'
+        $script:Svc['WerSvc'] | Should -Be 'Manual'
+        $script:EnvVars.ContainsKey('POWERSHELL_TELEMETRY_OPTOUT') | Should -BeFalse
         @(Read-DzBackup -Name 'tweaks').Count | Should -Be 0 -Because 'the used backup is renamed so it is not applied twice'
     }
     It 'turns off matching startup entries the way Task Manager does, and undo turns them back on' {
@@ -162,8 +200,105 @@ Describe 'Applying and undoing tweaks' {
     It 'refuses a tweak that touches Windows Update, whatever the JSON says' {
         $evil = [pscustomobject]@{ id = 'evil'; title = 'Evil'; actions = @([pscustomobject]@{ type = 'registry'; path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU'; name = 'NoAutoUpdate'; kind = 'DWord'; value = 1 }) }
         { Invoke-DzTweak -Tweak $evil -Context $script:ctx } | Should -Throw '*never touches Windows Update*'
-        $evil2 = [pscustomobject]@{ id = 'evil2'; title = 'Evil'; actions = @([pscustomobject]@{ type = 'service'; name = 'wuauserv' }) }
-        { Invoke-DzTweak -Tweak $evil2 -Context $script:ctx } | Should -Throw '*unknown action type*'
+        foreach ($svc in 'wuauserv', 'UsoSvc', 'WaaSMedicSvc', 'BITS', 'WinDefend', 'SecurityHealthService', 'mpssvc', 'InstallService') {
+            $evil2 = [pscustomobject]@{ id = 'evil2'; title = 'Evil'; actions = @([pscustomobject]@{ type = 'service'; name = $svc; startup = 'Disabled' }) }
+            { Invoke-DzTweak -Tweak $evil2 -Context $script:ctx } | Should -Throw '*never touches Windows Update*'
+        }
+        $evil3 = [pscustomobject]@{ id = 'evil3'; title = 'Evil'; actions = @([pscustomobject]@{ type = 'script'; command = 'Set-MpPreference' }) }
+        { Invoke-DzTweak -Tweak $evil3 -Context $script:ctx } | Should -Throw '*unknown action type*'
+        $evil4 = [pscustomobject]@{ id = 'evil4'; title = 'Evil'; actions = @([pscustomobject]@{ type = 'registryKey'; path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\X' }) }
+        { Invoke-DzTweak -Tweak $evil4 -Context $script:ctx } | Should -Throw '*never touches Windows Update*'
+    }
+    It 'changes service start types and undo puts back the exact old ones (delayed start too)' {
+        $r = Invoke-DzTweak -Tweak (Get-Tweak 'services-manual') -Context $script:ctx
+        $r.Status | Should -Be 'Done'
+        $r.Message | Should -Match 'restart'
+        $script:Svc['DiagTrack'] | Should -Be 'Disabled'
+        $script:Svc['CscService'] | Should -Be 'Disabled'
+        $script:Svc['MapsBroker'] | Should -Be 'Manual'
+        $script:Svc['StorSvc'] | Should -Be 'Manual'
+        (Invoke-DzTweak -Tweak (Get-Tweak 'services-manual') -Context $script:ctx).Message | Should -Match 'Already set'
+        [void](Undo-DzTweak)
+        $script:Svc['DiagTrack'] | Should -Be 'Automatic'
+        $script:Svc['CscService'] | Should -Be 'Manual'
+        $script:Svc['MapsBroker'] | Should -Be 'AutomaticDelayed'
+        $script:Svc['StorSvc'] | Should -Be 'Automatic'
+    }
+    It 'skips a service that is not on this PC' {
+        [void]$script:Svc.Remove('CscService')
+        $r = Invoke-DzTweak -Tweak (Get-Tweak 'services-manual') -Context $script:ctx
+        $r.Status | Should -Be 'Done'
+        $r.Message | Should -Match 'CscService is not on this PC'
+    }
+    It 'creates the classic right-click menu key and undo deletes only what it created' {
+        $r = Invoke-DzTweak -Tweak (Get-Tweak 'classic-context-menu') -Context $script:ctx
+        $r.Status | Should -Be 'Done'
+        $key = 'HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32'
+        $script:Keys.Contains($key) | Should -BeTrue
+        $script:Reg["$key|(default)"].Value | Should -Be ''
+        $change = @(@(Read-DzBackup -Name 'tweaks')[0].changes)[0]
+        $change.type | Should -Be 'registryKey'
+        $change.created | Should -Be 'HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}'
+        (Invoke-DzTweak -Tweak (Get-Tweak 'classic-context-menu') -Context $script:ctx).Message | Should -Match 'Already set'
+        [void](Undo-DzTweak)
+        $script:Keys.Contains($key) | Should -BeFalse
+        $script:Keys.Contains('HKCU:\Software\Classes\CLSID') | Should -BeTrue
+    }
+    It 'runs DISM component clean-up without /ResetBase, and warns instead of failing' {
+        Mock -ModuleName Tweaks Invoke-DzProcess { $script:DismArgs = @($Arguments); [pscustomobject]@{ ExitCode = 0; Output = ''; TimedOut = $false } }
+        $r = Invoke-DzTweak -Tweak (Get-Tweak 'disk-cleanup') -Context $script:ctx
+        $r.Status | Should -Be 'Done'
+        $script:DismArgs | Should -Contain '/StartComponentCleanup'
+        ($script:DismArgs -join ' ') | Should -Not -Match 'ResetBase'
+        Mock -ModuleName Tweaks Invoke-DzProcess { [pscustomobject]@{ ExitCode = -2146498554; Output = ''; TimedOut = $false } }
+        (Invoke-DzTweak -Tweak (Get-Tweak 'disk-cleanup') -Context $script:ctx).Status | Should -Be 'Warn'
+    }
+    It 'cleans temp files but keeps DayZero folders and logs' {
+        $tmp = Join-Path $TestDrive ('temp-' + [guid]::NewGuid().ToString('N'))
+        [void](New-Item -ItemType Directory -Path (Join-Path $tmp 'DayZero-odt'), (Join-Path $tmp 'old-installer') -Force)
+        Set-Content -LiteralPath (Join-Path $tmp 'junk.tmp') -Value ('x' * 2048)
+        Set-Content -LiteralPath (Join-Path $tmp 'old-installer/setup.exe') -Value 'x'
+        Set-Content -LiteralPath (Join-Path $tmp 'Office-setup.log') -Value 'log'
+        Set-Content -LiteralPath (Join-Path $tmp 'DayZero-odt/setup.exe') -Value 'x'
+        Mock -ModuleName Tweaks Get-DzTempFolder { , @($tmp) }
+        $r = Invoke-DzTweak -Tweak (Get-Tweak 'temp-files-clean') -Context $script:ctx
+        $r.Status | Should -Be 'Done'
+        $r.Message | Should -Match 'freed'
+        Test-Path (Join-Path $tmp 'junk.tmp') | Should -BeFalse
+        Test-Path (Join-Path $tmp 'old-installer') | Should -BeFalse
+        Test-Path (Join-Path $tmp 'Office-setup.log') | Should -BeTrue
+        Test-Path (Join-Path $tmp 'DayZero-odt/setup.exe') | Should -BeTrue
+        @(Read-DzBackup -Name 'tweaks').Count | Should -Be 0 -Because 'deleting temp files has nothing to undo'
+    }
+    It 'deletes nothing and starts no DISM in dry-run mode' {
+        Set-DzDryRun -Enabled $true
+        Mock -ModuleName Tweaks Clear-DzTempFolder { throw 'REAL CHANGE: temp' }
+        Mock -ModuleName Tweaks Invoke-DzProcess { throw 'REAL CHANGE: dism' }
+        (Invoke-DzTweak -Tweak (Get-Tweak 'temp-files-clean') -Context $script:ctx).Message | Should -Match 'DRY-RUN'
+        (Invoke-DzTweak -Tweak (Get-Tweak 'disk-cleanup') -Context $script:ctx).Message | Should -Match 'DRY-RUN'
+        (Invoke-DzTweak -Tweak (Get-Tweak 'services-manual') -Context $script:ctx).Message | Should -Match 'DRY-RUN'
+        $script:Svc['DiagTrack'] | Should -Be 'Automatic'
+    }
+}
+
+Describe 'Registry key and service helpers' {
+    It 'finds the parent of a registry path' {
+        Get-DzParentRegistryPath -Path 'HKCU:\Software\Classes\CLSID' | Should -Be 'HKCU:\Software\Classes'
+        Get-DzParentRegistryPath -Path 'HKCU:\Software' | Should -BeNullOrEmpty
+    }
+    It 'protects Windows Update, Defender, firewall and Store services, not the others' {
+        foreach ($n in 'wuauserv', 'WUAUSERV', 'UsoSvc', 'WaaSMedicSvc', 'BITS', 'DoSvc', 'WinDefend', 'WdNisSvc', 'Sense', 'SecurityHealthService', 'wscsvc', 'mpssvc', 'BFE', 'AppXSvc', 'ClipSVC', 'InstallService', 'TrustedInstaller') {
+            Test-DzProtectedService -Name $n | Should -BeTrue -Because $n
+        }
+        foreach ($n in 'DiagTrack', 'WerSvc', 'CscService', 'MapsBroker', 'StorSvc', 'lfsvc') { Test-DzProtectedService -Name $n | Should -BeFalse -Because $n }
+    }
+    It 'refuses to set a protected service even when called directly' {
+        { Set-DzServiceStart -Name 'wuauserv' -Startup 'Disabled' } | Should -Throw '*never touches Windows Update*'
+    }
+    It 'keeps DayZero temp folders and log files' {
+        Test-DzKeptTempItem -Name 'DayZero-winget' | Should -BeTrue
+        Test-DzKeptTempItem -Name 'PC-20261112-1200.log' | Should -BeTrue
+        Test-DzKeptTempItem -Name 'setup.exe' | Should -BeFalse
     }
 }
 
@@ -194,11 +329,11 @@ Describe 'Power plan and startup helpers' {
 }
 
 Describe 'Debloat list' {
-    It '<Name> is never on the keep list' -ForEach $script:DebloatItems {
+    It '<Name> is never on the keep list and belongs to a level' -ForEach $script:DebloatItems {
         $keep = Get-DzKeepPattern -DebloatConfig $script:Config.debloat
         Test-DzKeptPackage -Name $Name -Keep $keep | Should -BeFalse
         $Item.title | Should -Not -BeNullOrEmpty
-        @($Item.profiles | Where-Object { $_ -notin @('light', 'full') }).Count | Should -Be 0
+        $Item.level | Should -BeIn @('minimal', 'standard', 'advanced')
     }
     It 'always keeps the Store, Calculator, Photos and winget' {
         $keep = Get-DzKeepPattern -DebloatConfig $null
@@ -206,23 +341,102 @@ Describe 'Debloat list' {
             Test-DzKeptPackage -Name $n -Keep $keep | Should -BeTrue
         }
     }
+    It 'keeps the small tools WinUtil''s default list removes (Clock, Sticky Notes, Sound Recorder, Quick Assist)' {
+        $keep = Get-DzKeepPattern -DebloatConfig $script:Config.debloat
+        foreach ($n in 'Microsoft.WindowsAlarms', 'Microsoft.MicrosoftStickyNotes', 'Microsoft.WindowsSoundRecorder', 'MicrosoftCorporationII.QuickAssist') {
+            Test-DzKeptPackage -Name $n -Keep $keep | Should -BeTrue -Because $n
+        }
+    }
     It 'refuses a JSON entry that would remove a kept app' {
-        $bad = '{"packages":[{"name":"Microsoft.WindowsStore","title":"Store","profiles":["full"]},{"name":"Microsoft.Windows.*","title":"All","profiles":["full"]},{"name":"Clipchamp.Clipchamp","title":"Clipchamp","profiles":["full"]}]}' | ConvertFrom-Json
-        @(Get-DzDebloatTarget -DebloatConfig $bad -Profile 'full' | ForEach-Object { $_.name }) | Should -Be @('Clipchamp.Clipchamp')
+        $bad = '{"levels":[{"id":"clear"},{"id":"full"}],"packages":[{"name":"Microsoft.WindowsStore","title":"Store","level":"full"},{"name":"Microsoft.Windows.*","title":"All","level":"full"},{"name":"Clipchamp.Clipchamp","title":"Clipchamp","level":"full"}]}' | ConvertFrom-Json
+        @(Get-DzDebloatTarget -DebloatConfig $bad -Level 'full' | ForEach-Object { $_.name }) | Should -Be @('Clipchamp.Clipchamp')
     }
-    It 'makes the light profile a subset of the full one' {
-        $light = @(Get-DzDebloatTarget -DebloatConfig $script:Config.debloat -Profile 'light' | ForEach-Object { $_.name })
-        $full = @(Get-DzDebloatTarget -DebloatConfig $script:Config.debloat -Profile 'full' | ForEach-Object { $_.name })
-        $light.Count | Should -BeLessThan $full.Count
-        foreach ($l in $light) { $full | Should -Contain $l }
+    It 'removes more at each level: Clear nothing, Minimal < Standard < Advanced' {
+        $cfg = $script:Config.debloat
+        @(Get-DzDebloatTarget -DebloatConfig $cfg -Level 'clear').Count | Should -Be 0
+        $min = @(Get-DzDebloatTarget -DebloatConfig $cfg -Level 'minimal' | ForEach-Object { $_.name })
+        $std = @(Get-DzDebloatTarget -DebloatConfig $cfg -Level 'standard' | ForEach-Object { $_.name })
+        $adv = @(Get-DzDebloatTarget -DebloatConfig $cfg -Level 'advanced' | ForEach-Object { $_.name })
+        $min.Count | Should -BeGreaterThan 0
+        $min.Count | Should -BeLessThan $std.Count
+        $std.Count | Should -BeLessThan $adv.Count
+        foreach ($n in $min) { $std | Should -Contain $n }
+        foreach ($n in $std) { $adv | Should -Contain $n }
+        $min | Should -Contain 'king.com.*'
+        $min | Should -Not -Contain 'Clipchamp.Clipchamp'
     }
-    It 'removes the Copilot app in the full profile' {
-        @(Get-DzDebloatTarget -DebloatConfig $script:Config.debloat -Profile 'full' | ForEach-Object { $_.name }) | Should -Contain 'Microsoft.Copilot'
+    It 'removes WinUtil''s default AppX selection at Standard (except the tools DayZero keeps)' {
+        $std = @(Get-DzDebloatTarget -DebloatConfig $script:Config.debloat -Level 'standard' | ForEach-Object { $_.name })
+        foreach ($n in 'Microsoft.WindowsFeedbackHub', 'Microsoft.GetHelp', 'Microsoft.MicrosoftOfficeHub', 'Clipchamp.Clipchamp', 'Microsoft.Todos', 'Microsoft.MicrosoftSolitaireCollection',
+            'Microsoft.PowerAutomateDesktop', 'Microsoft.Windows.DevHome', 'Microsoft.BingWeather', 'Microsoft.StartExperiencesApp', 'Microsoft.BingNews', 'Microsoft.Copilot', 'Microsoft.BingSearch') {
+            $std | Should -Contain $n
+        }
+        $std | Should -Not -Contain 'Microsoft.OutlookForWindows'
     }
-    It 'offers OneDrive removal as an unticked option' {
+    It 'accepts the old level names (light, full)' {
+        @(Get-DzDebloatTarget -DebloatConfig $script:Config.debloat -Level 'light').Count | Should -Be @(Get-DzDebloatTarget -DebloatConfig $script:Config.debloat -Level 'minimal').Count
+        @(Get-DzDebloatTarget -DebloatConfig $script:Config.debloat -Level 'full').Count | Should -Be @(Get-DzDebloatTarget -DebloatConfig $script:Config.debloat -Level 'standard').Count
+    }
+    It 'does not remove the preinstalled Teams when Teams is one of the apps being installed' {
+        @(Get-DzDebloatTarget -DebloatConfig $script:Config.debloat -Level 'advanced' | ForEach-Object { $_.name }) | Should -Contain 'MSTeams'
+        @(Get-DzDebloatTarget -DebloatConfig $script:Config.debloat -Level 'advanced' -KeepApps @('teams') | ForEach-Object { $_.name }) | Should -Not -Contain 'MSTeams'
+    }
+    It 'offers OneDrive removal: unticked unless the level is Advanced' {
         $o = @($script:Config.debloat.optionalRemovals | Where-Object { $_.id -eq 'onedrive' })[0]
         $o.default | Should -BeFalse
         $o.winget | Should -Be 'Microsoft.OneDrive'
+        @((Get-DzDebloatLevel -Config $script:Config -Id 'standard').removals) | Should -Not -Contain 'onedrive'
+        @((Get-DzDebloatLevel -Config $script:Config -Id 'advanced').removals) | Should -Contain 'onedrive'
+    }
+}
+
+Describe 'Clean-up levels (WinUtil presets)' {
+    It 'offers Clear, Minimal, Standard and Advanced, Standard by default' {
+        @(Get-DzDebloatLevelList -Config $script:Config | ForEach-Object { $_.id }) | Should -Be @('clear', 'minimal', 'standard', 'advanced')
+        Get-DzDefaultDebloatLevel -Config $script:Config | Should -Be 'standard'
+    }
+    It 'resolves level names, old names and nonsense' {
+        Resolve-DzDebloatLevelId -Config $script:Config -Id 'STANDARD' | Should -Be 'standard'
+        Resolve-DzDebloatLevelId -Config $script:Config -Id 'none' | Should -Be 'clear'
+        Resolve-DzDebloatLevelId -Config $script:Config -Id 'light' | Should -Be 'minimal'
+        Resolve-DzDebloatLevelId -Config $script:Config -Id 'full' | Should -Be 'standard'
+        Resolve-DzDebloatLevelId -Config $script:Config -Id 'nuke-everything' | Should -BeNullOrEmpty
+        Resolve-DzDebloatLevelId -Config $script:Config -Id '' | Should -BeNullOrEmpty
+    }
+    It 'maps WinUtil''s Minimal preset' {
+        $l = Get-DzDebloatLevel -Config $script:Config -Id 'minimal'
+        foreach ($t in 'telemetry-off', 'services-manual', 'wpbt-off', 'consumer-features-off', 'promoted-apps-off') { @($l.tweaks) | Should -Contain $t }
+        @(Get-DzDebloatLevel -Config $script:Config -Id 'clear').tweaks.Count | Should -Be 0
+    }
+    It 'maps WinUtil''s Standard preset on top of Minimal' {
+        $l = Get-DzDebloatLevel -Config $script:Config -Id 'standard'
+        foreach ($t in 'telemetry-off', 'activity-history-off', 'location-off', 'delivery-optimization-off', 'folder-discovery-off', 'end-task-taskbar', 'temp-files-clean', 'disk-cleanup') { @($l.tweaks) | Should -Contain $t }
+        @($l.tweaks) | Should -Not -Contain 'classic-context-menu'
+    }
+    It 'maps WinUtil''s Advanced preset on top of Standard' {
+        $l = Get-DzDebloatLevel -Config $script:Config -Id 'advanced'
+        foreach ($t in 'location-off', 'copilot-off', 'windows-ai-off', 'widgets-off', 'bing-search-off', 'classic-context-menu') { @($l.tweaks) | Should -Contain $t }
+    }
+    It 'documents every item of WinUtil''s presets and where DayZero differs' {
+        $map = @($script:Config.debloat.winutil)
+        foreach ($item in 'Telemetry - Disable', 'Services - Set to Manual', 'ConsumerFeatures - Disable', 'Windows Platform Binary Table (WPBT) - Disable',
+            'Activity History - Disable', 'Location Tracking - Disable', 'Delivery Optimization - Disable', 'File Explorer Automatic Folder Discovery - Disable',
+            'End Task With Right Click - Enable', 'Temporary Files - Remove', 'Disk Cleanup - Run', 'Restore Point - Create',
+            'Windows AI - Disable And Remove', 'Widgets - Remove', 'Microsoft OneDrive - Remove', 'Right-Click Menu Previous Layout - Enable',
+            'Microsoft Store Recommended Search Results - Disable', 'Start Menu Previous Layout - Enable') {
+            @($map | Where-Object { $_.item -eq $item }).Count | Should -Be 1 -Because $item
+        }
+    }
+    It 'reports no problems in the shipped configuration' {
+        @(Test-DzConfig -Config $script:Config) | Should -BeNullOrEmpty
+    }
+    It 'reports a level that lists an unknown tweak' {
+        $cfg = @{} + $script:Config
+        $cfg.debloat = ('{"levels":[{"id":"clear"},{"id":"x","tweaks":["no-such-tweak"],"removals":["nope"]}],"packages":[{"name":"A.B","title":"AB","level":"y"}]}' | ConvertFrom-Json)
+        $text = (Test-DzConfig -Config $cfg) -join ' '
+        $text | Should -Match "unknown tweak 'no-such-tweak'"
+        $text | Should -Match "unknown removal 'nope'"
+        $text | Should -Match "unknown level 'y'"
     }
 }
 

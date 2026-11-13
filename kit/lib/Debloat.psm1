@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
-    DayZero - removes preinstalled apps listed in config\debloat.json and the optional
-    removals (OneDrive). Every removal is recorded in <kit>\backup\apps.json so
+    DayZero - removes the preinstalled apps of the chosen clean-up level (config\debloat.json)
+    and the optional removals (OneDrive). Every removal is recorded in <kit>\backup\apps.json so
     'DayZero.cmd -Undo' can reinstall it.
 
     The keep-list below is enforced in code: the Store, Calculator, Photos, App Installer
@@ -46,14 +46,42 @@ function Test-DzKeptPackage {
     return $false
 }
 
-function Get-DzDebloatTarget {
-    <# The packages of one profile ('light' or 'full'), keep-list violations removed (and reported). #>
+function Get-DzLevelRank {
+    <# Position of a clean-up level in debloat.json (old names none/light/full accepted); -1 when unknown. #>
     [CmdletBinding()]
-    param([Parameter(Mandatory = $true)][object]$DebloatConfig, [Parameter(Mandatory = $true)][string]$Profile)
+    [OutputType([int])]
+    param([Parameter(Mandatory = $true)][object]$DebloatConfig, [AllowNull()][AllowEmptyString()][string]$Level)
+    if (-not $Level) { return -1 }
+    $ids = @(@(Get-DzProperty $DebloatConfig 'levels' @()) | ForEach-Object { [string]$_.id })
+    $id = $Level
+    if ($ids -notcontains $id) {
+        $alias = Get-DzProperty (Get-DzProperty $DebloatConfig 'aliases' $null) $Level.ToLowerInvariant() $null
+        if ($alias) { $id = [string]$alias }
+    }
+    return [array]::IndexOf([string[]]$ids, $id)
+}
+
+function Get-DzDebloatTarget {
+    <#
+        The packages a clean-up level removes: every package whose 'level' is this level or an
+        earlier one. Keep-list violations are dropped (and reported); packages whose unlessApp
+        is in -KeepApps (apps being installed, e.g. Teams) stay.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][object]$DebloatConfig,
+        [Parameter(Mandatory = $true)][string]$Level,
+        [AllowEmptyCollection()][string[]]$KeepApps = @()
+    )
     $keep = Get-DzKeepPattern -DebloatConfig $DebloatConfig
+    $rank = Get-DzLevelRank -DebloatConfig $DebloatConfig -Level $Level
     $out = New-Object System.Collections.Generic.List[object]
+    if ($rank -le 0) { return $out.ToArray() }
     foreach ($p in @(Get-DzProperty $DebloatConfig 'packages' @())) {
-        if (@($p.profiles) -notcontains $Profile) { continue }
+        $pr = Get-DzLevelRank -DebloatConfig $DebloatConfig -Level ([string](Get-DzProperty $p 'level' ''))
+        if ($pr -le 0 -or $pr -gt $rank) { continue }
+        $unless = [string](Get-DzProperty $p 'unlessApp' '')
+        if ($unless -and ($KeepApps -contains $unless)) { continue }
         if (Test-DzKeptPackage -Name ([string]$p.name) -Keep $keep) {
             Write-DzLog -Level Warn -Message ("debloat.json lists '{0}', which is on the keep list; not removing it." -f $p.name)
             continue
@@ -64,12 +92,16 @@ function Get-DzDebloatTarget {
 }
 
 function Remove-DzBloatware {
-    <# Removes one debloat profile. Returns a step result. #>
+    <# Removes the preinstalled apps of one clean-up level. Returns a step result. #>
     [CmdletBinding()]
-    param([Parameter(Mandatory = $true)][hashtable]$Context, [Parameter(Mandatory = $true)][string]$Profile)
+    param(
+        [Parameter(Mandatory = $true)][hashtable]$Context,
+        [Parameter(Mandatory = $true)][string]$Level,
+        [AllowEmptyCollection()][string[]]$KeepApps = @()
+    )
     $cfg = $Context.Config.debloat
     if ($null -eq $cfg) { return (New-DzStepResult -Status Skipped -Message 'config\debloat.json is missing.') }
-    $targets = Get-DzDebloatTarget -DebloatConfig $cfg -Profile $Profile
+    $targets = Get-DzDebloatTarget -DebloatConfig $cfg -Level $Level -KeepApps $KeepApps
     if ($Context.Progress) { & $Context.Progress 'Looking for preinstalled apps...' }
     $provisioned = @(Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue)
     $removed = New-Object System.Collections.Generic.List[object]
@@ -90,7 +122,7 @@ function Remove-DzBloatware {
         catch { $failed.Add(("{0}: {1}" -f $t.title, $_.Exception.Message)) }
     }
     if ($removed.Count -gt 0 -and -not (Test-DzDryRun)) {
-        Add-DzBackupEntry -Name 'apps' -Entry ([ordered]@{ step = "debloat-$Profile"; removedAt = (Get-Date).ToString('o'); removed = $removed.ToArray() })
+        Add-DzBackupEntry -Name 'apps' -Entry ([ordered]@{ step = "debloat-$Level"; removedAt = (Get-Date).ToString('o'); removed = $removed.ToArray() })
     }
     $titles = @($removed | ForEach-Object { $_.title })
     $msg = if ($titles.Count -gt 0) { ('{0}{1} app(s): {2}.' -f $(if (Test-DzDryRun) { '[DRY-RUN] would remove ' } else { 'Removed ' }), $titles.Count, ($titles -join ', ')) } else { 'Nothing to remove; the PC is already clean.' }
@@ -156,4 +188,4 @@ function Restore-DzRemovedApp {
     return [pscustomobject]@{ Restored = $ok; Failed = $bad; Messages = $messages.ToArray() }
 }
 
-Export-ModuleMember -Function @('Get-DzKeepPattern', 'Test-DzKeptPackage', 'Get-DzDebloatTarget', 'Remove-DzBloatware', 'Remove-DzOptionalItem', 'Restore-DzRemovedApp')
+Export-ModuleMember -Function @('Get-DzKeepPattern', 'Test-DzKeptPackage', 'Get-DzLevelRank', 'Get-DzDebloatTarget', 'Remove-DzBloatware', 'Remove-DzOptionalItem', 'Restore-DzRemovedApp')
