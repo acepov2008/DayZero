@@ -1,0 +1,7 @@
+[13.11.2026  3:57:43,02] === Activation started ===
+[13.11.2026  3:57:43,02] Host: DESKTOP-GQ0MS4I / User: Alex
+[13.11.2026  3:57:43,03] Engine: C:\Users\Alex\Documents\GitHub\DayZero\kit\Scripts\MAS_AIO.cmd
+[13.11.2026  3:57:43,99] OS: Майкрософт Windows 10 Домашняя (build 19045, type 1)
+[13.11.2026  3:57:44,45] Network: online
+[13.11.2026  3:57:52,92] Windows already activated, skipping.
+[13.11.2026  3:57:59,63] Office found - installing Ohook (offline, permanent)...
