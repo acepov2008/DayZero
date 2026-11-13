@@ -267,7 +267,9 @@ function Get-DzFileSha1 {
     $stream = [System.IO.File]::OpenRead($Path)
     try {
         $buffer = New-Object byte[] (4MB)
-        $total = [double][math]::Max(1, $stream.Length)
+        # No [math]::Max here: PowerShell 5.1 picks the Int32 overload and fails on files over 2 GB.
+        $total = [double]$stream.Length
+        if ($total -lt 1) { $total = 1 }
         $done = [int64]0
         $next = [int64]0
         while (($read = $stream.Read($buffer, 0, $buffer.Length)) -gt 0) {
@@ -598,7 +600,9 @@ function Get-DzUsbPartitionSize {
     [CmdletBinding()]
     [OutputType([int])]
     param([Parameter(Mandatory = $true)][int64]$DiskBytes)
-    return [int][math]::Min(32000, [math]::Floor($DiskBytes / 1MB) - 64)
+    $mb = [math]::Floor(([double]$DiskBytes) / 1MB) - 64
+    if ($mb -gt 32000) { $mb = 32000 }
+    return [int]$mb
 }
 
 function Initialize-DzUsbDisk {
@@ -683,7 +687,7 @@ function Copy-DzMediaTree {
         $label = 'Copying Windows to the USB stick'
         try {
             $d = Get-CimInstance -ClassName Win32_LogicalDisk -Filter "DeviceID = '$device'" -ErrorAction Stop
-            if ($total -gt 0) { $label = '{0} ({1:N0}%)' -f $label, [math]::Min(99, 100 * ([double]$d.Size - [double]$d.FreeSpace) / $total) }
+            if ($total -gt 0) { $label = '{0} ({1:N0}%)' -f $label, [math]::Min([double]99, [double](100 * ([double]$d.Size - [double]$d.FreeSpace) / $total)) }
         }
         catch { Write-Verbose $text }
         if ($Tick) { & $Tick $label }

@@ -257,6 +257,11 @@ Describe 'Safety of the media module' {
         $body.IndexOf('$now.Problem') | Should -BeLessThan $body.IndexOf('diskpart.exe')
         $body.IndexOf('$now.Serial -ne $Disk.Serial') | Should -BeLessThan $body.IndexOf('diskpart.exe')
     }
+    It 'does no [math]::Max/Min on file sizes without [double] (PowerShell 5.1 picks Int32 and fails over 2 GB)' {
+        foreach ($m in [regex]::Matches($script:Source, '\[math\]::(Max|Min)\(([^,]+),')) {
+            $m.Groups[2].Value | Should -Match '^\[double\]' -Because $m.Value
+        }
+    }
     It 'checks size and SHA-1 before unpacking a download' {
         $body = [regex]::Match($script:Source, '(?s)function Get-DzWindowsMediaTree \{.*?\n\}\r?\n').Value
         $body.IndexOf('$sha -ne $entry.Sha1') | Should -BeGreaterThan 0
