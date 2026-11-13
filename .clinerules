@@ -1,5 +1,5 @@
 Project: DayZero - Windows setup toolkit on a USB stick.
-- builder\  : USB Builder (PowerShell 5.1 + WPF). Builder.ps1 + Builder.xaml. Writes autounattend.xml and copies kit\ to the stick.
+- builder\  : USB Builder (PowerShell 5.1 + WPF). Builder.ps1 + Builder.xaml. Makes the Windows USB stick (lib\WinMedia.psm1: download from Microsoft or ISO, diskpart, DISM), writes autounattend.xml and copies kit\ to the stick.
 - kit\      : runs on the new PC. DayZero.ps1 = wizard. kit\lib\*.psm1 = modules (order in Modules.ps1).
 - kit\config\*.json : modes, apps (winget IDs), tweaks, debloat levels, drivers, office. Most changes are JSON only.
 - kit\ui\Theme.xaml : all colours/styles (monochrome). Keep resource key names (DzMagenta etc.), code uses them.
@@ -8,6 +8,8 @@ Project: DayZero - Windows setup toolkit on a USB stick.
 Hard rules:
 - .ps1/.psm1 files must be plain ASCII (PowerShell 5.1). .cmd files keep CRLF.
 - autounattend.xml must never select, wipe or partition a disk.
+- The builder may erase only a USB stick that passes Test-DzUsbDiskAllowed and that the user confirmed. Never weaken that check.
+- Windows downloads must come from microsoft.com and match the catalogue size and SHA-1.
 - Never disable Windows Update or Defender; no third-party activators.
 - Every tweak must be reversible (backup + DayZero.cmd -Undo); no scripts in JSON.
 - winget IDs must be real (check winget-pkgs), never guessed.

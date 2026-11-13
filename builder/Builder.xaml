@@ -30,7 +30,7 @@
                 <TextBlock x:Name="VersionText" Text="USB BUILDER" Style="{StaticResource DzSubtitle}" Margin="2,0,0,0"/>
             </StackPanel>
             <TextBlock Grid.Column="1" VerticalAlignment="Center" TextAlignment="Right" Style="{StaticResource DzHint}" Margin="0,0,290,0"
-                       Text="Adds an answer file + the DayZero toolkit to a Windows USB&#x0a;made with the Media Creation Tool or Rufus."/>
+                       Text="Makes a Windows install USB stick with your settings on it,&#x0a;or adds DayZero to a stick you already made."/>
         </Grid>
         <Border Grid.Row="0" VerticalAlignment="Bottom" Height="1" Margin="0" Background="{StaticResource DzBorder}"/>
 
@@ -47,11 +47,33 @@
                     <Border Style="{StaticResource DzCard}">
                         <StackPanel>
                             <TextBlock Text="&#x2460;  WHERE TO WRITE" Style="{StaticResource DzCardTitle}"/>
-                            <StackPanel Orientation="Horizontal">
-                                <RadioButton x:Name="TargetUsbRadio" GroupName="Target" IsChecked="True" Content="Windows install _USB stick"/>
-                                <RadioButton x:Name="TargetFolderRadio" GroupName="Target" Content="_Folder (to test in a virtual machine)"/>
+                            <StackPanel>
+                                <RadioButton x:Name="TargetNewUsbRadio" GroupName="Target" IsChecked="True" Content="Make a _new Windows USB stick (erases the stick)"/>
+                                <RadioButton x:Name="TargetUsbRadio" GroupName="Target" Margin="0,6,0,0" Content="A Windows _USB stick I already made (Media Creation Tool or Rufus)"/>
+                                <RadioButton x:Name="TargetFolderRadio" GroupName="Target" Margin="0,6,0,0" Content="_Folder (to test in a virtual machine)"/>
                             </StackPanel>
-                            <Grid x:Name="UsbPanel" Margin="0,10,0,0">
+                            <StackPanel x:Name="NewUsbPanel" Margin="0,10,0,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="UsbDiskCombo" DisplayMemberPath="Display"/>
+                                    <Button x:Name="RefreshDisksButton" Grid.Column="1" Margin="8,0,0,0" Content="Refresh" ToolTip="Look for USB sticks again"/>
+                                </Grid>
+                                <TextBlock Text="Where Windows comes from" Style="{StaticResource DzLabel}"/>
+                                <RadioButton x:Name="SourceDownloadRadio" GroupName="Source" IsChecked="True" Content="Download it from Microsoft (about 5 GB the first time, then reused)"/>
+                                <RadioButton x:Name="SourceIsoRadio" GroupName="Source" Margin="0,6,0,0" Content="Use a Windows ISO file I already have"/>
+                                <Grid x:Name="IsoPanel" Margin="0,8,0,0" Visibility="Collapsed">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="IsoPathText" IsReadOnly="True"/>
+                                    <Button x:Name="BrowseIsoButton" Grid.Column="1" Margin="8,0,0,0" Content="Browse..."/>
+                                </Grid>
+                            </StackPanel>
+                            <Grid x:Name="UsbPanel" Margin="0,10,0,0" Visibility="Collapsed">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
@@ -67,7 +89,7 @@
                                 <TextBox x:Name="FolderText"/>
                                 <Button x:Name="BrowseFolderButton" Grid.Column="1" Margin="8,0,0,0" Content="_Browse..."/>
                             </Grid>
-                            <TextBlock x:Name="MediaInfoText" Style="{StaticResource DzHint}" Text="Looking for Windows installation USB sticks..."/>
+                            <TextBlock x:Name="MediaInfoText" Style="{StaticResource DzHint}" Text="Looking for USB sticks..."/>
                         </StackPanel>
                     </Border>
 
@@ -205,7 +227,7 @@
                                     ToolTip="Runs 'winget show' for every app id on this PC. Read-only."/>
                             <Border Style="{StaticResource DzInfoBox}">
                                 <TextBlock TextWrapping="Wrap" Foreground="{StaticResource DzText}"
-                                           Text="Safety: DayZero never picks, wipes or partitions a disk. Windows Setup will stop and ask you which disk to install on."/>
+                                           Text="Safety: on the new PC, DayZero never picks, wipes or partitions a disk. Windows Setup will stop and ask you which disk to install on. Here, only the USB stick you pick and confirm is erased; internal disks are always refused."/>
                             </Border>
                         </StackPanel>
                     </Border>
@@ -224,7 +246,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock x:Name="StatusText" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{StaticResource DzMuted}" Text="Ready."/>
                     <Button x:Name="PreviewButton" Grid.Column="1" Margin="12,0,0,0" Content="_Preview answer file"/>
-                    <Button x:Name="WriteButton" Grid.Column="2" Margin="12,0,0,0" Style="{StaticResource DzPrimaryButton}" Content="_WRITE TO USB  &#x25B6;"/>
+                    <Button x:Name="WriteButton" Grid.Column="2" Margin="12,0,0,0" Style="{StaticResource DzPrimaryButton}" Content="_CREATE WINDOWS USB  &#x25B6;"/>
                 </Grid>
                 <Expander x:Name="LogExpander" Header="Log" Foreground="{StaticResource DzMuted}" Margin="0,8,0,0">
                     <TextBox x:Name="LogText" Style="{StaticResource DzLogBox}" Height="130" Margin="0,6,0,0"/>

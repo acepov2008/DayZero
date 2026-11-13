@@ -41,6 +41,29 @@ run the GUI or Windows Setup. That is what the VM test is for.
 Windows Setup looks for `autounattend.xml` on every CD/DVD and removable drive, and DayZero
 finds its folder by the build marker file, so a second virtual DVD drive behaves like the stick.
 
+## 2b. Make the Windows stick (needs a real USB stick you can erase)
+
+The builder's default, **Make a new Windows USB stick**, erases a stick and puts Windows on
+it. This part cannot be tested in the automated checks. Use a stick with nothing you need.
+
+- [ ] Only USB sticks are listed. Internal disks never appear; the Log shows "Not offered: ..."
+      for anything refused (write-protected, under 8 GB, over 300 GB).
+- [ ] The hint names the stick, its size and its drive letters under "EVERYTHING on this stick
+      will be erased", and the confirmation shows the same before anything happens.
+- [ ] **Download:** the status line shows the download in GB and %, then "Checking the
+      download", then the unpacking steps. The Log says "SHA-1 ... matches Microsoft's catalogue".
+- [ ] Unplug the network during the download: it waits and continues when you reconnect.
+      If it fails, **the stick has not been erased yet**.
+- [ ] Afterwards the stick is FAT32, labelled DAYZERO, and has `setup.exe`, `sources\boot.wim`,
+      `sources\install.esd` (under 4 GB), `autounattend.xml` and `DayZero\`.
+- [ ] Make a second stick: no download this time ("prepared earlier"), only a few minutes.
+- [ ] **ISO file:** pick a Windows 11 ISO from Microsoft. The hint shows its build, language and
+      editions. The stick gets `sources\install.swm` and `install2.swm` instead of `install.wim`.
+- [ ] Windows 10: same checks with **Windows 10** selected.
+- [ ] The stick boots a real PC in UEFI mode with Secure Boot on. On an old PC, also in legacy BIOS mode.
+- [ ] Attach the stick to a VM (VirtualBox: Settings > USB, add a filter for it) and run the checklist in section 4.
+- [ ] `%LOCALAPPDATA%\DayZero\media` holds one `win11-...` folder and no leftover `.esd` file.
+
 ## 3a. Hyper-V (Windows Pro/Enterprise)
 
 1. **New > Virtual Machine**: **Generation 2**, 4096 MB RAM or more (untick Dynamic Memory),

@@ -3,9 +3,11 @@
 .SYNOPSIS
     DayZero USB Builder.
 .DESCRIPTION
-    Adds an unattended-setup answer file (autounattend.xml) and the DayZero toolkit to a
-    Windows installation USB stick that you made with Microsoft's Media Creation Tool or
-    Rufus. It does not create bootable media and never touches the stick's boot files.
+    Makes a Windows installation USB stick (Windows is downloaded from Microsoft or taken
+    from an ISO file you have; see lib\WinMedia.psm1) and puts an unattended-setup answer
+    file (autounattend.xml) and the DayZero toolkit on it. It can also add those two to a
+    stick you already made with the Media Creation Tool or Rufus, without touching the
+    rest of that stick.
 
     Start it with Build-DayZeroUSB.cmd, which asks for administrator rights (needed to
     read the Windows image on the stick) and bypasses the execution policy for this one
@@ -22,6 +24,7 @@ $script:KitRoot = Join-Path $script:RepoRoot 'kit'
 $script:Version = (Get-Content -LiteralPath (Join-Path $script:KitRoot 'VERSION') -Raw).Trim()
 $script:LogLines = New-Object System.Collections.Generic.List[string]
 $script:MediaByDrive = @{}
+$script:IsoMedia = $null
 $script:GeneratedPassword = $null
 $script:ThisPcFirmware = $null
 $script:BuilderConfig = $null
@@ -205,14 +208,136 @@ function Update-MediaInfo {
     Set-BuilderStatus -Text 'Ready.'
 }
 
+function Get-TargetKind {
+    <# 'newusb' (make the Windows stick), 'usb' (a stick that already has Windows) or 'folder'. #>
+    $ui = $script:ui
+    if ($ui.TargetNewUsbRadio.IsChecked -eq $true) { return 'newusb' }
+    if ($ui.TargetUsbRadio.IsChecked -eq $true) { return 'usb' }
+    return 'folder'
+}
+
+function Update-UsbDiskList {
+    $ui = $script:ui
+    Set-BuilderStatus -Text 'Looking for USB sticks...'
+    $all = @(Get-DzUsbDiskCandidate)
+    foreach ($d in @($all | Where-Object { $_.Problem })) { Write-BuilderLog ("Not offered: {0}. {1}" -f $d.Display, $d.Problem) }
+    $ok = @($all | Where-Object { -not $_.Problem })
+    $ui.UsbDiskCombo.ItemsSource = $ok
+    if ($ok.Count -gt 0) { $ui.UsbDiskCombo.SelectedIndex = 0 }
+    Write-BuilderLog ("Found {0} USB stick(s) that can be used." -f $ok.Count)
+    Update-NewUsbInfo
+    if ($ok.Count -gt 0) { Set-BuilderStatus -Text 'Ready.' } else { Set-BuilderStatus -Text 'No USB stick found yet.' -Kind Warn }
+}
+
+function Update-NewUsbInfo {
+    <# The hint under "Make a new Windows USB stick": what gets erased and where Windows comes from. #>
+    $ui = $script:ui
+    if ((Get-TargetKind) -ne 'newusb') { return }
+    $lines = New-Object System.Collections.Generic.List[string]
+    $disk = $ui.UsbDiskCombo.SelectedItem
+    if ($null -eq $disk) {
+        $lines.Add('No USB stick found. Plug one in (8 GB or more) and press Refresh. Internal disks and drives over 300 GB are never offered.')
+    }
+    else {
+        $lines.Add(('EVERYTHING on this stick will be erased: {0}, {1} GB{2}.' -f $disk.Name, $disk.SizeGB, $(if ($disk.Volumes) { ', ' + $disk.Volumes } else { '' })))
+        if ($disk.SizeGB -gt 33) { $lines.Add('It gets one 32 GB partition (the FAT32 limit); the rest of the stick stays unused.') }
+    }
+    if ($ui.SourceIsoRadio.IsChecked -eq $true) {
+        $info = $script:IsoMedia
+        if ($null -eq $info) { $lines.Add('Pick a Windows 10 or 11 ISO file from Microsoft.') }
+        elseif ($info.Error) { $lines.Add("Could not read the ISO file: $($info.Error)") }
+        else {
+            $lines.Add(('ISO: Windows {0} (build {1}), {2}, language {3}.' -f $info.WindowsVersion, $info.Build, $info.Architecture, ($info.Languages -join ', ')))
+            $lines.Add(('Editions: {0}' -f ((@($info.Editions | ForEach-Object { ($_.Name -replace '^Windows 1[01] ', '') })) -join ', ')))
+        }
+    }
+    else {
+        $winVer = if ($ui.Win10Radio.IsChecked -eq $true) { 10 } else { 11 }
+        $lang = [string]$ui.DisplayLanguageCombo.SelectedValue
+        $cached = $null
+        if ($lang) { try { $cached = Get-DzPreparedMedia -WindowsVersion $winVer -Language $lang } catch { $cached = $null } }
+        if ($cached) { $lines.Add("Windows $winVer ($lang) is already on this PC from last time; only a newer release would be downloaded.") }
+        else { $lines.Add("Windows $winVer is downloaded from Microsoft (the files the Media Creation Tool uses), checked against Microsoft's checksum and kept for next time. The first time takes a while: about 5 GB to download, then 15 to 40 minutes to unpack.") }
+    }
+    $ui.MediaInfoText.Text = ($lines -join [Environment]::NewLine)
+}
+
+function Update-SourceMode {
+    <# Download or ISO: fills the display-language list to match what the Windows media will contain. #>
+    $ui = $script:ui
+    $iso = ($ui.SourceIsoRadio.IsChecked -eq $true)
+    $ui.IsoPanel.Visibility = if ($iso) { 'Visible' } else { 'Collapsed' }
+    $info = $script:IsoMedia
+    if ($iso -and $info -and -not $info.Error) {
+        if ($info.WindowsVersion -eq 10) { $ui.Win10Radio.IsChecked = $true } elseif ($info.WindowsVersion -eq 11) { $ui.Win11Radio.IsChecked = $true }
+        if (@($info.Languages).Count -gt 0) {
+            $ui.DisplayLanguageCombo.ItemsSource = @($info.Languages | ForEach-Object { Get-CultureItem -Name $_ })
+            Select-ComboValue -Combo $ui.DisplayLanguageCombo -Value $info.DefaultLanguage
+        }
+    }
+    elseif (-not $iso) {
+        $languages = @(Get-DzWindowsLanguageList)
+        $ui.DisplayLanguageCombo.ItemsSource = @($languages | ForEach-Object { Get-CultureItem -Name $_ })
+        $wanted = (Get-UICulture).Name
+        if ($languages -notcontains $wanted) { $wanted = 'en-US' }
+        Select-ComboValue -Combo $ui.DisplayLanguageCombo -Value $wanted
+    }
+    Update-NewUsbInfo
+}
+
+function Read-IsoMedia {
+    <# Mounts the picked ISO for a moment and reads which Windows is inside. #>
+    $path = $script:ui.IsoPathText.Text.Trim()
+    $script:IsoMedia = $null
+    if (-not $path) { Update-SourceMode; return }
+    Set-BuilderStatus -Text 'Reading the ISO file...'
+    $script:Window.Cursor = [System.Windows.Input.Cursors]::Wait
+    try {
+        $script:IsoMedia = Invoke-DzWithMountedIso -IsoPath $path -Action {
+            param($root)
+            $image = Find-DzInstallImage -Root $root
+            if (-not $image) { throw 'It has no sources\install.wim or install.esd, so it is not Windows installation media.' }
+            Get-DzMediaInfo -ImagePath $image
+        }
+    }
+    catch {
+        $script:IsoMedia = [pscustomobject]@{ Error = $_.Exception.Message }
+    }
+    finally {
+        $script:Window.Cursor = $null
+    }
+    if ($script:IsoMedia.Error) { Write-BuilderLog "ISO read error: $($script:IsoMedia.Error)" }
+    else { Write-BuilderLog ("ISO {0}: Windows {1} build {2} {3}." -f $path, $script:IsoMedia.WindowsVersion, $script:IsoMedia.Build, $script:IsoMedia.Architecture) }
+    Update-SourceMode
+    Set-BuilderStatus -Text 'Ready.'
+}
+
+function Select-IsoFile {
+    $dialog = New-Object Microsoft.Win32.OpenFileDialog
+    $dialog.Title = 'Pick a Windows 10 or 11 ISO file'
+    $dialog.Filter = 'Windows ISO files (*.iso)|*.iso'
+    if ($dialog.ShowDialog($script:Window) -eq $true) {
+        $script:ui.IsoPathText.Text = $dialog.FileName
+        Read-IsoMedia
+    }
+}
+
 function Update-TargetMode {
     $ui = $script:ui
-    $isUsb = ($ui.TargetUsbRadio.IsChecked -eq $true)
-    $ui.UsbPanel.Visibility = if ($isUsb) { 'Visible' } else { 'Collapsed' }
-    $ui.FolderPanel.Visibility = if ($isUsb) { 'Collapsed' } else { 'Visible' }
-    $ui.WriteButton.Content = if ($isUsb) { "_WRITE TO USB  $([char]0x25B6)" } else { "_EXPORT TO FOLDER  $([char]0x25B6)" }
-    if ($isUsb) {
-        Update-MediaInfo
+    $kind = Get-TargetKind
+    $ui.NewUsbPanel.Visibility = if ($kind -eq 'newusb') { 'Visible' } else { 'Collapsed' }
+    $ui.UsbPanel.Visibility = if ($kind -eq 'usb') { 'Visible' } else { 'Collapsed' }
+    $ui.FolderPanel.Visibility = if ($kind -eq 'folder') { 'Visible' } else { 'Collapsed' }
+    $ui.WriteButton.Content = switch ($kind) {
+        'newusb' { "_CREATE WINDOWS USB  $([char]0x25B6)" }
+        'usb' { "_WRITE TO USB  $([char]0x25B6)" }
+        default { "_EXPORT TO FOLDER  $([char]0x25B6)" }
+    }
+    if ($kind -eq 'newusb') {
+        Update-SourceMode
+    }
+    elseif ($kind -eq 'usb') {
+        Update-DriveList
     }
     else {
         $ui.MediaInfoText.Text = ('Writes autounattend.xml and the DayZero folder into an empty folder. ' +
@@ -273,8 +398,25 @@ function Get-BuilderInput {
 
     $target = $null
     $media = $null
-    $isUsb = ($ui.TargetUsbRadio.IsChecked -eq $true)
-    if ($isUsb) {
+    $kind = Get-TargetKind
+    $isUsb = ($kind -eq 'usb')
+    $usbDisk = $null
+    $source = $null
+    $isoPath = $null
+    if ($kind -eq 'newusb') {
+        $usbDisk = $ui.UsbDiskCombo.SelectedItem
+        if ($null -eq $usbDisk) { $errors.Add('Pick the USB stick to make into a Windows installer (plug one in and press Refresh).') }
+        if ($ui.SourceIsoRadio.IsChecked -eq $true) {
+            $source = 'iso'
+            $isoPath = $ui.IsoPathText.Text.Trim()
+            if (-not $isoPath) { $errors.Add('Pick the Windows ISO file (or switch to the download).') }
+            elseif (-not (Test-Path -LiteralPath $isoPath -PathType Leaf)) { $errors.Add('The Windows ISO file is gone.') }
+            elseif ($null -eq $script:IsoMedia -or $script:IsoMedia.Error) { $errors.Add('The Windows ISO file could not be read. Pick another one.') }
+            else { $media = $script:IsoMedia }
+        }
+        else { $source = 'download' }
+    }
+    elseif ($isUsb) {
         $drive = $ui.DriveCombo.SelectedItem
         if ($null -eq $drive) { $errors.Add('Pick the Windows installation USB stick (or switch to Folder).') }
         else {
@@ -292,7 +434,7 @@ function Get-BuilderInput {
 
     $winVer = if ($ui.Win10Radio.IsChecked -eq $true) { 10 } else { 11 }
     if ($media -and -not $media.Error -and $media.WindowsVersion -and $media.WindowsVersion -ne $winVer) {
-        $errors.Add("The stick contains Windows $($media.WindowsVersion), but Windows $winVer is selected.")
+        $errors.Add("The Windows media contains Windows $($media.WindowsVersion), but Windows $winVer is selected.")
     }
     $arch = 'amd64'
     if ($media -and -not $media.Error) {
@@ -308,7 +450,7 @@ function Get-BuilderInput {
     }
     if ($media -and -not $media.Error -and ($edition -eq 'home' -or $edition -eq 'pro') -and
         -not (Test-DzMediaHasEdition -Editions $media.Editions -Edition $edition)) {
-        $errors.Add("The stick has no plain Windows $winVer $edition edition.")
+        $errors.Add("The Windows media has no plain Windows $winVer $edition edition.")
     }
 
     $userName = $ui.UserNameText.Text.Trim()
@@ -334,7 +476,10 @@ function Get-BuilderInput {
     elseif (Test-DzInputLocale -Value $keyboard) { $errors.Add((Test-DzInputLocale -Value $keyboard)) }
     if (-not $timeZone) { $errors.Add('Pick a time zone.') }
     if ($media -and -not $media.Error -and $media.Languages.Count -gt 0 -and $display -and ($media.Languages -notcontains $display)) {
-        $errors.Add("The display language must be one that is on the stick: $($media.Languages -join ', ').")
+        $errors.Add("The display language must be one that is on the Windows media: $($media.Languages -join ', ').")
+    }
+    if ($source -eq 'download' -and $display -and (@(Get-DzWindowsLanguageList) -notcontains $display)) {
+        $errors.Add("Microsoft has no Windows download in $display. Pick another display language.")
     }
 
     $mode = [string]$script:SelectedMode
@@ -389,7 +534,11 @@ function Get-BuilderInput {
     return [pscustomobject]@{
         Errors   = $errors
         Warnings = $warnings
+        Kind     = $kind
         IsUsb    = $isUsb
+        UsbDisk  = $usbDisk
+        Source   = $source
+        IsoPath  = $isoPath
         Target   = $target
         Media    = $media
         Options  = $options
@@ -562,7 +711,7 @@ function Show-ValidationErrors {
 function Invoke-Preview {
     $data = Get-BuilderInput
     # The preview can skip target errors; anything else must be valid to build the XML.
-    $blocking = @($data.Errors | Where-Object { $_ -notmatch 'USB stick|export folder|Drive .* is gone' })
+    $blocking = @($data.Errors | Where-Object { $_ -notmatch 'USB stick|ISO file|export folder|Drive .* is gone' })
     if ($blocking.Count -gt 0) {
         $data.Errors.Clear()
         foreach ($b in $blocking) { $data.Errors.Add($b) }
@@ -589,10 +738,21 @@ function Invoke-Write {
     $data = Get-BuilderInput
     if ($data.Errors.Count -gt 0) { Show-ValidationErrors -InputData $data; return }
 
-    $what = if ($data.IsUsb) { "the USB stick $($data.Target)" } else { "the folder $($data.Target)" }
     $summary = New-Object System.Collections.Generic.List[string]
-    $summary.Add("Write DayZero to ${what}?")
-    $summary.Add('')
+    if ($data.Kind -eq 'newusb') {
+        $disk = $data.UsbDisk
+        $summary.Add("Make a Windows $($data.Settings.windowsVersion) install USB with DayZero on this stick?")
+        $summary.Add('')
+        $summary.Add('EVERYTHING ON IT WILL BE ERASED:')
+        $summary.Add(('   {0}, {1} GB, {2}' -f $disk.Name, $disk.SizeGB, $(if ($disk.Volumes) { $disk.Volumes } else { 'no drive letter' })))
+        $summary.Add('')
+        $summary.Add($(if ($data.Source -eq 'iso') { "Windows from: $($data.IsoPath)" } else { "Windows from: Microsoft download ($($data.Options.UILanguage))" }))
+    }
+    else {
+        $what = if ($data.IsUsb) { "the USB stick $($data.Target)" } else { "the folder $($data.Target)" }
+        $summary.Add("Write DayZero to ${what}?")
+        $summary.Add('')
+    }
     $summary.Add(("Windows {0}, edition: {1}" -f $data.Settings.windowsVersion, $data.Settings.edition))
     $summary.Add(("Account: {0}{1}" -f $data.Settings.userName, $(if ($data.Settings.temporaryPassword) { ' (temporary password)' } else { '' })))
     if ($script:GeneratedPassword -and $script:ui.PasswordBox1.Password -ceq $script:GeneratedPassword) {
@@ -615,7 +775,25 @@ function Invoke-Write {
     Write-BuilderLog "Build id $buildId"
     Set-BuilderStatus -Text 'Writing...'
     $script:Window.Cursor = [System.Windows.Input.Cursors]::Wait
+    $erased = $false
     try {
+        if ($data.Kind -eq 'newusb') {
+            $log = { param($m) Write-BuilderLog $m }
+            $tick = { param($t) if ($t) { Set-BuilderStatus -Text $t } else { Invoke-DzUiRefresh -Element $script:Window } }
+            $script:ui.LogExpander.IsExpanded = $true
+            # Get Windows ready first: if the download fails, the stick has not been touched yet.
+            $tree = $null
+            if ($data.Source -eq 'download') {
+                $tree = Get-DzWindowsMediaTree -WindowsVersion ([int]$data.Settings.windowsVersion) -Language $data.Options.UILanguage -Tick $tick -Log $log
+            }
+            $erased = $true
+            $data.Target = Initialize-DzUsbDisk -Disk $data.UsbDisk -Tick $tick -Log $log
+            if ($tree) { Copy-DzMediaTree -Source $tree -TargetRoot $data.Target -Tick $tick }
+            else { Copy-DzIsoToUsb -IsoPath $data.IsoPath -TargetRoot $data.Target -Tick $tick -Log $log }
+            [void](Set-DzUsbBootSector -TargetRoot $data.Target -Log $log)
+            Write-BuilderLog "Windows $($data.Settings.windowsVersion) is on the stick $($data.Target)"
+            Set-BuilderStatus -Text 'Adding the answer file and the DayZero toolkit...'
+        }
         $xml = New-DzUnattendXml -Options $data.Options
         $result = Write-DzKitToTarget -TargetRoot $data.Target -KitSource $script:KitRoot -UnattendXml $xml -Settings $data.Settings -Log {
             param($m) Write-BuilderLog $m
@@ -640,7 +818,9 @@ function Invoke-Write {
     catch {
         Write-BuilderLog ("ERROR: " + $_.Exception.Message)
         Set-BuilderStatus -Text ('Failed: ' + $_.Exception.Message) -Kind Error
-        [void](Show-DzMessage -Text ("Writing failed:`n`n" + $_.Exception.Message) -Title 'DayZero Builder' -Kind Error -Owner $script:Window)
+        $after = if ($erased) { "`n`nThe USB stick may already be erased and is not usable yet. Fix the problem, press Refresh and try again." } else { '' }
+        [void](Show-DzMessage -Text ("Writing failed:`n`n" + $_.Exception.Message + $after) -Title 'DayZero Builder' -Kind Error -Owner $script:Window)
+        if ($data.Kind -eq 'newusb') { try { Update-UsbDiskList } catch { Write-BuilderLog ('Refresh failed: ' + $_.Exception.Message) } }
         return
     }
     finally {
@@ -648,7 +828,8 @@ function Invoke-Write {
     }
 
     Set-BuilderStatus -Text ("Done! Build $buildId written to $($data.Target)") -Kind Ok
-    if ($data.IsUsb) {
+    if ($data.Kind -eq 'newusb') { try { Update-UsbDiskList } catch { Write-BuilderLog ('Refresh failed: ' + $_.Exception.Message) } }
+    if ($data.IsUsb -or $data.Kind -eq 'newusb') {
         $next = "All done!`n`nNext steps:`n 1. Eject the stick safely.`n 2. Boot the PC from it (boot menu key is often F12, F11, F8 or Esc).`n 3. When Setup asks where to install Windows, pick the disk yourself.`n 4. Everything else runs on its own; the DayZero wizard starts after the first sign-in."
     }
     else {
@@ -699,6 +880,7 @@ function Start-Builder {
     Import-Module (Join-Path $script:BuilderRoot 'lib\Unattend.psm1') -Force
     Import-Module (Join-Path $script:BuilderRoot 'lib\Media.psm1') -Force
     Import-Module (Join-Path $script:BuilderRoot 'lib\UsbWriter.psm1') -Force
+    Import-Module (Join-Path $script:BuilderRoot 'lib\WinMedia.psm1') -Force
 
     # Files downloaded from the internet carry a "blocked" mark; clear it so the copy on
     # the USB stick runs cleanly on the new PC.
@@ -743,6 +925,17 @@ function Start-Builder {
     $ui.RefreshDrivesButton.Add_Click({ $script:MediaByDrive = @{}; Update-DriveList })
     $ui.DriveCombo.Add_SelectionChanged({ Update-MediaInfo })
     $ui.TargetUsbRadio.Add_Checked({ Update-TargetMode })
+    $ui.TargetNewUsbRadio.Add_Checked({ Update-TargetMode })
+    $ui.RefreshDisksButton.Add_Click({ Update-UsbDiskList })
+    $ui.UsbDiskCombo.Add_SelectionChanged({ Update-NewUsbInfo })
+    $ui.SourceDownloadRadio.Add_Checked({ Update-SourceMode })
+    $ui.SourceIsoRadio.Add_Checked({ Update-SourceMode })
+    $ui.BrowseIsoButton.Add_Click({
+            try { Select-IsoFile } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
+        })
+    $ui.Win10Radio.Add_Checked({ Update-NewUsbInfo })
+    $ui.Win11Radio.Add_Checked({ Update-NewUsbInfo })
+    $ui.DisplayLanguageCombo.Add_SelectionChanged({ Update-NewUsbInfo })
     $ui.TargetFolderRadio.Add_Checked({ Update-TargetMode })
     $ui.BrowseFolderButton.Add_Click({ Select-ExportFolder })
     $ui.EditionCombo.Add_SelectionChanged({ Update-EditionHint })
@@ -781,7 +974,8 @@ function Start-Builder {
         })
 
     $script:Window.Add_ContentRendered({
-            Update-DriveList
+            Update-SourceMode
+            Update-UsbDiskList
             Update-EditionHint
             $script:ui.UserNameText.Focus()
         })

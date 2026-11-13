@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.11.0 - the builder makes the Windows stick
+- New default: **Make a new Windows USB stick**. Pick the stick and Windows 10 or 11, press
+  **CREATE WINDOWS USB**: the builder gets Windows, erases the stick, makes it bootable (UEFI
+  and legacy BIOS) and adds the answer file and toolkit. No Media Creation Tool or Rufus needed.
+- Windows is downloaded from Microsoft through the Media Creation Tool's own catalogue, checked
+  against Microsoft's size and SHA-1, unpacked with DISM and kept in
+  `%LOCALAPPDATA%\DayZero\media` for the next stick. Or pick a Windows ISO file you have.
+- Only USB drives of 7.5 to 300 GB that Windows is not running from can be erased; the stick is
+  re-checked right before erasing. Sticks you already made still work as before.
+
 ## 0.10.0 - your own scripts
 - `kit\Scripts\` / `DayZero\Scripts\`: your .cmd, .bat and .ps1 files run on the new PC after
   the apps, as administrator, in name order. Review switch, **Run my scripts** button on the

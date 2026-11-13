@@ -3,17 +3,18 @@
 A USB stick that installs Windows and then sets the PC up for you: think **Ninite + an
 unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 
-> **Status: v0.10.0, all six stages built.** 616 automated tests and static checks pass,
+> **Status: v0.11.0, all six stages built.** 659 automated tests and static checks pass,
 > including a complete dry run of every mode. **It has not run on real Windows yet**: the
 > GUI (WPF) and the Windows-only steps can only be tested on Windows. Do the VM test in
 > [TESTING.md](TESTING.md) before you use it on a real PC.
 
 ## How it works
 
-1. **Make a normal Windows install USB** with Microsoft's
-   [Media Creation Tool](https://www.microsoft.com/software-download/windows11) (or Rufus).
-2. **Run the DayZero Builder** on any Windows PC. It adds `autounattend.xml` (the answer file
-   Windows Setup reads by itself) and the `DayZero\` toolkit to that stick.
+1. **Run the DayZero Builder** on any Windows PC and plug in an empty USB stick (8 GB or more).
+2. **Choose your settings and press CREATE WINDOWS USB.** The builder downloads Windows 10 or
+   11 from Microsoft (or uses an ISO file you have), erases the stick, puts Windows on it and
+   adds `autounattend.xml` (the answer file Windows Setup reads by itself) and the `DayZero\`
+   toolkit. A stick you already made with the Media Creation Tool or Rufus works too.
 3. **Boot the PC from the stick.** Setup runs on its own, **except that it always stops and
    asks which disk to install on.** DayZero never picks, wipes or partitions a disk.
 4. **The DayZero wizard starts at the first sign-in.** Pick a mode, tick what you want, and
@@ -21,14 +22,31 @@ unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 
 ## Quick start
 
-1. Make the Windows USB with the Media Creation Tool.
-   *Rufus?* Untick its "Windows User Experience" options (they write their own answer file).
+1. Plug in a USB stick of 8 GB or more. **It will be erased.**
 2. Get DayZero: in GitHub Desktop **Clone** `acepov2008/DayZero`, or on GitHub use
    **Code > Download ZIP** (then right-click the ZIP > **Properties** > tick **Unblock** before extracting).
 3. Double-click **`Build-DayZeroUSB.cmd`** and accept the admin prompt.
-4. Pick the stick, fill in your account, region, default mode and clean-up level, press **WRITE TO USB**.
+4. Pick the stick, Windows 10 or 11, your account, region, default mode and clean-up level,
+   then press **CREATE WINDOWS USB**. The first time, Windows is downloaded (about 5 GB) and
+   unpacked (15 to 40 minutes); after that it is reused and a new stick takes a few minutes.
 5. Boot the target PC from the stick (boot menu key: often F12, F11, F8 or Esc), pick the disk
    when Setup asks, and let it run.
+
+### Where Windows comes from
+
+* **Download (default).** The builder reads the same catalogue as Microsoft's Media Creation
+  Tool, downloads that Windows image from `dl.delivery.mp.microsoft.com`, checks its size and
+  SHA-1 against the catalogue and unpacks it with DISM. The result is kept in
+  `%LOCALAPPDATA%\DayZero\media` (about 5 GB per Windows version and language; delete the
+  folder to get the space back). Windows itself is never stored in this repository.
+* **ISO file.** Pick a Windows ISO you downloaded from Microsoft. An `install.wim` over 4 GB
+  is split into `install.swm` parts so it fits the FAT32 stick.
+* **A stick you already made** with the Media Creation Tool or Rufus: nothing is erased, only
+  the answer file and toolkit are added. *Rufus?* Untick its "Windows User Experience" options
+  (they write their own answer file).
+
+The stick is formatted FAT32 with one partition of up to 32 GB, so it boots on UEFI (with
+Secure Boot) and on legacy BIOS. Home, Home Single Language, Education and Pro are on it.
 
 ## The four modes
 
@@ -176,6 +194,10 @@ once (digital licence). The summary shows the result. No activators or bypass sc
 ## Safety summary
 
 * No disk selection, partitioning or wiping in the answer file (a test fails the build otherwise).
+* The builder erases only the USB stick you pick and confirm. Internal disks, the disk Windows
+  runs from, write-protected drives and drives over 300 GB are refused in code, and the stick
+  is re-checked right before it is erased.
+* The Windows download must come from microsoft.com and match Microsoft's size and SHA-1.
 * Only documented answer-file settings; no BypassNRO or other OOBE hacks.
 * Passwords in the answer file are base64 (warned about); temporary-password option.
 * Restore point before tweaks; every tweak recorded and reversible; dry-run mode.
@@ -201,7 +223,8 @@ On the new PC: `C:\DayZero\Logs\engine-*.log` (every step), `C:\DayZero\state.js
 
 ```
 Build-DayZeroUSB.cmd      builder launcher (asks for admin; execution policy bypassed for that process only)
-builder\                  builder GUI + modules (Unattend.psm1 = answer-file generator, Bundles.psm1 = offline installers)
+builder\                  builder GUI + modules (Unattend.psm1 = answer-file generator, WinMedia.psm1 = Windows
+                          download + making the stick, Bundles.psm1 = offline installers)
 kit\                      everything copied to the stick and then to C:\DayZero
   DayZero.cmd / .ps1      wizard launcher / wizard (-DryRun, -Resume, -Reset, -Undo, /console)
   bootstrap\              scripts the answer file runs during setup and at first sign-in
