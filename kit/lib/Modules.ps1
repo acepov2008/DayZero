@@ -3,6 +3,7 @@
 # modules, because they register their step types with it when they load.
 @(
     'Core.psm1',
+    'Lang.psm1',
     'Config.psm1',
     'System.psm1',
     'State.psm1',

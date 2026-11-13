@@ -64,6 +64,7 @@ $script:WaitingForRestart = $false
 $script:CloseWhenStopped = $false
 $script:Paused = $false
 $script:LastError = $null
+$script:LanguagePath = $null
 
 # ------------------------------------------------------------------------------------
 # Helpers
@@ -88,7 +89,7 @@ function Get-DzBrush {
 function New-DzTextBlock {
     param([string]$Text, [double]$Size = 13, [string]$Brush = '', [switch]$Bold, [switch]$Wrap, [switch]$Emoji, [double]$Top = 0)
     $tb = New-Object System.Windows.Controls.TextBlock
-    $tb.Text = $Text
+    $tb.Text = [string](Get-DzText $Text)
     $tb.FontSize = $Size
     if ($Bold) { $tb.FontWeight = [System.Windows.FontWeights]::Bold }
     if ($Wrap) { $tb.TextWrapping = [System.Windows.TextWrapping]::Wrap }
@@ -109,7 +110,8 @@ function New-DzStepView {
     if ($null -eq $Message) { $Message = [string]$Step.message }
     $icon = $script:Icons['pending']
     if ($script:Icons.ContainsKey($Status)) { $icon = $script:Icons[$Status] }
-    return [pscustomobject]@{ Index = $Index; Id = [string]$Step.id; Title = [string]$Step.title; Status = $Status; Icon = $icon; Message = [string]$Message }
+    # Title and message are shown in the step list; the state file and the logs keep the English text.
+    return [pscustomobject]@{ Index = $Index; Id = [string]$Step.id; Title = [string](Get-DzText ([string]$Step.title)); Status = $Status; Icon = $icon; Message = [string](Get-DzText ([string]$Message)) }
 }
 
 # ------------------------------------------------------------------------------------
@@ -148,6 +150,8 @@ function Set-DzPage {
         try { Invoke-DzPageAnimation -Element $pageElement } catch { Write-Verbose 'Page animation skipped.' }
     }
 
+    # The language is picked on the first page; later pages are built in it.
+    Set-DzVisible $ui.LanguageButton ($Name -eq 'Mode')
     Set-DzVisible $ui.BackButton ($Name -eq 'Review')
     Set-DzVisible $ui.StopButton ($Name -eq 'Progress' -and -not $script:WaitingForRestart)
     Set-DzVisible $ui.OpenLogsButton ($Name -in @('Progress', 'Summary'))
@@ -158,25 +162,50 @@ function Set-DzPage {
     $ui.NextButton.IsEnabled = $true
     switch ($Name) {
         'Mode' {
-            $ui.NextButton.Content = "_NEXT  $($script:Arrow)"
-            $ui.HintText.Text = 'Arrow keys or 1 - 4 pick a mode  |  Enter continues'
+            $ui.NextButton.Content = Get-DzText $("_NEXT  $($script:Arrow)")
+            $ui.HintText.Text = Get-DzText $('Arrow keys or 1 - 4 pick a mode  |  Enter continues')
         }
         'Review' {
-            $ui.NextButton.Content = "_START  $($script:Arrow)"
-            $ui.HintText.Text = 'Space ticks a box  |  Enter starts  |  Esc goes back'
+            $ui.NextButton.Content = Get-DzText $("_START  $($script:Arrow)")
+            $ui.HintText.Text = Get-DzText $('Space ticks a box  |  Enter starts  |  Esc goes back')
         }
         'Progress' {
-            $ui.HintText.Text = 'L shows the live log  |  You can keep using the PC; restarts are announced first'
+            $ui.HintText.Text = Get-DzText $('L shows the live log  |  You can keep using the PC; restarts are announced first')
         }
         'Summary' {
-            $ui.NextButton.Content = if ($script:Paused) { "_CONTINUE  $($script:Arrow)" } else { "_FINISH  $($script:Arrow)" }
-            $ui.HintText.Text = 'Finish turns off automatic sign-in and cleans up the setup helpers'
+            $ui.NextButton.Content = Get-DzText $(if ($script:Paused) { "_CONTINUE  $($script:Arrow)" } else { "_FINISH  $($script:Arrow)" })
+            $ui.HintText.Text = Get-DzText $('Finish turns off automatic sign-in and cleans up the setup helpers')
         }
         'Esu' {
-            $ui.NextButton.Content = '_CLOSE'
+            $ui.NextButton.Content = Get-DzText $('_CLOSE')
             $ui.HintText.Text = ''
         }
     }
+}
+
+function Update-DzLanguageButton {
+    $current = Get-DzLanguage
+    $name = @(Get-DzLanguageList | Where-Object { $_.Code -eq $current } | ForEach-Object { $_.Name }) | Select-Object -First 1
+    $script:ui.LanguageButton.Content = ('{0}: {1}' -f (Get-DzText 'Language'), $name)
+}
+
+function Switch-DzWizardLanguage {
+    <# Moves to the next language (only offered on the mode page) and redraws that page. #>
+    $codes = @(Get-DzLanguageList | ForEach-Object { $_.Code })
+    $next = $codes[([array]::IndexOf($codes, (Get-DzLanguage)) + 1) % $codes.Count]
+    [void](Set-DzLanguage -Code $next)
+    Save-DzLanguageChoice -Path $script:LanguagePath -Code $next
+    Write-DzLog -Message "Interface language: $next"
+    Update-DzTranslation -Root $script:Window
+    Update-DzLanguageButton
+    $script:ui.SubtitleText.Text = Get-DzText $(("SETUP WIZARD  {0}  v{1}" -f [char]0x00B7, (Get-DzVersion)))
+    $mode = $script:SelectedMode
+    Initialize-DzModeCards
+    if ($mode) { Select-DzMode -Id $mode }
+    $script:Page = ''
+    Set-DzPage Mode
+    $sel = @($script:ModeCards | Where-Object { $_.IsChecked }) | Select-Object -First 1
+    if ($sel) { $sel.Focus() | Out-Null }
 }
 
 function Initialize-DzModeCards {
@@ -253,7 +282,7 @@ function Show-DzReview {
     $level = if ($script:Settings.PSObject.Properties['debloatLevel']) { [string]$script:Settings.debloatLevel } else { $null }
     $scripts = @(Get-DzUserScript -Folder (Get-DzUserScriptFolder -KitRoot $script:Kit -BuildId ([string]$script:Settings.buildId)) | ForEach-Object { $_.Name })
     $review = Get-DzReviewModel -Mode $mode -System $script:System -Config $script:Config -Preselect $preselect -DebloatLevel $level -UserScripts $scripts
-    $ui.ReviewTitleText.Text = ("YOUR PC  {0}  {1} MODE" -f $script:Bullet, $mode.title)
+    $ui.ReviewTitleText.Text = Get-DzText $(("YOUR PC  {0}  {1} MODE" -f $script:Bullet, $mode.title))
 
     $sys = $script:System
     if ($sys) {
@@ -264,11 +293,11 @@ function Show-DzReview {
             ('Graphics   {0}' -f $(if (@($sys.GpuNames).Count) { @($sys.GpuNames) -join ', ' } else { 'not detected' })),
             ('Memory     {0} GB    Free disk {1} GB' -f $sys.MemoryGB, $sys.FreeDiskGB)
         )
-        $ui.SystemInfoText.Text = ($lines -join [Environment]::NewLine)
+        $ui.SystemInfoText.Text = Get-DzText $(($lines -join [Environment]::NewLine))
         Set-DzVisible $ui.LaptopNotice ([bool]$sys.IsLaptop)
     }
     else {
-        $ui.SystemInfoText.Text = 'Could not read the PC details (see the log).'
+        $ui.SystemInfoText.Text = Get-DzText $('Could not read the PC details (see the log).')
     }
 
     $ui.OptionsPanel.Children.Clear()
@@ -312,10 +341,10 @@ function Start-DzEngine {
     Set-DzPage Progress
     Initialize-DzStepItems
     $ui = $script:ui
-    $ui.CurrentStepText.Text = 'Starting...'
+    $ui.CurrentStepText.Text = Get-DzText $('Starting...')
     $ui.ProgressDetailText.Text = ''
     $ui.StopButton.IsEnabled = $true
-    $ui.StopButton.Content = '_Pause after this step'
+    $ui.StopButton.Content = Get-DzText $('_Pause after this step')
     $script:Sync = New-DzSync -System $script:System
     $script:Job = Start-DzRunAsync -KitRoot $script:Kit -StatePath $script:StatePath -Sync $script:Sync -DryRun (Test-DzDryRun)
     $script:Timer.Start()
@@ -342,9 +371,9 @@ function Update-DzFromQueue {
                 $i = [int]$msg.index
                 if ($i -lt $script:StepItems.Count) {
                     $old = $script:StepItems[$i]
-                    $script:StepItems[$i] = [pscustomobject]@{ Index = $i; Id = $old.Id; Title = $old.Title; Status = [string]$msg.status; Icon = $(if ($script:Icons.ContainsKey([string]$msg.status)) { $script:Icons[[string]$msg.status] } else { $old.Icon }); Message = [string]$msg.message }
+                    $script:StepItems[$i] = [pscustomobject]@{ Index = $i; Id = $old.Id; Title = $old.Title; Status = [string]$msg.status; Icon = $(if ($script:Icons.ContainsKey([string]$msg.status)) { $script:Icons[[string]$msg.status] } else { $old.Icon }); Message = [string](Get-DzText ([string]$msg.message)) }
                     if ($msg.status -eq 'running') {
-                        $ui.CurrentStepText.Text = [string]$msg.title
+                        $ui.CurrentStepText.Text = Get-DzText $([string]$msg.title)
                         $ui.ProgressDetailText.Text = ''
                         $container = $ui.StepList.ItemContainerGenerator.ContainerFromIndex($i)
                         if ($container) { $container.BringIntoView() }
@@ -355,14 +384,14 @@ function Update-DzFromQueue {
                 $i = [int]$msg.index
                 if ($i -lt $script:StepItems.Count) {
                     $old = $script:StepItems[$i]
-                    $script:StepItems[$i] = [pscustomobject]@{ Index = $i; Id = $old.Id; Title = $old.Title; Status = $old.Status; Icon = $old.Icon; Message = [string]$msg.message }
+                    $script:StepItems[$i] = [pscustomobject]@{ Index = $i; Id = $old.Id; Title = $old.Title; Status = $old.Status; Icon = $old.Icon; Message = [string](Get-DzText ([string]$msg.message)) }
                 }
-                $ui.ProgressDetailText.Text = [string]$msg.message
+                $ui.ProgressDetailText.Text = Get-DzText $([string]$msg.message)
             }
             'progress' {
                 $ui.OverallProgress.Maximum = [Math]::Max(1, [int]$msg.total)
                 $ui.OverallProgress.Value = [int]$msg.done
-                $ui.ProgressCountText.Text = ('{0} / {1}' -f $msg.done, $msg.total)
+                $ui.ProgressCountText.Text = Get-DzText $(('{0} / {1}' -f $msg.done, $msg.total))
             }
             'reboot' { Show-DzReboot -Reason ([string]$msg.reason) }
             'done' { Complete-DzEngine -Outcome ([string]$msg.outcome); return }
@@ -398,9 +427,9 @@ function Show-DzReboot {
     param([string]$Reason)
     $ui = $script:ui
     $script:WaitingForRestart = $true
-    $ui.RebootReasonText.Text = $Reason
+    $ui.RebootReasonText.Text = Get-DzText $($Reason)
     $script:RebootSeconds = 60
-    $ui.RebootCountdownText.Text = "Restarting in $($script:RebootSeconds) seconds..."
+    $ui.RebootCountdownText.Text = Get-DzText $("Restarting in $($script:RebootSeconds) seconds...")
     Set-DzVisible $ui.StopButton $false
     Set-DzVisible $ui.RebootOverlay $true
     $ui.RestartNowButton.Focus() | Out-Null
@@ -411,7 +440,7 @@ function Invoke-DzRestartNow {
     $script:RebootTimer.Stop()
     $script:ui.RestartNowButton.IsEnabled = $false
     $script:ui.RestartLaterButton.IsEnabled = $false
-    $script:ui.RebootCountdownText.Text = 'Restarting now...'
+    $script:ui.RebootCountdownText.Text = Get-DzText $('Restarting now...')
     Write-DzLog -Level Step -Message 'Restarting to continue setup.'
     Invoke-DzRestart -Reason 'continue DayZero setup'
 }
@@ -419,9 +448,9 @@ function Invoke-DzRestartNow {
 function Stop-DzRestartCountdown {
     $script:RebootTimer.Stop()
     Set-DzVisible $script:ui.RebootOverlay $false
-    $script:ui.NextButton.Content = "_RESTART NOW  $($script:Arrow)"
+    $script:ui.NextButton.Content = Get-DzText $("_RESTART NOW  $($script:Arrow)")
     Set-DzVisible $script:ui.NextButton $true
-    $script:ui.HintText.Text = 'DayZero continues automatically after the next restart.'
+    $script:ui.HintText.Text = Get-DzText $('DayZero continues automatically after the next restart.')
     Write-DzLog -Message 'Restart postponed by the user.'
 }
 
@@ -438,26 +467,26 @@ function Show-DzSummary {
     foreach ($s in @($script:State.steps)) { $list.Add((New-DzStepView -Index $i -Step $s)); $i++ }
     $ui.SummaryList.ItemsSource = $list
 
-    if ($script:Paused) { $ui.SummaryTitleText.Text = 'PAUSED' }
-    elseif ($counts.failed -gt 0 -or $script:LastError) { $ui.SummaryTitleText.Text = ('DONE, WITH {0} PROBLEM{1}' -f $counts.failed, $(if ($counts.failed -eq 1) { '' } else { 'S' })) }
-    else { $ui.SummaryTitleText.Text = ('ALL DONE ' + $script:Icons['done']) }
-    $ui.SummaryCountsText.Text = ('{0} done  |  {1} with notes  |  {2} failed  |  {3} skipped  |  {4} not started{5}' -f $counts.done, $counts.warn, $counts.failed, $counts.skipped, ($counts.pending + $counts.reboot + $counts.running), $(if (Test-DzDryRun) { '   (DRY RUN: nothing was changed)' } else { '' }))
+    if ($script:Paused) { $ui.SummaryTitleText.Text = (Get-DzText 'PAUSED') }
+    elseif ($counts.failed -gt 0 -or $script:LastError) { $ui.SummaryTitleText.Text = (Get-DzText 'DONE, WITH PROBLEMS: {0}') -f $counts.failed }
+    else { $ui.SummaryTitleText.Text = ((Get-DzText 'ALL DONE') + ' ' + $script:Icons['done']) }
+    $ui.SummaryCountsText.Text = Get-DzText $(('{0} done  |  {1} with notes  |  {2} failed  |  {3} skipped  |  {4} not started{5}' -f $counts.done, $counts.warn, $counts.failed, $counts.skipped, ($counts.pending + $counts.reboot + $counts.running), $(if (Test-DzDryRun) { '   (DRY RUN: nothing was changed)' } else { '' })))
 
     # Activation (read-only)
     $act = Get-DzActivationStatus
     if ($act.Error) {
-        $ui.ActivationText.Text = 'Could not read the activation status.'
-        $ui.ActivationDetailText.Text = $act.Error
+        $ui.ActivationText.Text = Get-DzText $('Could not read the activation status.')
+        $ui.ActivationDetailText.Text = Get-DzText $($act.Error)
     }
     else {
-        $ui.ActivationText.Text = if ($act.Activated) { "$($script:Icons['done']) Windows is activated" } else { "$($script:Icons['failed']) $($act.StatusText)" }
+        $ui.ActivationText.Text = if ($act.Activated) { "$($script:Icons['done']) " + (Get-DzText 'Windows is activated') } else { "$($script:Icons['failed']) " + (Get-DzText ([string]$act.StatusText)) }
         $ui.ActivationText.Foreground = Get-DzBrush $(if ($act.Activated) { 'DzGreen' } else { 'DzRed' })
         $detail = @()
         if ($act.Edition) { $detail += $act.Edition }
         if ($act.Channel) { $detail += "Licence channel: $($act.Channel)" }
         if ($act.FirmwareKeyPresent) { $detail += "Key in this PC's firmware: $($act.FirmwareEdition)" }
         if (-not $act.Activated) { $detail += 'Settings > System > Activation shows why. A digital licence often kicks in within an hour of being online.' }
-        $ui.ActivationDetailText.Text = ($detail -join [Environment]::NewLine)
+        $ui.ActivationDetailText.Text = Get-DzText $(($detail -join [Environment]::NewLine))
     }
 
     $notes = New-Object System.Collections.Generic.List[string]
@@ -475,7 +504,7 @@ function Show-DzSummary {
     if ($script:Settings.temporaryPassword) { $notes.Add('You set a temporary password: Windows asks for a new one at your next sign-in.') }
     if (Test-DzDryRun) { $notes.Add('This was a DRY RUN. Open the logs to see everything DayZero would have done.') }
     if (-not $script:Paused) { $notes.Add('Press FINISH to switch off automatic sign-in and remove the setup helpers.') }
-    $ui.NextStepsText.Text = (($notes | ForEach-Object { "$($script:Bullet) $_" }) -join [Environment]::NewLine)
+    $ui.NextStepsText.Text = Get-DzText $((($notes | ForEach-Object { "$($script:Bullet) $_" }) -join [Environment]::NewLine))
 
     Set-DzPage Summary
     Set-DzVisible $ui.RetryButton ($counts.failed -gt 0)
@@ -586,7 +615,7 @@ function Confirm-DzClose {
         $script:CloseWhenStopped = $true
         $script:Sync.Cancel = $true
         $script:ui.StopButton.IsEnabled = $false
-        $script:ui.StopButton.Content = 'Pausing...'
+        $script:ui.StopButton.Content = Get-DzText $('Pausing...')
         Write-DzLog -Message 'Closing requested: pausing after the current step.'
     }
 }
@@ -601,6 +630,13 @@ function Start-DzWizard {
     Import-Module (Join-Path $lib 'Ui.psm1') -Force
 
     $script:Settings = Get-DzSettings
+    # Interface language: what was picked in this wizard before, else the builder's choice,
+    # else the language Windows is shown in (when there is a pack for it), else English.
+    [void](Import-DzLanguage -KitRoot $script:Kit)
+    $script:LanguagePath = Join-Path $script:Kit 'language.txt'
+    $preferred = Read-DzLanguageChoice -Path $script:LanguagePath
+    if (-not $preferred -and $script:Settings.PSObject.Properties['appLanguage']) { $preferred = [string]$script:Settings.appLanguage }
+    [void](Set-DzLanguage -Code (Get-DzDefaultLanguage -Preferred $preferred))
     $script:StatePath = Get-DzStatePath
     if ($script:Cli.Reset -and (Test-Path -LiteralPath $script:StatePath)) {
         Move-Item -LiteralPath $script:StatePath -Destination ($script:StatePath + '.reset-' + (Get-Date -Format 'yyyyMMdd-HHmmss')) -Force
@@ -634,8 +670,10 @@ function Start-DzWizard {
     $script:Window = Import-DzXaml -Path $xamlPath
     $script:ui = Get-DzNamedElement -Root $script:Window -XamlPath $xamlPath
     $ui = $script:ui
+    Update-DzTranslation -Root $script:Window
+    Update-DzLanguageButton
 
-    $ui.SubtitleText.Text = ("SETUP WIZARD  {0}  v{1}" -f [char]0x00B7, (Get-DzVersion))
+    $ui.SubtitleText.Text = Get-DzText $(("SETUP WIZARD  {0}  v{1}" -f [char]0x00B7, (Get-DzVersion)))
     Set-DzVisible $ui.DryRunBadge $dry
     if ($script:System) { $ui.SystemChipText.Text = Format-DzSystemSummary -System $script:System }
     $script:StepItems = New-Object 'System.Collections.ObjectModel.ObservableCollection[object]'
@@ -649,12 +687,13 @@ function Start-DzWizard {
     $script:RebootTimer.Add_Tick({
             Invoke-DzSafe {
                 $script:RebootSeconds--
-                $script:ui.RebootCountdownText.Text = "Restarting in $($script:RebootSeconds) seconds..."
+                $script:ui.RebootCountdownText.Text = Get-DzText $("Restarting in $($script:RebootSeconds) seconds...")
                 if ($script:RebootSeconds -le 0) { Invoke-DzRestartNow }
             }
         })
 
     $ui.NextButton.Add_Click({ Invoke-DzSafe { Invoke-DzNext } })
+    $ui.LanguageButton.Add_Click({ Invoke-DzSafe { Switch-DzWizardLanguage } })
     $ui.BackButton.Add_Click({ Invoke-DzSafe { Set-DzPage Mode } })
     $ui.RetryButton.Add_Click({ Invoke-DzSafe { Invoke-DzRetry } })
     $ui.OpenLinksButton.Add_Click({ Invoke-DzSafe { Open-DzFollowUp } })
@@ -670,7 +709,7 @@ function Start-DzWizard {
             Invoke-DzSafe {
                 if ($script:Sync) { $script:Sync.Cancel = $true }
                 $script:ui.StopButton.IsEnabled = $false
-                $script:ui.StopButton.Content = 'Pausing after this step...'
+                $script:ui.StopButton.Content = Get-DzText $('Pausing after this step...')
                 Write-DzLog -Message 'Pause requested.'
             }
         })

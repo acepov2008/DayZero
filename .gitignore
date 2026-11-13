@@ -13,3 +13,4 @@ kit/build-*.marker
 TestResults/
 *.log
 .vscode/
+kit/language.txt

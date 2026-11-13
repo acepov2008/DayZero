@@ -26,6 +26,8 @@ $script:LogLines = New-Object System.Collections.Generic.List[string]
 $script:MediaByDrive = @{}
 $script:IsoMedia = $null
 $script:Busy = $false
+$script:CacheWindow = $null
+$script:CacheNames = $null
 $script:GeneratedPassword = $null
 $script:ThisPcFirmware = $null
 $script:BuilderConfig = $null
@@ -62,6 +64,7 @@ function Set-BuilderBusy {
     $ui.BuildProgress.Visibility = if ($Busy -and $ShowProgress) { 'Visible' } else { 'Collapsed' }
     $ui.BodyGrid.IsEnabled = -not $Busy
     $ui.PreviewButton.IsEnabled = -not $Busy
+    $ui.VerifyButton.IsEnabled = -not $Busy
     $ui.WriteButton.IsEnabled = -not $Busy
     $script:Window.Cursor = if ($Busy) { [System.Windows.Input.Cursors]::AppStarting } else { $null }
     Invoke-DzUiRefresh -Element $script:Window
@@ -86,7 +89,7 @@ function Set-BuilderStatus {
         'Error' { 'DzRed' }
         default { 'DzMuted' }
     }
-    $script:ui.StatusText.Text = $Text
+    $script:ui.StatusText.Text = Get-DzText $($Text)
     $script:ui.StatusText.Foreground = [System.Windows.Application]::Current.FindResource($brush)
     if ($script:Busy) {
         # The bar only moves forward: each status line maps to a point in the whole job.
@@ -98,12 +101,76 @@ function Set-BuilderStatus {
 }
 
 # ------------------------------------------------------------------------------------
+# Interface language
+# ------------------------------------------------------------------------------------
+
+function Get-BuilderLanguagePath {
+    $base = if ($env:LOCALAPPDATA) { $env:LOCALAPPDATA } else { [System.IO.Path]::GetTempPath() }
+    return (Join-Path (Join-Path $base 'DayZero') 'language.txt')
+}
+
+function Update-LanguageButton {
+    <# The button names the language in use; pressing it moves to the next one. #>
+    $current = Get-DzLanguage
+    $name = @(Get-DzLanguageList | Where-Object { $_.Code -eq $current } | ForEach-Object { $_.Name }) | Select-Object -First 1
+    $script:ui.LanguageButton.Content = ('{0}: {1}' -f (Get-DzText 'Language'), $name)
+}
+
+function Initialize-BuilderChoiceLists {
+    <# The edition and Microsoft 365 drop-downs (their labels are translated), keeping what was picked. #>
+    $ui = $script:ui
+    $edition = [string]$ui.EditionCombo.SelectedValue
+    $plan = [string]$ui.OfficePlanCombo.SelectedValue
+    $ui.EditionCombo.ItemsSource = @(
+        (New-ListItem -Label "Auto - match the PC's built-in key (recommended)" -Value 'auto'),
+        (New-ListItem -Label 'Home' -Value 'home'),
+        (New-ListItem -Label 'Pro' -Value 'pro'),
+        (New-ListItem -Label 'Use my own product key' -Value 'key')
+    )
+    $ui.OfficePlanCombo.ItemsSource = @(
+        (New-ListItem -Label 'Microsoft 365 Personal / Family' -Value 'personal'),
+        (New-ListItem -Label 'Microsoft 365 Business Standard / Premium' -Value 'business'),
+        (New-ListItem -Label 'Microsoft 365 E3 / E5 (enterprise)' -Value 'enterprise')
+    )
+    if ($edition) { $ui.EditionCombo.SelectedValue = $edition } else { $ui.EditionCombo.SelectedIndex = 0 }
+    if ($plan) { $ui.OfficePlanCombo.SelectedValue = $plan } else { $ui.OfficePlanCombo.SelectedIndex = 0 }
+}
+
+function Switch-BuilderLanguage {
+    <# Moves to the next language and redraws everything that shows text. What you typed stays. #>
+    $codes = @(Get-DzLanguageList | ForEach-Object { $_.Code })
+    $next = $codes[([array]::IndexOf($codes, (Get-DzLanguage)) + 1) % $codes.Count]
+    [void](Set-DzLanguage -Code $next)
+    Save-DzLanguageChoice -Path (Get-BuilderLanguagePath) -Code $next
+    Update-DzTranslation -Root $script:Window
+    Update-LanguageButton
+    $script:ui.VersionText.Text = Get-DzText $("USB BUILDER  $([char]0x00B7)  v$($script:Version)")
+    Initialize-BuilderChoiceLists
+    $mode = $script:SelectedMode
+    $level = $script:SelectedLevel
+    Initialize-BuilderModeCards
+    Select-BuilderMode -Id $mode
+    Initialize-BuilderLevelCards
+    Select-BuilderLevel -Id $level
+    # Update-TargetMode refills the Windows display-language list; keep what was picked there.
+    $display = [string]$script:ui.DisplayLanguageCombo.SelectedValue
+    Update-TargetMode
+    if ($display -and (@($script:ui.DisplayLanguageCombo.ItemsSource | Where-Object { $_.Value -ieq $display }).Count -gt 0)) {
+        Select-ComboValue -Combo $script:ui.DisplayLanguageCombo -Value $display
+    }
+    Update-EditionHint
+    Update-ScriptsCount
+    Set-BuilderStatus -Text 'Ready.'
+    Write-BuilderLog "Interface language: $next"
+}
+
+# ------------------------------------------------------------------------------------
 # Data for the drop-downs
 # ------------------------------------------------------------------------------------
 
 function New-ListItem {
     param([string]$Label, [string]$Value)
-    return [pscustomobject]@{ Label = $Label; Value = $Value }
+    return [pscustomobject]@{ Label = [string](Get-DzText $Label); Value = $Value }
 }
 
 function Get-CultureItem {
@@ -193,7 +260,7 @@ function Update-DriveList {
         Set-BuilderStatus -Text 'Ready.'
     }
     else {
-        $ui.MediaInfoText.Text = 'No Windows installation USB found. Make one with the Media Creation Tool or Rufus, plug it in, then press Refresh.'
+        $ui.MediaInfoText.Text = Get-DzText $('No Windows installation USB found. Make one with the Media Creation Tool or Rufus, plug it in, then press Refresh.')
         Set-BuilderStatus -Text 'No installation USB found yet.' -Kind Warn
         Write-BuilderLog 'No Windows installation media found.'
     }
@@ -237,7 +304,7 @@ function Update-MediaInfo {
         $lines.Add('This stick already has an autounattend.xml (for example from Rufus "Windows User Experience" options). It will be renamed to a backup, not deleted.')
     }
     if ($drive.FreeMB -lt 200) { $lines.Add(("Only {0} MB free on the stick. DayZero needs about 50 MB plus any drivers you add." -f $drive.FreeMB)) }
-    $ui.MediaInfoText.Text = ($lines -join [Environment]::NewLine)
+    $ui.MediaInfoText.Text = Get-DzText $(($lines -join [Environment]::NewLine))
     Update-EditionHint
     Set-BuilderStatus -Text 'Ready.'
 }
@@ -267,6 +334,7 @@ function Update-NewUsbInfo {
     <# The hint under "Make a new Windows USB stick": what gets erased and where Windows comes from. #>
     $ui = $script:ui
     if ((Get-TargetKind) -ne 'newusb') { return }
+    try { Update-CacheInfo } catch { Write-BuilderLog ('Windows cache: ' + $_.Exception.Message) }
     $lines = New-Object System.Collections.Generic.List[string]
     $disk = $ui.UsbDiskCombo.SelectedItem
     if ($null -eq $disk) {
@@ -293,7 +361,7 @@ function Update-NewUsbInfo {
         if ($cached) { $lines.Add("Windows $winVer ($lang) is already on this PC from last time; only a newer release would be downloaded.") }
         else { $lines.Add("Windows $winVer is downloaded from Microsoft (the files the Media Creation Tool uses), checked against Microsoft's checksum and kept for next time. The first time takes a while: about 5 GB to download, then 15 to 40 minutes to unpack.") }
     }
-    $ui.MediaInfoText.Text = ($lines -join [Environment]::NewLine)
+    $ui.MediaInfoText.Text = Get-DzText $(($lines -join [Environment]::NewLine))
 }
 
 function Update-SourceMode {
@@ -348,8 +416,8 @@ function Read-IsoMedia {
 
 function Select-IsoFile {
     $dialog = New-Object Microsoft.Win32.OpenFileDialog
-    $dialog.Title = 'Pick a Windows 10 or 11 ISO file'
-    $dialog.Filter = 'Windows ISO files (*.iso)|*.iso'
+    $dialog.Title = Get-DzText 'Pick a Windows 10 or 11 ISO file'
+    $dialog.Filter = (Get-DzText 'Windows ISO files') + ' (*.iso)|*.iso'
     if ($dialog.ShowDialog($script:Window) -eq $true) {
         $script:ui.IsoPathText.Text = $dialog.FileName
         Read-IsoMedia
@@ -362,11 +430,11 @@ function Update-TargetMode {
     $ui.NewUsbPanel.Visibility = if ($kind -eq 'newusb') { 'Visible' } else { 'Collapsed' }
     $ui.UsbPanel.Visibility = if ($kind -eq 'usb') { 'Visible' } else { 'Collapsed' }
     $ui.FolderPanel.Visibility = if ($kind -eq 'folder') { 'Visible' } else { 'Collapsed' }
-    $ui.WriteButton.Content = switch ($kind) {
-        'newusb' { "_CREATE WINDOWS USB  $([char]0x25B6)" }
-        'usb' { "_WRITE TO USB  $([char]0x25B6)" }
-        default { "_EXPORT TO FOLDER  $([char]0x25B6)" }
-    }
+    $ui.WriteButton.Content = Get-DzText $(switch ($kind) {
+            'newusb' { "_CREATE WINDOWS USB  $([char]0x25B6)" }
+            'usb' { "_WRITE TO USB  $([char]0x25B6)" }
+            default { "_EXPORT TO FOLDER  $([char]0x25B6)" }
+        })
     if ($kind -eq 'newusb') {
         Update-SourceMode
     }
@@ -374,8 +442,7 @@ function Update-TargetMode {
         Update-DriveList
     }
     else {
-        $ui.MediaInfoText.Text = ('Writes autounattend.xml and the DayZero folder into an empty folder. ' +
-            'Make an ISO of it with tools\New-DzTestIso.ps1 and attach it to your test VM next to the Windows ISO (see TESTING.md).')
+        $ui.MediaInfoText.Text = Get-DzText 'Writes autounattend.xml and the DayZero folder into an empty folder. Make an ISO of it with tools\New-DzTestIso.ps1 and attach it to your test VM next to the Windows ISO (see TESTING.md).'
         $ui.DisplayLanguageCombo.ItemsSource = Get-RegionItemList
         Select-ComboValue -Combo $ui.DisplayLanguageCombo -Value (Get-UICulture).Name
     }
@@ -384,7 +451,7 @@ function Update-TargetMode {
 function Select-ExportFolder {
     # Shell folder picker (COM), so no Windows Forms dependency is needed.
     $shell = New-Object -ComObject Shell.Application
-    $folder = $shell.BrowseForFolder(0, 'Pick an empty folder for the DayZero test files', 0x50, 0)
+    $folder = $shell.BrowseForFolder(0, [string](Get-DzText 'Pick an empty folder for the DayZero test files'), 0x50, 0)
     if ($null -ne $folder) {
         $path = $folder.Self.Path
         if ($path -and (Test-Path -LiteralPath $path -PathType Container)) { $script:ui.FolderText.Text = $path }
@@ -409,7 +476,7 @@ function Update-EditionHint {
     if ($null -eq $script:ThisPcFirmware) { $script:ThisPcFirmware = [string](Get-DzThisPcFirmwareEdition) }
     $fw = $script:ThisPcFirmware
     if ($fw) { $text += " (This PC - the one running the builder - has a built-in $fw key.)" }
-    $ui.EditionHintText.Text = $text
+    $ui.EditionHintText.Text = Get-DzText $($text)
 }
 
 function New-TemporaryPassword {
@@ -557,6 +624,7 @@ function Get-BuilderInput {
         defaultMode       = $mode
         debloatLevel      = [string]$script:SelectedLevel
         dryRun            = $dryRun
+        appLanguage       = (Get-DzLanguage)
         officePlan        = [string]$ui.OfficePlanCombo.SelectedValue
         uiLanguage        = $display
         userLocale        = $region
@@ -604,14 +672,14 @@ function New-BuilderCard {
         [void]$panel.Children.Add($e)
     }
     $t = New-Object System.Windows.Controls.TextBlock
-    $t.Text = $Title
+    $t.Text = [string](Get-DzText $Title)
     $t.FontSize = 14
     $t.FontWeight = [System.Windows.FontWeights]::Black
     $t.HorizontalAlignment = 'Center'
     $t.Margin = New-Object System.Windows.Thickness(0, 4, 0, 0)
     [void]$panel.Children.Add($t)
     $g = New-Object System.Windows.Controls.TextBlock
-    $g.Text = $Tagline
+    $g.Text = [string](Get-DzText $Tagline)
     $g.FontSize = 11
     $g.Foreground = Get-DzResource 'DzMuted'
     $g.TextWrapping = [System.Windows.TextWrapping]::Wrap
@@ -646,7 +714,7 @@ function Initialize-BuilderLevelCards {
     $ui.LevelCardsPanel.Children.Clear()
     $cards = New-Object System.Collections.Generic.List[object]
     foreach ($l in @(Get-DzDebloatLevelList -Config $script:BuilderConfig)) {
-        $rb = New-BuilderCard -Group 'Level' -Id ([string]$l.id) -Emoji '' -Title ([string]$l.title).ToUpperInvariant() -Tagline ([string]$l.tagline) -AccessibleName ('{0} clean-up: {1}' -f $l.title, $l.tagline)
+        $rb = New-BuilderCard -Group 'Level' -Id ([string]$l.id) -Emoji '' -Title ([string](Get-DzText ([string]$l.title))).ToUpper() -Tagline ([string]$l.tagline) -AccessibleName ('{0} clean-up: {1}' -f $l.title, $l.tagline)
         $rb.Add_Checked({
                 param($src)
                 try { Select-BuilderLevel -Id ([string]$src.Tag) } catch { Write-BuilderLog ('Clean-up level preview failed: ' + $_.Exception.Message) }
@@ -662,8 +730,8 @@ function Select-BuilderLevel {
     $script:SelectedLevel = $Id
     foreach ($c in $script:LevelCards) { if ([string]$c.Tag -eq $Id -and -not $c.IsChecked) { $c.IsChecked = $true } }
     $level = Get-DzDebloatLevel -Config $script:BuilderConfig -Id $Id
-    $script:ui.LevelIncludesTitle.Text = ('WHAT {0} DOES' -f ([string]$level.title).ToUpperInvariant())
-    $script:ui.LevelIncludesText.Text = Get-DzDebloatLevelSummary -Config $script:BuilderConfig -LevelId $Id
+    $script:ui.LevelIncludesTitle.Text = (Get-DzText 'WHAT {0} DOES') -f ([string](Get-DzText ([string]$level.title))).ToUpper()
+    $script:ui.LevelIncludesText.Text = Get-DzText $(Get-DzDebloatLevelSummary -Config $script:BuilderConfig -LevelId $Id)
 }
 
 function Select-BuilderMode {
@@ -677,8 +745,8 @@ function Update-ModeIncludes {
     $ui = $script:ui
     $mode = Get-DzMode -Config $script:BuilderConfig -Id $script:SelectedMode
     $pre = if ($mode.custom) { $script:CustomSelection } else { $null }
-    $ui.ModeIncludesTitle.Text = ('WHAT {0} INCLUDES' -f $mode.title)
-    $ui.ModeIncludesText.Text = Get-DzModeSummary -Mode $mode -Config $script:BuilderConfig -Preselect $pre
+    $ui.ModeIncludesTitle.Text = (Get-DzText 'WHAT {0} INCLUDES') -f (Get-DzText ([string]$mode.title))
+    $ui.ModeIncludesText.Text = Get-DzText $(Get-DzModeSummary -Mode $mode -Config $script:BuilderConfig -Preselect $pre)
     $ui.CustomizeButton.Visibility = if ($mode.custom) { 'Visible' } else { 'Collapsed' }
 }
 
@@ -688,6 +756,7 @@ function Show-CustomPicker {
     $path = Join-Path $script:BuilderRoot 'PickerWindow.xaml'
     $picker = Import-DzXaml -Path $path
     $names = Get-DzNamedElement -Root $picker -XamlPath $path
+    Update-DzTranslation -Root $picker
     # The clean-up level and its privacy switches are picked on the main window (CLEAN-UP LEVEL).
     $pickerOptions = @($model.Options | Where-Object { $_.Kind -eq 'removal' -or ($_.Kind -eq 'tweak' -and -not $_.LevelOwned) })
     $controls = @(Add-DzChoiceGroup -Panel $names.PickerAppsPanel -Items @($model.Apps) -GroupWidth 235 -RadioPrefix 'papp') +
@@ -695,7 +764,7 @@ function Show-CustomPicker {
     $countText = $names.PickerCountText
     $updateCount = {
         $n = @($controls | Where-Object { $_.IsChecked -eq $true -and $_.Tag.Kind -in @('app', 'office') }).Count
-        $countText.Text = "$n app(s) ticked"
+        $countText.Text = Get-DzText "$n app(s) ticked"
     }.GetNewClosure()
     foreach ($c in $controls) { $c.Add_Click($updateCount) }
     & $updateCount
@@ -732,7 +801,7 @@ function Update-ScriptsCount {
     <# Shows how many of your scripts will go on the stick (refreshed when the window gets focus back). #>
     $names = @(Get-ChildItem -LiteralPath (Join-Path $script:KitRoot 'Scripts') -File -ErrorAction SilentlyContinue |
             Where-Object { @('.cmd', '.bat', '.ps1') -contains $_.Extension.ToLowerInvariant() } | Sort-Object Name | ForEach-Object { $_.Name })
-    $script:ui.ScriptsCountText.Text = if ($names.Count -eq 0) { 'none yet' } else { '{0} script(s): {1}' -f $names.Count, ($names -join ', ') }
+    $script:ui.ScriptsCountText.Text = Get-DzText $(if ($names.Count -eq 0) { 'none yet' } else { '{0} script(s): {1}' -f $names.Count, ($names -join ', ') })
 }
 
 function Show-ValidationErrors {
@@ -759,6 +828,7 @@ function Invoke-Preview {
     $preview = Import-DzXaml -Path $previewPath
     $names = Get-DzNamedElement -Root $preview -XamlPath $previewPath
     $names.PreviewText.Text = Get-DzUnattendPreview -Xml $xml
+    Update-DzTranslation -Root $preview
     $names.ClosePreviewButton.Add_Click({ $preview.Close() }.GetNewClosure())
     $preview.Add_PreviewKeyDown({
             param($src, $keyArgs)
@@ -865,6 +935,19 @@ function Invoke-Write {
         Set-BuilderBusy -Busy $false
     }
 
+    # Check what was just written (reads only). A problem here is reported, not treated as a failed write.
+    $verifyNote = ''
+    try {
+        Set-BuilderBusy -Busy $true
+        Set-BuilderStatus -Text 'Checking the finished stick...'
+        $checks = @(Get-StickCheck -Root $data.Target -ToolkitOnly:($data.Kind -eq 'folder'))
+        foreach ($line in @(Format-StickCheck -Checks $checks)) { Write-BuilderLog ("Check: $line") }
+        $bad = @($checks | Where-Object { -not $_.Ok })
+        $verifyNote = "`n`n" + (Get-StickVerdict -Checks $checks)
+        if ($bad.Count -gt 0) { $verifyNote += "`n" + ((Format-StickCheck -Checks $bad) -join "`n") }
+    }
+    catch { Write-BuilderLog ('Check failed to run: ' + $_.Exception.Message) }
+    finally { Set-BuilderBusy -Busy $false }
     Set-BuilderStatus -Text ("Done! Build $buildId written to $($data.Target)") -Kind Ok
     if ($data.Kind -eq 'newusb') { try { Update-UsbDiskList } catch { Write-BuilderLog ('Refresh failed: ' + $_.Exception.Message) } }
     if ($data.IsUsb -or $data.Kind -eq 'newusb') {
@@ -873,7 +956,7 @@ function Invoke-Write {
     else {
         $next = "Exported!`n`nNext: run tools\New-DzTestIso.ps1 -SourceFolder `"$($data.Target)`" to make an ISO, attach it to your VM as a second DVD drive, and follow TESTING.md."
     }
-    [void](Show-DzMessage -Text ($next + $bundleNote) -Title 'DayZero Builder' -Kind Info -Owner $script:Window)
+    [void](Show-DzMessage -Text ($next + $verifyNote + $bundleNote) -Title 'DayZero Builder' -Kind Info -Owner $script:Window)
 }
 
 function Invoke-CheckApps {
@@ -907,11 +990,142 @@ function Invoke-CheckApps {
 }
 
 # ------------------------------------------------------------------------------------
+# Verify a stick, and the downloaded-Windows manager
+# ------------------------------------------------------------------------------------
+
+function Get-StickCheck {
+    <# Runs every check on a stick or export folder. Reads only. #>
+    param([Parameter(Mandatory = $true)][string]$Root, [switch]$ToolkitOnly)
+    if ($ToolkitOnly) { return @(Test-DzUsbStick -Root $Root -ToolkitOnly) }
+    $info = $null
+    $image = Find-DzInstallImage -Root $Root
+    if ($image) { $info = Get-DzMediaInfo -ImagePath $image }
+    $fileSystem = ''
+    try { $fileSystem = [string](Get-Volume -DriveLetter $Root.Substring(0, 1) -ErrorAction Stop).FileSystem } catch { $fileSystem = '' }
+    return @(Test-DzUsbStick -Root $Root -ImageInfo $info -FileSystem $fileSystem)
+}
+
+function Format-StickCheck {
+    <# The checks as lines for a message box (and, in English, for the log). #>
+    param([Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$Checks)
+    $ok = [string][char]0x2713
+    $bad = [string][char]0x2715
+    return @($Checks | ForEach-Object { '{0} {1}: {2}' -f $(if ($_.Ok) { $ok } else { $bad }), $_.Name, $_.Detail })
+}
+
+function Get-StickVerdict {
+    param([Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$Checks)
+    $failed = @($Checks | Where-Object { -not $_.Ok }).Count
+    if ($failed -eq 0) { return ('All {0} checks passed.' -f $Checks.Count) }
+    return ('{0} of {1} checks failed.' -f $failed, $Checks.Count)
+}
+
+function Invoke-VerifyStick {
+    $drives = @(Get-DzInstallMediaCandidate)
+    if ($drives.Count -eq 0) {
+        [void](Show-DzMessage -Text 'No Windows installation stick found. Plug it in and try again.' -Title 'DayZero Builder' -Kind Warning -Owner $script:Window)
+        return
+    }
+    Set-BuilderBusy -Busy $true
+    $text = New-Object System.Collections.Generic.List[string]
+    $failed = 0
+    try {
+        foreach ($d in $drives) {
+            Set-BuilderStatus -Text ("Checking the stick {0} ..." -f $d.Drive)
+            $checks = @(Get-StickCheck -Root $d.Root)
+            $failed += @($checks | Where-Object { -not $_.Ok }).Count
+            if ($text.Count -gt 0) { $text.Add('') }
+            $text.Add(('Stick {0} ({1}):' -f $d.Drive, $d.Label))
+            foreach ($line in @(Format-StickCheck -Checks $checks)) { $text.Add($line); Write-BuilderLog ("{0} {1}" -f $d.Drive, $line) }
+            $text.Add((Get-StickVerdict -Checks $checks))
+        }
+    }
+    finally { Set-BuilderBusy -Busy $false }
+    $text.Add('')
+    $text.Add($(if ($failed -eq 0) { 'The stick is ready to use.' } else { 'Write the stick again before using it.' }))
+    Set-BuilderStatus -Text $(if ($failed -eq 0) { 'The stick is ready to use.' } else { 'The stick has problems; see the message.' }) -Kind $(if ($failed -eq 0) { 'Ok' } else { 'Warn' })
+    [void](Show-DzMessage -Text ($text -join "`n") -Title 'DayZero Builder' -Kind $(if ($failed -eq 0) { 'Info' } else { 'Warning' }) -Owner $script:Window)
+}
+
+function Update-CacheInfo {
+    <# "x GB on this PC" next to the Downloaded Windows button. #>
+    $total = 0.0
+    foreach ($i in @(Get-DzMediaCacheItem)) { $total += $i.Bytes }
+    $script:ui.CacheInfoText.Text = if ($total -le 0) { Get-DzText 'Nothing stored on this PC yet.' } else { (Get-DzText '{0} GB on this PC') -f ('{0:N1}' -f ($total / 1GB)) }
+}
+
+function Update-CacheList {
+    <# Fills the manager window: one tick box per stored Windows or leftover. #>
+    $names = $script:CacheNames
+    $names.CacheItemsPanel.Children.Clear()
+    $items = @(Get-DzMediaCacheItem)
+    $total = 0.0
+    foreach ($i in $items) {
+        $total += $i.Bytes
+        $box = New-Object System.Windows.Controls.CheckBox
+        $box.Content = [string](Get-DzText ([string]$i.Display))
+        $box.Tag = $i
+        $box.IsChecked = ($i.Kind -eq 'leftover')   # leftovers are never useful, so they start ticked
+        $box.Margin = New-Object System.Windows.Thickness(0, 4, 0, 4)
+        [void]$names.CacheItemsPanel.Children.Add($box)
+    }
+    $names.CacheEmptyText.Visibility = if ($items.Count -eq 0) { 'Visible' } else { 'Collapsed' }
+    $names.CacheDeleteButton.IsEnabled = ($items.Count -gt 0)
+    $names.CacheTotalText.Text = (Get-DzText 'Total: {0} GB in {1}') -f ('{0:N1}' -f ($total / 1GB)), (Get-DzMediaCacheRoot)
+}
+
+function Remove-CacheSelection {
+    $picked = @($script:CacheNames.CacheItemsPanel.Children | Where-Object { $_.IsChecked -eq $true } | ForEach-Object { $_.Tag })
+    if ($picked.Count -eq 0) {
+        [void](Show-DzMessage -Text 'Tick what you want to delete first.' -Title 'DayZero Builder' -Kind Info -Owner $script:CacheWindow)
+        return
+    }
+    $size = 0.0
+    foreach ($p in $picked) { $size += $p.Bytes }
+    $question = ('Delete {0} item(s), {1} GB?' -f $picked.Count, ('{0:N1}' -f ($size / 1GB))) + "`n`n" + 'Windows is downloaded again the next time you need it.'
+    if ((Show-DzMessage -Text $question -Title 'DayZero Builder' -Kind Question -Owner $script:CacheWindow) -ne 'Yes') { return }
+    $script:CacheWindow.Cursor = [System.Windows.Input.Cursors]::Wait
+    try {
+        foreach ($p in $picked) {
+            Remove-DzMediaCacheItem -Name $p.Name
+            Write-BuilderLog ("Deleted from the Windows cache: {0} ({1:N1} GB)" -f $p.Name, $p.SizeGB)
+        }
+    }
+    finally { $script:CacheWindow.Cursor = $null }
+    Update-CacheList
+}
+
+function Show-CacheManager {
+    $path = Join-Path $script:BuilderRoot 'CacheWindow.xaml'
+    $script:CacheWindow = Import-DzXaml -Path $path
+    $script:CacheNames = Get-DzNamedElement -Root $script:CacheWindow -XamlPath $path
+    $names = $script:CacheNames
+    Update-DzTranslation -Root $script:CacheWindow
+    Update-CacheList
+    $names.CacheDeleteButton.Add_Click({
+            try { Remove-CacheSelection } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:CacheWindow) }
+        })
+    $names.CacheOpenFolderButton.Add_Click({
+            try {
+                $dir = Get-DzMediaCacheRoot
+                if (-not (Test-Path -LiteralPath $dir)) { [void](New-Item -ItemType Directory -Path $dir -Force) }
+                Start-Process -FilePath 'explorer.exe' -ArgumentList ('"' + $dir + '"')
+            }
+            catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:CacheWindow) }
+        })
+    $names.CacheCloseButton.Add_Click({ $script:CacheWindow.Close() })
+    $script:CacheWindow.Owner = $script:Window
+    [void]$script:CacheWindow.ShowDialog()
+    Update-CacheInfo
+    Update-NewUsbInfo
+}
+
+# ------------------------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------------------------
 
 function Start-Builder {
-    foreach ($m in 'Core.psm1', 'Config.psm1', 'Engine.psm1', 'Plan.psm1', 'Download.psm1', 'Winget.psm1', 'Ui.psm1') {
+    foreach ($m in 'Core.psm1', 'Lang.psm1', 'Config.psm1', 'Engine.psm1', 'Plan.psm1', 'Download.psm1', 'Winget.psm1', 'Ui.psm1') {
         Import-Module (Join-Path $script:KitRoot "lib\$m") -Force -DisableNameChecking
     }
     Import-Module (Join-Path $script:BuilderRoot 'lib\Bundles.psm1') -Force
@@ -929,16 +1143,16 @@ function Start-Builder {
     $script:Window = Import-DzXaml -Path $xamlPath
     $script:ui = Get-DzNamedElement -Root $script:Window -XamlPath $xamlPath
     $ui = $script:ui
-    $ui.VersionText.Text = "USB BUILDER  $([char]0x00B7)  v$($script:Version)"
+
+    # Language: the saved choice, else the language Windows is shown in (when there is a pack), else English.
+    [void](Import-DzLanguage -KitRoot $script:KitRoot)
+    [void](Set-DzLanguage -Code (Get-DzDefaultLanguage -Preferred (Read-DzLanguageChoice -Path (Get-BuilderLanguagePath))))
+    Update-DzTranslation -Root $script:Window
+    Update-LanguageButton
+    $ui.VersionText.Text = Get-DzText $("USB BUILDER  $([char]0x00B7)  v$($script:Version)")
 
     # Drop-down contents
-    $ui.EditionCombo.ItemsSource = @(
-        (New-ListItem -Label "Auto - match the PC's built-in key (recommended)" -Value 'auto'),
-        (New-ListItem -Label 'Home' -Value 'home'),
-        (New-ListItem -Label 'Pro' -Value 'pro'),
-        (New-ListItem -Label 'Use my own product key' -Value 'key')
-    )
-    $ui.EditionCombo.SelectedIndex = 0
+    Initialize-BuilderChoiceLists
     $script:BuilderConfig = Get-DzConfig -KitRoot $script:KitRoot
     foreach ($p in @(Test-DzConfig -Config $script:BuilderConfig)) { Write-BuilderLog "Config problem: $p" }
     Initialize-BuilderModeCards
@@ -947,12 +1161,6 @@ function Start-Builder {
     Initialize-BuilderLevelCards
     $defaultLevel = Get-DzDefaultDebloatLevel -Config $script:BuilderConfig
     if ($defaultLevel) { Select-BuilderLevel -Id $defaultLevel }
-    $ui.OfficePlanCombo.ItemsSource = @(
-        (New-ListItem -Label 'Microsoft 365 Personal / Family' -Value 'personal'),
-        (New-ListItem -Label 'Microsoft 365 Business Standard / Premium' -Value 'business'),
-        (New-ListItem -Label 'Microsoft 365 E3 / E5 (enterprise)' -Value 'enterprise')
-    )
-    $ui.OfficePlanCombo.SelectedIndex = 0
     $ui.RegionCombo.ItemsSource = Get-RegionItemList
     $ui.KeyboardCombo.ItemsSource = Get-KeyboardItemList
     $ui.TimeZoneCombo.ItemsSource = Get-TimeZoneItemList
@@ -960,6 +1168,9 @@ function Start-Builder {
     Set-RegionFromThisPc
 
     # Events
+    $ui.LanguageButton.Add_Click({
+            try { Switch-BuilderLanguage } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
+        })
     $ui.RefreshDrivesButton.Add_Click({ $script:MediaByDrive = @{}; Update-DriveList })
     $ui.DriveCombo.Add_SelectionChanged({ Update-MediaInfo })
     $ui.TargetUsbRadio.Add_Checked({ Update-TargetMode })
@@ -978,6 +1189,12 @@ function Start-Builder {
     $ui.BrowseFolderButton.Add_Click({ Select-ExportFolder })
     $ui.EditionCombo.Add_SelectionChanged({ Update-EditionHint })
     $ui.UseThisPcButton.Add_Click({ Set-RegionFromThisPc })
+    $ui.VerifyButton.Add_Click({
+            try { Invoke-VerifyStick } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
+        })
+    $ui.ManageCacheButton.Add_Click({
+            try { Show-CacheManager } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
+        })
     $ui.PreviewButton.Add_Click({
             try { Invoke-Preview } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
         })
@@ -1006,7 +1223,7 @@ function Start-Builder {
             $script:ui.PasswordBox1.Password = $pw
             $script:ui.PasswordBox2.Password = $pw
             $script:ui.TempPasswordCheck.IsChecked = $true
-            $script:ui.GeneratedPasswordText.Text = "Temporary password: $pw  - write it down. You type it once after DayZero finishes, then Windows asks you for a new one."
+            $script:ui.GeneratedPasswordText.Text = Get-DzText $("Temporary password: $pw  - write it down. You type it once after DayZero finishes, then Windows asks you for a new one.")
             $script:ui.GeneratedPasswordText.Visibility = 'Visible'
             Write-BuilderLog 'Generated a temporary password.'
         })
@@ -1015,7 +1232,7 @@ function Start-Builder {
             if ($script:Busy) {
                 # Closing in the middle of formatting or copying would leave a half-made stick.
                 $args[1].Cancel = $true
-                $script:ui.StatusText.Text = 'Still working. The window can be closed when this is finished.'
+                $script:ui.StatusText.Text = Get-DzText $('Still working. The window can be closed when this is finished.')
             }
         })
     $script:Window.Add_ContentRendered({

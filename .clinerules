@@ -2,6 +2,7 @@ Project: DayZero - Windows setup toolkit on a USB stick.
 - builder\  : USB Builder (PowerShell 5.1 + WPF). Builder.ps1 + Builder.xaml. Makes the Windows USB stick (lib\WinMedia.psm1: download from Microsoft or ISO, diskpart, DISM), writes autounattend.xml and copies kit\ to the stick.
 - kit\      : runs on the new PC. DayZero.ps1 = wizard. kit\lib\*.psm1 = modules (order in Modules.ps1).
 - kit\config\*.json : modes, apps (winget IDs), tweaks, debloat levels, drivers, office. Most changes are JSON only.
+- kit\lang\ru.json : Russian texts as pairs [English shown text, translation]. kit\lib\Lang.psm1 translates where text is shown (Get-DzText). Add a pair for every new text shown to the user; tests\Lang.Tests.ps1 fails otherwise. Logs stay English.
 - kit\ui\Theme.xaml : all colours/styles (monochrome). Keep resource key names (DzMagenta etc.), code uses them.
 - tests\    : Pester tests. Run: pwsh tools\Invoke-DzChecks.ps1 (tests + PSScriptAnalyzer). Must stay green.
 

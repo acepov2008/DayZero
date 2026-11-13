@@ -490,6 +490,60 @@ function Get-DzPreparedMedia {
     return $null
 }
 
+function Get-DzMediaCacheItem {
+    <#
+        What the builder keeps in its Windows cache: every prepared Windows (Kind 'windows'),
+        plus leftovers of a download or unpack that did not finish (Kind 'leftover').
+        Each item: Kind, Name, WindowsVersion, Language, Bytes, SizeGB, Prepared, Display.
+    #>
+    [CmdletBinding()]
+    param([string]$CacheRoot = (Get-DzMediaCacheRoot))
+    if (-not (Test-Path -LiteralPath $CacheRoot)) { return }
+    $pattern = '^win(\d+)-([a-z0-9-]+)-x64-[0-9a-f]{10}$'
+    foreach ($entry in @(Get-ChildItem -LiteralPath $CacheRoot -Force -ErrorAction SilentlyContinue | Sort-Object Name)) {
+        $base = $entry.Name -replace '\.esd$', ''
+        if ($entry.Name -like '*.ready.json' -or $base -notmatch $pattern) { continue }
+        $version = [int]$Matches[1]
+        $language = [string]$Matches[2]
+        $isFolder = [bool]$entry.PSIsContainer
+        $ready = $isFolder -and (Test-Path -LiteralPath (Join-Path $CacheRoot ($entry.Name + '.ready.json'))) -and [bool](Find-DzInstallImage -Root $entry.FullName)
+        $bytes = if ($isFolder) { Get-DzFolderSize -Path $entry.FullName } else { [double]$entry.Length }
+        $kind = if ($ready) { 'windows' } else { 'leftover' }
+        $sizeGB = [math]::Round($bytes / 1GB, 1)
+        $what = if ($ready) { 'Windows {0}, {1}' -f $version, $language }
+        elseif ($isFolder) { 'Unfinished unpack of Windows {0}, {1}' -f $version, $language }
+        else { 'Unfinished download of Windows {0}, {1}' -f $version, $language }
+        [pscustomobject]@{
+            Kind           = $kind
+            Name           = $entry.Name
+            WindowsVersion = $version
+            Language       = $language
+            Bytes          = $bytes
+            SizeGB         = $sizeGB
+            Prepared       = $entry.LastWriteTime
+            Display        = ('{0} - {1:N1} GB' -f $what, $sizeGB)
+        }
+    }
+}
+
+function Remove-DzMediaCacheItem {
+    <#
+        Deletes one cache item (its folder or file, and its ready marker). Only names that
+        Get-DzMediaCacheItem can return are accepted, so nothing outside the cache is touched.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$Name,
+        [string]$CacheRoot = (Get-DzMediaCacheRoot)
+    )
+    if ($Name -notmatch '^win\d+-[a-z0-9-]+-x64-[0-9a-f]{10}(\.esd)?$') { throw "Not a DayZero cache item: $Name" }
+    $base = $Name -replace '\.esd$', ''
+    foreach ($leaf in @(($base + '.ready.json'), $Name)) {
+        $path = Join-Path $CacheRoot $leaf
+        if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Recurse -Force }
+    }
+}
+
 function Get-DzWindowsMediaTree {
     <#
     .SYNOPSIS
@@ -960,7 +1014,7 @@ Export-ModuleMember -Function @(
     'Get-DzWindowsLanguageList', 'Get-DzWindowsCatalogUrl', 'Get-DzMediaCacheRoot', 'Get-DzBuildProgress', 'Invoke-DzProcess',
     'ConvertFrom-DzProductsXml', 'Test-DzWindowsDownloadEntry', 'Select-DzWindowsDownload', 'Find-DzCatalogXml', 'Get-DzWindowsCatalog',
     'Get-DzFileSha1', 'Save-DzLargeFile', 'Get-DzEsdImagePlan', 'Select-DzEsdEdition', 'New-DzMediaFromEsd',
-    'Get-DzPreparedMedia', 'Get-DzWindowsMediaTree', 'Test-DzUsbDiskAllowed', 'Get-DzUsbDiskCandidate',
+    'Get-DzPreparedMedia', 'Get-DzMediaCacheItem', 'Remove-DzMediaCacheItem', 'Get-DzWindowsMediaTree', 'Test-DzUsbDiskAllowed', 'Get-DzUsbDiskCandidate',
     'New-DzDiskpartScript', 'Get-DzUsbPartitionSize', 'Get-DzMediaFitProblem', 'Get-DzFolderSize', 'Initialize-DzUsbDisk', 'ConvertTo-DzRobocopyPath', 'Update-DzCopyState', 'Get-DzCopyStateBytes', 'Copy-DzMediaTree',
     'Invoke-DzWithMountedIso', 'Find-DzInstallImage', 'Copy-DzIsoToUsb', 'Set-DzUsbBootSector'
 )

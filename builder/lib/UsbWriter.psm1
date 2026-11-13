@@ -93,6 +93,8 @@ function Copy-DzKit {
 
     foreach ($item in @(Get-ChildItem -LiteralPath $KitSource -Force)) {
         if ($item.Name -like 'build-*.marker') { continue }
+        # Left over from trying the wizard on this PC (DayZero.cmd -DryRun): not for the new PC.
+        if ($item.Name -like 'state.json*' -or $item.Name -eq 'backup' -or $item.Name -eq 'language.txt') { continue }
         if ($Tick) { & $Tick }   # lets the builder window stay responsive between items
         $target = Join-Path $Destination $item.Name
         if ($script:MergedFolders -contains $item.Name) {
@@ -178,4 +180,101 @@ function Write-DzKitToTarget {
     }
 }
 
-Export-ModuleMember -Function @('Write-DzUtf8File', 'Test-DzIsSystemDriveRoot', 'Get-DzReadmeText', 'Copy-DzKit', 'Write-DzKitToTarget')
+function Test-DzUsbStick {
+    <#
+    .SYNOPSIS
+        Checks a finished DayZero stick (or export folder) without changing it.
+    .DESCRIPTION
+        Returns one object per check: Name, Ok, Detail. Looks at the Windows Setup files, the
+        Windows image parts, the answer file (well-formed, no disk settings, points at this
+        stick's toolkit) and the toolkit itself. -ImageInfo (from Get-DzMediaInfo) and
+        -FileSystem add what only Windows can tell: whether the image opens and how the
+        stick is formatted. -ToolkitOnly skips the Windows files (for an export folder).
+    #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Used inside the nested script block, which the analyzer cannot follow.')]
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$Root,
+        [object]$ImageInfo,
+        [string]$FileSystem,
+        [switch]$ToolkitOnly
+    )
+    $results = New-Object System.Collections.Generic.List[object]
+    $add = { param($name, $ok, $detail) $results.Add([pscustomobject]@{ Name = [string]$name; Ok = [bool]$ok; Detail = [string]$detail }) }
+    $at = { param($relative) Join-Path $Root $relative }
+
+    if (-not $ToolkitOnly) {
+        $missing = @(@('setup.exe', 'sources\boot.wim') | Where-Object { -not (Test-Path -LiteralPath (& $at $_)) })
+        & $add 'Windows Setup files' ($missing.Count -eq 0) $(if ($missing.Count) { 'Missing: ' + ($missing -join ', ') } else { 'setup.exe and sources\boot.wim are there.' })
+
+        $efi = @(@('efi\boot\bootx64.efi', 'efi\boot\bootaa64.efi') | Where-Object { Test-Path -LiteralPath (& $at $_) })
+        $bios = Test-Path -LiteralPath (& $at 'bootmgr')
+        & $add 'Boot files' (@($efi).Count -gt 0) $(if (@($efi).Count -eq 0) { 'Missing: efi\boot\bootx64.efi. The stick will not boot.' } elseif ($bios) { 'UEFI and legacy BIOS boot files are there.' } else { 'UEFI boot files are there (no bootmgr for legacy BIOS).' })
+
+        $sources = & $at 'sources'
+        $parts = @(Get-ChildItem -LiteralPath $sources -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '^install\d*\.(wim|esd|swm)$' })
+        if ($parts.Count -eq 0) { & $add 'Windows image' $false 'Missing: sources\install.wim, install.esd or install.swm.' }
+        else {
+            $swm = @($parts | Where-Object { $_.Extension -ieq '.swm' })
+            $gap = $null
+            if ($swm.Count -gt 0) {
+                if (-not ($swm | Where-Object { $_.Name -ieq 'install.swm' })) { $gap = 'install.swm' }
+                for ($n = 2; $n -le $swm.Count -and -not $gap; $n++) { if (-not ($swm | Where-Object { $_.Name -ieq "install$n.swm" })) { $gap = "install$n.swm" } }
+            }
+            $size = 0.0
+            foreach ($p in $parts) { $size += $p.Length }
+            $big = @($parts | Where-Object { $_.Length -gt 4294967295 })
+            if ($gap) { & $add 'Windows image' $false "A part of the split image is missing: $gap" }
+            elseif ($big.Count -gt 0 -and $FileSystem -ieq 'FAT32') { & $add 'Windows image' $false "$($big[0].Name) is larger than 4 GB, which FAT32 cannot hold." }
+            else { & $add 'Windows image' $true ('{0} file(s), {1:N1} GB.' -f $parts.Count, ($size / 1GB)) }
+        }
+        if ($ImageInfo) {
+            if ($ImageInfo.Error) { & $add 'Windows image opens' $false ([string]$ImageInfo.Error) }
+            else { & $add 'Windows image opens' (@($ImageInfo.Editions).Count -gt 0) ('Windows {0} build {1}: {2}' -f $ImageInfo.WindowsVersion, $ImageInfo.Build, ((@($ImageInfo.Editions) | ForEach-Object { ([string]$_.Name) -replace '^Windows 1[01] ', '' }) -join ', ')) }
+        }
+        if ($FileSystem) {
+            & $add 'File system' $true $(if ($FileSystem -ieq 'FAT32') { 'FAT32: boots on UEFI (with Secure Boot) and legacy BIOS.' } else { "${FileSystem}: made by another tool; it boots only if that tool added its own boot helper." })
+        }
+    }
+
+    $answer = & $at 'autounattend.xml'
+    $buildId = $null
+    if (-not (Test-Path -LiteralPath $answer)) { & $add 'Answer file' $false 'Missing: autounattend.xml. Windows Setup would ask every question itself.' }
+    else {
+        try {
+            $text = [System.IO.File]::ReadAllText($answer)
+            $doc = New-Object System.Xml.XmlDocument
+            $doc.XmlResolver = $null
+            $doc.LoadXml($text)
+            $forbidden = @('DiskConfiguration', 'WipeDisk', 'InstallTo', 'CreatePartitions', 'ModifyPartitions', 'ImageInstall')
+            $hit = @($doc.SelectNodes('//*') | Where-Object { $forbidden -contains $_.LocalName } | ForEach-Object { $_.LocalName } | Select-Object -Unique)
+            $m = [regex]::Match($text, 'build-([0-9a-f]{8})\.marker')
+            if ($m.Success) { $buildId = $m.Groups[1].Value }
+            if ($hit.Count -gt 0) { & $add 'Answer file' $false ('It contains disk settings (' + ($hit -join ', ') + '). DayZero never writes those: do not use this stick.') }
+            elseif (-not $buildId) { & $add 'Answer file' $false 'It was not made by DayZero (no toolkit marker in it).' }
+            else { & $add 'Answer file' $true "Well-formed, no disk settings, build $buildId." }
+        }
+        catch { & $add 'Answer file' $false ('autounattend.xml is not valid XML: ' + $_.Exception.Message) }
+    }
+
+    $kit = & $at $script:KitFolderName
+    $needed = @('DayZero.cmd', 'DayZero.ps1', 'VERSION', 'lib\Modules.ps1', 'lib\Core.psm1', 'bootstrap\CopyKit.cmd', 'bootstrap\FirstLogon.cmd', 'config\modes.json', 'config\apps.json', 'ui\Wizard.xaml')
+    $gone = @($needed | Where-Object { -not (Test-Path -LiteralPath (Join-Path $kit $_)) })
+    & $add 'DayZero toolkit' ($gone.Count -eq 0) $(if ($gone.Count) { 'Missing in DayZero\: ' + ($gone -join ', ') } else { 'All parts are there.' })
+
+    if ($buildId) {
+        $marker = Join-Path $kit "build-$buildId.marker"
+        & $add 'Answer file finds the toolkit' (Test-Path -LiteralPath $marker) $(if (Test-Path -LiteralPath $marker) { "Marker build-$buildId.marker is there." } else { "DayZero\build-$buildId.marker is missing: the new PC would not find the toolkit. Write the stick again." })
+    }
+    $settingsPath = Join-Path $kit 'config\settings.json'
+    try {
+        $settings = [System.IO.File]::ReadAllText($settingsPath) | ConvertFrom-Json
+        $value = { param($name) if ($settings.PSObject.Properties[$name]) { [string]$settings.$name } else { '-' } }
+        $same = (-not $buildId) -or ((& $value 'buildId') -eq $buildId)
+        & $add 'Your settings' $same $(if ($same) { ('Mode {0}, clean-up level {1}, account {2}.' -f (& $value 'defaultMode'), (& $value 'debloatLevel'), (& $value 'userName')) } else { 'settings.json belongs to another build than the answer file. Write the stick again.' })
+    }
+    catch { & $add 'Your settings' $false 'DayZero\config\settings.json is missing or unreadable.' }
+    return $results.ToArray()
+}
+
+Export-ModuleMember -Function @('Test-DzUsbStick', 'Write-DzUtf8File', 'Test-DzIsSystemDriveRoot', 'Get-DzReadmeText', 'Copy-DzKit', 'Write-DzKitToTarget')

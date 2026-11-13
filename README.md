@@ -3,7 +3,7 @@
 A USB stick that installs Windows and then sets the PC up for you: think **Ninite + an
 unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 
-> **Status: v0.11.0, all six stages built.** 659 automated tests and static checks pass,
+> **Status: v0.12.0, all six stages built.** 1,054 automated tests and static checks cover it,
 > including a complete dry run of every mode. **It has not run on real Windows yet**: the
 > GUI (WPF) and the Windows-only steps can only be tested on Windows. Do the VM test in
 > [TESTING.md](TESTING.md) before you use it on a real PC.
@@ -48,6 +48,23 @@ unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 
 The stick is formatted FAT32 with one partition of up to 32 GB, so it boots on UEFI (with
 Secure Boot) and on legacy BIOS. Home, Home Single Language, Education and Pro are on it.
+
+### Language
+
+The builder and the wizard are in English or Russian. Press the **Language** button in the
+header to switch; the choice is remembered, and the builder's choice is used on the new PC
+(where it can be changed on the first page). Without a saved choice, DayZero starts in
+Russian when Windows itself is shown in Russian, otherwise in English. Logs are always
+English. To add a language, copy `kit\lang\ru.json`, change `code` and `name`, and translate
+the second text of each pair.
+
+### Check a stick, manage downloads
+
+* **Verify a stick** (footer) checks any DayZero stick that is plugged in: Windows Setup and
+  boot files, the Windows image, the answer file and the toolkit. The same check runs after
+  every write. It only reads.
+* **Downloaded Windows...** shows how much space the downloaded copies of Windows take on
+  this PC and deletes the ones you tick.
 
 ## The four modes
 

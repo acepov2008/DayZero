@@ -7,6 +7,86 @@
 Set-StrictMode -Version 2.0
 
 $script:NsXaml = 'http://schemas.microsoft.com/winfx/2006/xaml'
+# Element -> @{ property = @{ O = English text; T = what was shown } }, so the language can be switched back and forth.
+$script:Translated = $null
+
+function Get-DzUiText {
+    <# Get-DzText when the language module is loaded (it always is in the GUIs); the text itself otherwise. #>
+    [CmdletBinding()]
+    param([Parameter(Position = 0)][AllowNull()][AllowEmptyString()][object]$Text)
+    if (Get-Command -Name 'Get-DzText' -ErrorAction SilentlyContinue) { return (Get-DzText $Text) }
+    return $Text
+}
+
+function Get-DzTranslatedValue {
+    <#
+        The text to show for one property of one element. Remembers the English original: when
+        the property still holds what was shown last time, it is translated again from that
+        original (language switched); when the code has put something new there, that is the
+        new original.
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory = $true)][object]$Element, [Parameter(Mandatory = $true)][string]$Name, [AllowNull()][AllowEmptyString()][string]$Current)
+    if ([string]::IsNullOrEmpty($Current)) { return $Current }
+    if ($null -eq $script:Translated) { $script:Translated = New-Object 'System.Runtime.CompilerServices.ConditionalWeakTable[object,object]' }
+    $record = $null
+    if (-not $script:Translated.TryGetValue($Element, [ref]$record)) {
+        $record = @{}
+        $script:Translated.Add($Element, $record)
+    }
+    $previous = $record[$Name]
+    $original = if ($previous -and $Current -ceq [string]$previous.T) { [string]$previous.O } else { $Current }
+    $shown = [string](Get-DzUiText $original)
+    $record[$Name] = @{ O = $original; T = $shown }
+    return $shown
+}
+
+function Update-DzTranslation {
+    <#
+        Puts every fixed text of a window (and everything inside it) into the current language:
+        window title, text blocks and their runs, button / check box / radio captions, expander
+        headers and tooltips. Text boxes and list items are left alone. Call it after loading
+        the XAML and again after the language changes.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][object]$Root)
+    $stack = New-Object System.Collections.Generic.Stack[object]
+    $stack.Push($Root)
+    while ($stack.Count -gt 0) {
+        $e = $stack.Pop()
+        # One element that cannot be translated must never stop the window from opening.
+        try { Update-DzTranslatedElement -Element $e -Stack $stack } catch { Write-Verbose ('Translation skipped an element: ' + $_.Exception.Message) }
+    }
+}
+
+function Update-DzTranslatedElement {
+    <# Translates one element and pushes its children. Used by Update-DzTranslation. #>
+    [CmdletBinding()]
+    param([AllowNull()][object]$Element, [Parameter(Mandatory = $true)][object]$Stack)
+    $e = $Element
+    $stack = $Stack
+    foreach ($once in 1) {
+        if ($e -isnot [System.Windows.DependencyObject]) { continue }
+        if ($e -is [System.Windows.Controls.Primitives.TextBoxBase] -or $e -is [System.Windows.Controls.PasswordBox]) { continue }
+        if ($e -is [System.Windows.Window] -and $e.Title) { $e.Title = Get-DzTranslatedValue -Element $e -Name 'Title' -Current $e.Title }
+        if ($e -is [System.Windows.FrameworkElement] -and $e.ToolTip -is [string]) { $e.ToolTip = Get-DzTranslatedValue -Element $e -Name 'ToolTip' -Current $e.ToolTip }
+        if ($e -is [System.Windows.Controls.TextBlock]) {
+            $runs = @($e.Inlines | Where-Object { $_ -is [System.Windows.Documents.Run] })
+            if ($e.Inlines.Count -le 1) { if ($e.Text) { $e.Text = Get-DzTranslatedValue -Element $e -Name 'Text' -Current $e.Text } }
+            else { foreach ($r in $runs) { if ($r.Text -and $r.Text.Trim()) { $r.Text = Get-DzTranslatedValue -Element $r -Name 'Text' -Current $r.Text } } }
+            continue
+        }
+        if ($e -is [System.Windows.Controls.HeaderedContentControl] -and $e.Header -is [string]) { $e.Header = Get-DzTranslatedValue -Element $e -Name 'Header' -Current $e.Header }
+        if ($e -is [System.Windows.Controls.ContentControl] -and $e.Content -is [string]) { $e.Content = Get-DzTranslatedValue -Element $e -Name 'Content' -Current $e.Content }
+        if ($e -is [System.Windows.Controls.ItemsControl]) { continue }
+        # The cast picks the overload; without it PowerShell may find two that fit.
+        $children = if ($e -is [System.Windows.FrameworkElement]) { [System.Windows.LogicalTreeHelper]::GetChildren([System.Windows.FrameworkElement]$e) }
+        elseif ($e -is [System.Windows.FrameworkContentElement]) { [System.Windows.LogicalTreeHelper]::GetChildren([System.Windows.FrameworkContentElement]$e) }
+        else { [System.Windows.LogicalTreeHelper]::GetChildren([System.Windows.DependencyObject]$e) }
+        foreach ($child in $children) { $stack.Push($child) }
+    }
+}
 
 function Initialize-DzWpf {
     <# Loads the WPF assemblies. Safe to call more than once. #>
@@ -84,6 +164,8 @@ function Show-DzMessage {
         [object]$Owner = $null
     )
     Initialize-DzWpf
+    $Text = [string](Get-DzUiText $Text)
+    $Title = [string](Get-DzUiText $Title)
     $buttons = [System.Windows.MessageBoxButton]::OK
     $icon = [System.Windows.MessageBoxImage]::Information
     switch ($Kind) {
@@ -133,13 +215,13 @@ function New-DzChoiceControl {
     $title = if ($Item.PSObject.Properties['Title'] -and $Item.Title) { [string]$Item.Title } else { [string]$Item.Name }
     $panel = New-Object System.Windows.Controls.StackPanel
     $t = New-Object System.Windows.Controls.TextBlock
-    $t.Text = $title
+    $t.Text = [string](Get-DzUiText $title)
     $t.FontWeight = [System.Windows.FontWeights]::SemiBold
     $t.TextWrapping = [System.Windows.TextWrapping]::Wrap
     [void]$panel.Children.Add($t)
     if ($Item.PSObject.Properties['Description'] -and $Item.Description) {
         $d = New-Object System.Windows.Controls.TextBlock
-        $d.Text = [string]$Item.Description
+        $d.Text = [string](Get-DzUiText ([string]$Item.Description))
         $d.FontSize = 11.5
         $d.TextWrapping = [System.Windows.TextWrapping]::Wrap
         $d.Foreground = Get-DzResource 'DzMuted'
@@ -147,7 +229,7 @@ function New-DzChoiceControl {
     }
     if ($Item.PSObject.Properties['Warning'] -and $Item.Warning) {
         $w = New-Object System.Windows.Controls.TextBlock
-        $w.Text = ([string][char]0x26A0) + ' ' + [string]$Item.Warning
+        $w.Text = ([string][char]0x26A0) + ' ' + [string](Get-DzUiText ([string]$Item.Warning))
         $w.FontSize = 11.5
         $w.TextWrapping = [System.Windows.TextWrapping]::Wrap
         $w.Foreground = Get-DzResource 'DzYellow'
@@ -179,7 +261,7 @@ function Add-DzChoiceGroup {
         if ($GroupWidth -gt 0) { $box.Width = $GroupWidth }
         $box.Margin = New-Object System.Windows.Thickness(0, 0, 18, 14)
         $h = New-Object System.Windows.Controls.TextBlock
-        $h.Text = $g.ToUpperInvariant()
+        $h.Text = ([string](Get-DzUiText $g)).ToUpper()
         $h.FontSize = 11
         $h.FontWeight = [System.Windows.FontWeights]::Bold
         $h.Foreground = Get-DzResource 'DzCyan'
@@ -224,6 +306,6 @@ function Update-DzChoiceItem {
 }
 
 Export-ModuleMember -Function @(
-    'Initialize-DzWpf', 'Import-DzXaml', 'Initialize-DzTheme', 'Get-DzNamedElement', 'Show-DzMessage', 'Invoke-DzUiRefresh',
+    'Get-DzUiText', 'Get-DzTranslatedValue', 'Update-DzTranslation', 'Update-DzTranslatedElement', 'Initialize-DzWpf', 'Import-DzXaml', 'Initialize-DzTheme', 'Get-DzNamedElement', 'Show-DzMessage', 'Invoke-DzUiRefresh',
     'Get-DzResource', 'New-DzChoiceControl', 'Add-DzChoiceGroup', 'Enable-DzLevelPreset', 'Update-DzChoiceItem'
 )

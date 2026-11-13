@@ -89,6 +89,8 @@
                     <TextBlock x:Name="SubtitleText" Text="SETUP WIZARD" Style="{StaticResource DzSubtitle}" Margin="2,0,0,0"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,280,0">
+                    <Button x:Name="LanguageButton" VerticalAlignment="Center" Margin="0,0,12,0" Content="Language: English"
+                            ToolTip="Switch the language of this program (English / Russian)"/>
                     <Border x:Name="DryRunBadge" Visibility="Collapsed" Background="{StaticResource DzWarningBg}" BorderBrush="{StaticResource DzYellow}"
                             BorderThickness="1.5" CornerRadius="6" Padding="10,4" Margin="0,0,12,0">
                         <TextBlock Text="DRY RUN - nothing is changed" FontWeight="Bold" Foreground="{StaticResource DzYellow}"/>

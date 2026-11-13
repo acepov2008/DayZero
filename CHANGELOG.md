@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.12.0 - Russian, stick check, downloaded-Windows manager
+- **English or Russian**, for the builder and the wizard. A **Language** button in each header
+  switches at once and is remembered; the builder's choice travels to the new PC. The first
+  start follows the language Windows is shown in. Logs stay English.
+- Translations live in `kit\lang\ru.json` (English text and its translation, about 600
+  entries); a test fails when a text shown in a window or config has no translation.
+- **Verify a stick** button: checks the Windows Setup and boot files, the split Windows image,
+  the answer file (well-formed, no disk settings, points at this stick's toolkit) and the
+  toolkit. It also runs by itself after every write. It changes nothing.
+- **Downloaded Windows...** button: shows what the builder keeps in
+  `%LOCALAPPDATA%\DayZero\media` with sizes, and deletes what you tick. Unfinished downloads
+  and unpacks are listed and pre-ticked.
+- A `state.json`, `backup\` or language choice left in the repo's `kit\` folder by trying the
+  wizard on your own PC is no longer copied to the stick.
+
 ## 0.11.0 - the builder makes the Windows stick
 - New default: **Make a new Windows USB stick**. Pick the stick and Windows 10 or 11, press
   **CREATE WINDOWS USB**: the builder gets Windows, erases the stick, makes it bootable (UEFI

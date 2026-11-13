@@ -150,6 +150,53 @@ Describe 'Prepared Windows cache' {
     }
 }
 
+Describe 'Downloaded-Windows manager' {
+    BeforeEach {
+        $script:cache = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+        [void](New-Item -ItemType Directory -Path (Join-Path $script:cache 'win11-ru-ru-x64-920bd57e15/sources') -Force)
+        Set-Content -LiteralPath (Join-Path $script:cache 'win11-ru-ru-x64-920bd57e15/sources/install.swm') -Value ('x' * 5000)
+        Set-Content -LiteralPath (Join-Path $script:cache 'win11-ru-ru-x64-920bd57e15.ready.json') -Value '{}'
+        [void](New-Item -ItemType Directory -Path (Join-Path $script:cache 'win10-en-us-x64-e35f49be74/sources') -Force)
+        Set-Content -LiteralPath (Join-Path $script:cache 'win10-en-us-x64-aaaaaaaaaa.esd') -Value ('y' * 3000)
+        [void](New-Item -ItemType Directory -Path (Join-Path $script:cache 'catalog'))
+        Set-Content -LiteralPath (Join-Path $script:cache 'notes.txt') -Value 'mine'
+    }
+    It 'lists prepared Windows and unfinished leftovers, and nothing else' {
+        $items = @(Get-DzMediaCacheItem -CacheRoot $script:cache)
+        $items.Count | Should -Be 3
+        $ready = @($items | Where-Object { $_.Kind -eq 'windows' })
+        $ready.Count | Should -Be 1
+        $ready[0].WindowsVersion | Should -Be 11
+        $ready[0].Language | Should -Be 'ru-ru'
+        $ready[0].Bytes | Should -BeGreaterThan 5000
+        $ready[0].Display | Should -Match '^Windows 11, ru-ru - '
+        $left = @($items | Where-Object { $_.Kind -eq 'leftover' } | ForEach-Object { $_.Display } | Sort-Object)
+        $left[0] | Should -Match '^Unfinished download of Windows 10, en-us - '
+        $left[1] | Should -Match '^Unfinished unpack of Windows 10, en-us - '
+        ($items | ForEach-Object { $_.Name }) | Should -Not -Contain 'catalog'
+    }
+    It 'returns nothing for a cache that does not exist' {
+        @(Get-DzMediaCacheItem -CacheRoot (Join-Path $script:cache 'nope')) | Should -BeNullOrEmpty
+    }
+    It 'deletes one item with its marker and leaves the rest' {
+        Remove-DzMediaCacheItem -Name 'win11-ru-ru-x64-920bd57e15' -CacheRoot $script:cache
+        Test-Path (Join-Path $script:cache 'win11-ru-ru-x64-920bd57e15') | Should -BeFalse
+        Test-Path (Join-Path $script:cache 'win11-ru-ru-x64-920bd57e15.ready.json') | Should -BeFalse
+        Remove-DzMediaCacheItem -Name 'win10-en-us-x64-aaaaaaaaaa.esd' -CacheRoot $script:cache
+        Test-Path (Join-Path $script:cache 'win10-en-us-x64-aaaaaaaaaa.esd') | Should -BeFalse
+        Test-Path (Join-Path $script:cache 'notes.txt') | Should -BeTrue
+        Test-Path (Join-Path $script:cache 'catalog') | Should -BeTrue
+        @(Get-DzMediaCacheItem -CacheRoot $script:cache).Count | Should -Be 1
+        Get-DzPreparedMedia -WindowsVersion 11 -Language 'ru-RU' -CacheRoot $script:cache | Should -BeNullOrEmpty
+    }
+    It 'refuses names that are not cache items, so it cannot delete anything else' {
+        foreach ($bad in @('..', '..\..\Windows', 'notes.txt', 'catalog', 'win11-ru-ru-x64-920bd57e15\..\..', 'C:\Users', '')) {
+            { Remove-DzMediaCacheItem -Name $bad -CacheRoot $script:cache } | Should -Throw
+        }
+        Test-Path (Join-Path $script:cache 'notes.txt') | Should -BeTrue
+    }
+}
+
 Describe 'Which disk may be erased' {
     It 'allows an ordinary USB stick' {
         Test-DzUsbDiskAllowed -Disk (New-TestDisk) | Should -BeNullOrEmpty

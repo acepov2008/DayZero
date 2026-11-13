@@ -17,7 +17,7 @@ BeforeDiscovery {
             ForEach-Object { @{ Path = $_.FullName; Name = $_.FullName.Substring($repo.Length + 1) } })
     # Script -> the XAML files whose x:Name elements it uses through $ui / $names.
     $script:ScriptXamlPairs = @(
-        @{ Script = 'builder/Builder.ps1'; Xaml = @('builder/Builder.xaml', 'builder/PreviewWindow.xaml', 'builder/PickerWindow.xaml') },
+        @{ Script = 'builder/Builder.ps1'; Xaml = @('builder/Builder.xaml', 'builder/PreviewWindow.xaml', 'builder/PickerWindow.xaml', 'builder/CacheWindow.xaml') },
         @{ Script = 'kit/DayZero.ps1'; Xaml = @('kit/ui/Wizard.xaml') }
     )
 }

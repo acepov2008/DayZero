@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- DayZero builder: the copies of Windows the builder downloaded and keeps for the next stick. -->
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="DayZero - downloaded Windows"
+        Width="640" Height="460" MinWidth="520" MinHeight="340"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource DzWindowBackground}"
+        Foreground="{StaticResource DzText}"
+        FontFamily="Segoe UI" FontSize="13"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel>
+            <TextBlock Text="DOWNLOADED WINDOWS" Style="{StaticResource DzCardTitle}"/>
+            <TextBlock Style="{StaticResource DzHint}" TextWrapping="Wrap"
+                       Text="Windows that the builder downloaded and unpacked, kept so the next stick takes minutes instead of an hour. Deleting one only means it is downloaded again when you need it."/>
+        </StackPanel>
+        <Border Grid.Row="1" Style="{StaticResource DzCard}" Margin="0,12,0,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <StackPanel x:Name="CacheItemsPanel"/>
+                    <TextBlock x:Name="CacheEmptyText" Visibility="Collapsed" Style="{StaticResource DzHint}" Text="Nothing is stored yet."/>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+        <TextBlock x:Name="CacheTotalText" Grid.Row="2" Margin="0,10,0,0" Foreground="{StaticResource DzMuted}" TextWrapping="Wrap"/>
+        <Grid Grid.Row="3" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button x:Name="CacheOpenFolderButton" Content="Open the folder"/>
+            <Button x:Name="CacheDeleteButton" Grid.Column="2" Margin="12,0,0,0" Content="Delete the ticked ones"/>
+            <Button x:Name="CacheCloseButton" Grid.Column="3" Margin="12,0,0,0" Style="{StaticResource DzPrimaryButton}" Content="Close"/>
+        </Grid>
+    </Grid>
+</Window>

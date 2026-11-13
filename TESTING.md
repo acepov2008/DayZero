@@ -64,6 +64,27 @@ it. This part cannot be tested in the automated checks. Use a stick with nothing
 - [ ] Attach the stick to a VM (VirtualBox: Settings > USB, add a filter for it) and run the checklist in section 4.
 - [ ] `%LOCALAPPDATA%\DayZero\media` holds one `win11-...` folder and no leftover `.esd` file.
 
+## 2c. Language, Verify and Downloaded Windows
+
+- [ ] On a Russian Windows the builder starts in Russian. The **Language** button switches to
+      English and back at once: card titles, buttons, hints, mode and level cards, drop-downs.
+      What you typed (user name, password, computer name) stays.
+- [ ] Close and reopen the builder: it starts in the language you left it in.
+- [ ] Russian text is not cut off or overlapping anywhere (Russian is longer than English).
+- [ ] Make a stick with the builder in Russian: the wizard on the new PC starts in Russian. Its
+      **Language** button on the first page switches it; after a restart it is still in that language.
+- [ ] Wizard in Russian: mode cards, the review screen (groups, apps, tweak descriptions and
+      warnings), step titles on the progress page and the summary are Russian. Detailed step
+      messages and the logs are English.
+- [ ] **Verify a stick** with a finished stick plugged in: every line has a check mark and the
+      last line says the stick is ready.
+- [ ] Delete `DayZero\DayZero.ps1` from the stick and verify again: the toolkit line fails and
+      the message says to write the stick again.
+- [ ] After **CREATE WINDOWS USB**, the final message includes "All N checks passed".
+- [ ] **Downloaded Windows...** lists the Windows you downloaded with its size. Tick it,
+      delete it: the folder in `%LOCALAPPDATA%\DayZero\media` is gone and the hint says Windows
+      will be downloaded again.
+
 ## 3a. Hyper-V (Windows Pro/Enterprise)
 
 1. **New > Virtual Machine**: **Generation 2**, 4096 MB RAM or more (untick Dynamic Memory),

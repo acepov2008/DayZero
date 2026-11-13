@@ -1,0 +1,2395 @@
+{
+  "code": "ru",
+  "name": "Русский",
+  "_doc": "Each entry is [English text exactly as DayZero shows it, translation]; {0} {1} are placeholders. Pairs, not an object, because English texts can differ only in upper/lower case. See kit/lib/Lang.psm1.",
+  "strings": [
+    [
+      "{0} - {1}",
+      "{0} - {1}"
+    ],
+    [
+      "{0}: {1}",
+      "{0}: {1}"
+    ],
+    [
+      "Language",
+      "Язык"
+    ],
+    [
+      "Switch the language of this program (English / Russian)",
+      "Сменить язык программы (английский / русский)"
+    ],
+    [
+      "DayZero USB Builder",
+      "DayZero: создание флешки"
+    ],
+    [
+      "USB BUILDER",
+      "СОЗДАНИЕ ФЛЕШКИ"
+    ],
+    [
+      "USB BUILDER  ·  v{0}",
+      "СОЗДАНИЕ ФЛЕШКИ  ·  v{0}"
+    ],
+    [
+      "Makes a Windows install USB stick with your settings on it,\nor adds DayZero to a stick you already made.",
+      "Создаёт установочную флешку Windows с вашими настройками\nили добавляет DayZero на уже готовую флешку."
+    ],
+    [
+      "①  WHERE TO WRITE",
+      "①  КУДА ЗАПИСАТЬ"
+    ],
+    [
+      "Make a _new Windows USB stick (erases the stick)",
+      "Создать новую флешку с Windows (флешка будет стёрта)"
+    ],
+    [
+      "A Windows _USB stick I already made (Media Creation Tool or Rufus)",
+      "Готовая флешка с Windows (Media Creation Tool или Rufus)"
+    ],
+    [
+      "_Folder (to test in a virtual machine)",
+      "Папка (для проверки в виртуальной машине)"
+    ],
+    [
+      "Refresh",
+      "Обновить"
+    ],
+    [
+      "_Refresh",
+      "Обновить"
+    ],
+    [
+      "Look for USB sticks again",
+      "Искать флешки заново"
+    ],
+    [
+      "Where Windows comes from",
+      "Откуда взять Windows"
+    ],
+    [
+      "Download it from Microsoft (about 5 GB the first time, then reused)",
+      "Скачать с сайта Microsoft (около 5 ГБ в первый раз, потом используется повторно)"
+    ],
+    [
+      "Use a Windows ISO file I already have",
+      "Использовать мой ISO-файл Windows"
+    ],
+    [
+      "Browse...",
+      "Обзор..."
+    ],
+    [
+      "_Browse...",
+      "Обзор..."
+    ],
+    [
+      "Looking for USB sticks...",
+      "Поиск флешек..."
+    ],
+    [
+      "②  WINDOWS",
+      "②  WINDOWS"
+    ],
+    [
+      "Edition",
+      "Редакция"
+    ],
+    [
+      "Your own product key: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
+      "Ваш ключ продукта: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+    ],
+    [
+      "③  YOUR ACCOUNT",
+      "③  УЧЁТНАЯ ЗАПИСЬ"
+    ],
+    [
+      "User name (a local account, no Microsoft account needed)",
+      "Имя пользователя (локальная учётная запись, без учётной записи Microsoft)"
+    ],
+    [
+      "Password",
+      "Пароль"
+    ],
+    [
+      "Confirm password",
+      "Пароль ещё раз"
+    ],
+    [
+      "_Generate a temporary password",
+      "Создать временный пароль"
+    ],
+    [
+      "Temporary password: Windows asks for a new one at the first sign-in after DayZero finishes",
+      "Временный пароль: Windows попросит задать новый при первом входе после завершения DayZero"
+    ],
+    [
+      "Sign in automatically until DayZero finishes, so it can continue after restarts (recommended)",
+      "Входить автоматически, пока DayZero не закончит, чтобы продолжать после перезагрузок (рекомендуется)"
+    ],
+    [
+      "⚠ Heads-up:",
+      "⚠ Внимание:"
+    ],
+    [
+      "Windows stores this password in autounattend.xml as base64. That is encoding, not encryption: anyone with this USB stick can read it. Use a temporary password, or delete autounattend.xml from the stick after installing.",
+      "Windows хранит этот пароль в autounattend.xml в виде base64. Это кодировка, а не шифрование: любой, у кого окажется флешка, сможет его прочитать. Используйте временный пароль или удалите autounattend.xml с флешки после установки."
+    ],
+    [
+      "④  THIS PC",
+      "④  КОМПЬЮТЕР"
+    ],
+    [
+      "Computer name",
+      "Имя компьютера"
+    ],
+    [
+      "Up to 15 letters, digits or hyphens. Leave empty and Windows picks a random name.",
+      "До 15 латинских букв, цифр или дефисов. Оставьте пустым, и Windows выберет случайное имя."
+    ],
+    [
+      "⑤  LANGUAGE & REGION",
+      "⑤  ЯЗЫК И РЕГИОН"
+    ],
+    [
+      "Windows display language",
+      "Язык интерфейса Windows"
+    ],
+    [
+      "Region format (dates, numbers, currency)",
+      "Региональный формат (даты, числа, валюта)"
+    ],
+    [
+      "Keyboard layout",
+      "Раскладка клавиатуры"
+    ],
+    [
+      "Time zone",
+      "Часовой пояс"
+    ],
+    [
+      "Use _this PC's settings",
+      "Взять настройки этого компьютера"
+    ],
+    [
+      "⑥  DEFAULT MODE",
+      "⑥  РЕЖИМ ПО УМОЛЧАНИЮ"
+    ],
+    [
+      "WHAT THIS MODE INCLUDES",
+      "ЧТО ВХОДИТ В ЭТОТ РЕЖИМ"
+    ],
+    [
+      "WHAT {0} INCLUDES",
+      "ЧТО ВХОДИТ В РЕЖИМ «{0}»"
+    ],
+    [
+      "_Choose apps and options...",
+      "Выбрать программы и параметры..."
+    ],
+    [
+      "This is only pre-selected: you can still pick another mode on the new PC.",
+      "Это только выбор по умолчанию: на новом компьютере можно выбрать другой режим."
+    ],
+    [
+      "⑦  CLEAN-UP LEVEL",
+      "⑦  УРОВЕНЬ ОЧИСТКИ"
+    ],
+    [
+      "How much of Windows' preinstalled extras and data collection to remove, for any mode. Modelled on Chris Titus Tech's WinUtil presets.",
+      "Сколько предустановленного лишнего и сбора данных Windows убрать, для любого режима. По образцу пресетов WinUtil от Chris Titus Tech."
+    ],
+    [
+      "WHAT THIS LEVEL DOES",
+      "ЧТО ДЕЛАЕТ ЭТОТ УРОВЕНЬ"
+    ],
+    [
+      "WHAT {0} DOES",
+      "ЧТО ДЕЛАЕТ УРОВЕНЬ «{0}»"
+    ],
+    [
+      "Pre-selected on the new PC, where every switch can still be changed. Everything is undone by DayZero.cmd -Undo.",
+      "На новом компьютере будет выбран заранее, но каждый переключатель можно изменить. Всё отменяется командой DayZero.cmd -Undo."
+    ],
+    [
+      "⑧  OPTIONS",
+      "⑧  ПАРАМЕТРЫ"
+    ],
+    [
+      "Dry run: the wizard on the new PC only logs what it would do and changes nothing (for testing)",
+      "Пробный запуск: мастер на новом компьютере только записывает в журнал, что он сделал бы, и ничего не меняет (для проверки)"
+    ],
+    [
+      "Put offline installers on the stick: winget (App Installer) and Microsoft's Office Deployment Tool, about 250 MB. Helps when the Store on a fresh PC is not ready yet.",
+      "Записать на флешку автономные установщики: winget (App Installer) и Office Deployment Tool от Microsoft, около 250 МБ. Помогает, когда Магазин на свежей системе ещё не готов."
+    ],
+    [
+      "Microsoft 365 plan (Office and Everything modes)",
+      "Подписка Microsoft 365 (режимы «Офис» и «Всё сразу»)"
+    ],
+    [
+      "Your own scripts (run on the new PC after the apps)",
+      "Ваши скрипты (запускаются на новом компьютере после установки программ)"
+    ],
+    [
+      "_Open the Scripts folder",
+      "Открыть папку Scripts"
+    ],
+    [
+      "Put .cmd, .bat or .ps1 files there; they are copied to the stick and run in name order as administrator",
+      "Положите туда файлы .cmd, .bat или .ps1; они копируются на флешку и запускаются по алфавиту от имени администратора"
+    ],
+    [
+      "_Check the app list with winget",
+      "Проверить список программ через winget"
+    ],
+    [
+      "Runs 'winget show' for every app id on this PC. Read-only.",
+      "Выполняет «winget show» для каждой программы на этом компьютере. Ничего не меняет."
+    ],
+    [
+      "Safety: on the new PC, DayZero never picks, wipes or partitions a disk. Windows Setup will stop and ask you which disk to install on. Here, only the USB stick you pick and confirm is erased; internal disks are always refused.",
+      "Безопасность: на новом компьютере DayZero никогда не выбирает, не стирает и не размечает диск. Установка Windows остановится и спросит, на какой диск ставить. Здесь стирается только флешка, которую вы выбрали и подтвердили; внутренние диски всегда отклоняются."
+    ],
+    [
+      "Ready.",
+      "Готово к работе."
+    ],
+    [
+      "_Preview answer file",
+      "Показать файл ответов"
+    ],
+    [
+      "_CREATE WINDOWS USB  ▶",
+      "СОЗДАТЬ ФЛЕШКУ WINDOWS  ▶"
+    ],
+    [
+      "_WRITE TO USB  ▶",
+      "ЗАПИСАТЬ НА ФЛЕШКУ  ▶"
+    ],
+    [
+      "_EXPORT TO FOLDER  ▶",
+      "ЭКСПОРТ В ПАПКУ  ▶"
+    ],
+    [
+      "Log",
+      "Журнал"
+    ],
+    [
+      "Language: English",
+      "Language: English"
+    ],
+    [
+      "DayZero - choose apps and options",
+      "DayZero: выбор программ и параметров"
+    ],
+    [
+      "CUSTOM MODE",
+      "СВОЙ РЕЖИМ"
+    ],
+    [
+      "Tick what you want on the new PC. These picks arrive pre-ticked there, and you can still change them before DayZero starts.",
+      "Отметьте, что нужно на новом компьютере. Там эти пункты будут уже отмечены, и их можно изменить до запуска DayZero."
+    ],
+    [
+      "APPS",
+      "ПРОГРАММЫ"
+    ],
+    [
+      "CLEAN-UP AND TWEAKS",
+      "ОЧИСТКА И НАСТРОЙКИ"
+    ],
+    [
+      "_Untick all",
+      "Снять все отметки"
+    ],
+    [
+      "_Cancel",
+      "Отмена"
+    ],
+    [
+      "_SAVE PICKS",
+      "СОХРАНИТЬ ВЫБОР"
+    ],
+    [
+      "{0} app(s) ticked",
+      "Отмечено программ: {0}"
+    ],
+    [
+      "DayZero - answer file preview",
+      "DayZero: просмотр файла ответов"
+    ],
+    [
+      "This is what Windows Setup will read. Password values are hidden here, but on the USB stick they are only base64-encoded. Notice there is no disk configuration: you will pick the disk yourself.",
+      "Это прочитает программа установки Windows. Пароли здесь скрыты, но на флешке они лишь закодированы в base64. Обратите внимание: настроек диска нет, диск вы выберете сами."
+    ],
+    [
+      "_Close",
+      "Закрыть"
+    ],
+    [
+      "SETUP WIZARD",
+      "МАСТЕР НАСТРОЙКИ"
+    ],
+    [
+      "SETUP WIZARD  {0}  v{1}",
+      "МАСТЕР НАСТРОЙКИ  {0}  v{1}"
+    ],
+    [
+      "DRY RUN - nothing is changed",
+      "ПРОБНЫЙ ЗАПУСК - ничего не меняется"
+    ],
+    [
+      "CHOOSE YOUR MODE",
+      "ВЫБЕРИТЕ РЕЖИМ"
+    ],
+    [
+      "The default from your USB builder is already selected. Arrow keys or 1 - 4 to switch, Enter to continue.",
+      "Режим, заданный при создании флешки, уже выбран. Стрелки или 1 - 4 для выбора, Enter для продолжения."
+    ],
+    [
+      "YOUR PC",
+      "ВАШ КОМПЬЮТЕР"
+    ],
+    [
+      "YOUR PC  {0}  {1} MODE",
+      "ВАШ КОМПЬЮТЕР  {0}  РЕЖИМ «{1}»"
+    ],
+    [
+      "Laptop detected. Performance options that cost battery life are switched OFF below; tick them only if you mostly play plugged in.",
+      "Обнаружен ноутбук. Параметры производительности, которые сокращают время работы от батареи, ниже ВЫКЛЮЧЕНЫ; включайте их, только если играете в основном от сети."
+    ],
+    [
+      "OPTIONS",
+      "ПАРАМЕТРЫ"
+    ],
+    [
+      "Clean-up level (Clear / Minimal / Standard / Advanced, like WinUtil's presets: picking one re-ticks its switches), every tweak and the PC-brand tool. Switches with a warning are off unless you turn them on. Every tweak can be undone with DayZero.cmd -Undo.",
+      "Уровень очистки (Без изменений / Минимальный / Стандартный / Расширенный, как пресеты WinUtil: выбор уровня заново расставляет его переключатели), все настройки и утилита производителя ПК. Переключатели с предупреждением выключены, пока вы сами их не включите. Любую настройку можно отменить командой DayZero.cmd -Undo."
+    ],
+    [
+      "No extra choices for this mode.",
+      "Для этого режима нет дополнительных параметров."
+    ],
+    [
+      "The whole catalog: this mode's apps are ticked. Tick anything else you want, untick what you don't.",
+      "Весь каталог: программы этого режима отмечены. Отметьте всё, что нужно ещё, и снимите лишнее."
+    ],
+    [
+      "No app list found (config\\apps.json).",
+      "Список программ не найден (config\\apps.json)."
+    ],
+    [
+      "Starting...",
+      "Запуск..."
+    ],
+    [
+      "Live log  (press L)",
+      "Журнал в реальном времени  (клавиша L)"
+    ],
+    [
+      "ALL DONE",
+      "ВСЁ ГОТОВО"
+    ],
+    [
+      "WINDOWS ACTIVATION",
+      "АКТИВАЦИЯ WINDOWS"
+    ],
+    [
+      "WHAT NOW",
+      "ЧТО ДАЛЬШЕ"
+    ],
+    [
+      "WINDOWS 10: KEEP GETTING SECURITY UPDATES",
+      "WINDOWS 10: ПРОДОЛЖАЙТЕ ПОЛУЧАТЬ ОБНОВЛЕНИЯ БЕЗОПАСНОСТИ"
+    ],
+    [
+      "Open _Windows Update settings",
+      "Открыть параметры Центра обновления Windows"
+    ],
+    [
+      "_Back",
+      "Назад"
+    ],
+    [
+      "_Pause after this step",
+      "Пауза после этого шага"
+    ],
+    [
+      "Open _logs",
+      "Открыть журналы"
+    ],
+    [
+      "Open _download pages",
+      "Открыть страницы загрузки"
+    ],
+    [
+      "Opens the official download pages listed under WHAT NOW in your browser",
+      "Открывает в браузере официальные страницы загрузки из раздела «ЧТО ДАЛЬШЕ»"
+    ],
+    [
+      "Run _my scripts",
+      "Запустить мои скрипты"
+    ],
+    [
+      "Runs the scripts in C:\\DayZero\\Scripts again, as administrator, in name order",
+      "Ещё раз запускает скрипты из C:\\DayZero\\Scripts от имени администратора, по алфавиту"
+    ],
+    [
+      "_Retry failed steps",
+      "Повторить неудавшиеся шаги"
+    ],
+    [
+      "_NEXT",
+      "ДАЛЕЕ"
+    ],
+    [
+      "RESTART NEEDED",
+      "НУЖНА ПЕРЕЗАГРУЗКА"
+    ],
+    [
+      "DayZero signs back in and continues automatically after the restart.",
+      "После перезагрузки DayZero сам войдёт в систему и продолжит."
+    ],
+    [
+      "Not _now",
+      "Не сейчас"
+    ],
+    [
+      "_RESTART NOW",
+      "ПЕРЕЗАГРУЗИТЬ"
+    ],
+    [
+      "_NEXT  ▶",
+      "ДАЛЕЕ  ▶"
+    ],
+    [
+      "_START  ▶",
+      "НАЧАТЬ  ▶"
+    ],
+    [
+      "_CONTINUE  ▶",
+      "ПРОДОЛЖИТЬ  ▶"
+    ],
+    [
+      "_FINISH  ▶",
+      "ЗАВЕРШИТЬ  ▶"
+    ],
+    [
+      "_RESTART NOW  ▶",
+      "ПЕРЕЗАГРУЗИТЬ  ▶"
+    ],
+    [
+      "_CLOSE",
+      "ЗАКРЫТЬ"
+    ],
+    [
+      "Arrow keys or 1 - 4 pick a mode  |  Enter continues",
+      "Стрелки или 1 - 4: выбор режима  |  Enter: продолжить"
+    ],
+    [
+      "Space ticks a box  |  Enter starts  |  Esc goes back",
+      "Пробел: отметить  |  Enter: начать  |  Esc: назад"
+    ],
+    [
+      "L shows the live log  |  You can keep using the PC; restarts are announced first",
+      "L: показать журнал  |  Компьютером можно пользоваться; о перезагрузках предупредим заранее"
+    ],
+    [
+      "Finish turns off automatic sign-in and cleans up the setup helpers",
+      "«Завершить» отключает автоматический вход и удаляет служебные файлы установки"
+    ],
+    [
+      "DayZero continues automatically after the next restart.",
+      "DayZero продолжит автоматически после следующей перезагрузки."
+    ],
+    [
+      "BUILDER DEFAULT",
+      "ВЫБРАНО ПРИ СОЗДАНИИ ФЛЕШКИ"
+    ],
+    [
+      "Could not read the PC details (see the log).",
+      "Не удалось прочитать сведения о компьютере (см. журнал)."
+    ],
+    [
+      "Windows    {0}",
+      "Windows    {0}"
+    ],
+    [
+      "Type       {0} - {1}",
+      "Тип        {0} - {1}"
+    ],
+    [
+      "Graphics   {0}",
+      "Графика    {0}"
+    ],
+    [
+      "Memory     {0} GB    Free disk {1} GB",
+      "Память     {0} ГБ    Свободно на диске {1} ГБ"
+    ],
+    [
+      "Virtual machine",
+      "Виртуальная машина"
+    ],
+    [
+      "Laptop",
+      "Ноутбук"
+    ],
+    [
+      "Desktop",
+      "Настольный ПК"
+    ],
+    [
+      "not detected",
+      "не определена"
+    ],
+    [
+      "Restarting in {0} seconds...",
+      "Перезагрузка через {0} с..."
+    ],
+    [
+      "Restarting now...",
+      "Перезагружаемся..."
+    ],
+    [
+      "Pausing...",
+      "Ставим на паузу..."
+    ],
+    [
+      "Pausing after this step...",
+      "Пауза после этого шага..."
+    ],
+    [
+      "PAUSED",
+      "ПАУЗА"
+    ],
+    [
+      "DONE, WITH PROBLEMS: {0}",
+      "ГОТОВО, ЕСТЬ ПРОБЛЕМЫ: {0}"
+    ],
+    [
+      "{0} done  |  {1} with notes  |  {2} failed  |  {3} skipped  |  {4} not started{5}",
+      "Готово: {0}  |  С замечаниями: {1}  |  Ошибок: {2}  |  Пропущено: {3}  |  Не начато: {4}{5}"
+    ],
+    [
+      "   (DRY RUN: nothing was changed)",
+      "   (ПРОБНЫЙ ЗАПУСК: ничего не изменено)"
+    ],
+    [
+      "Could not read the activation status.",
+      "Не удалось прочитать состояние активации."
+    ],
+    [
+      "Windows is activated",
+      "Windows активирована"
+    ],
+    [
+      "Not activated",
+      "Не активирована"
+    ],
+    [
+      "Activated",
+      "Активирована"
+    ],
+    [
+      "Grace period (out of box)",
+      "Льготный период (после установки)"
+    ],
+    [
+      "Grace period (out of tolerance)",
+      "Льготный период (изменилось оборудование)"
+    ],
+    [
+      "Grace period (non-genuine)",
+      "Льготный период (нелицензионная копия)"
+    ],
+    [
+      "Not activated (notification mode)",
+      "Не активирована (режим уведомлений)"
+    ],
+    [
+      "Grace period (extended)",
+      "Льготный период (продлённый)"
+    ],
+    [
+      "Unknown",
+      "Неизвестно"
+    ],
+    [
+      "Licence channel: {0}",
+      "Канал лицензии: {0}"
+    ],
+    [
+      "Key in this PC's firmware: {0}",
+      "Ключ в прошивке этого компьютера: {0}"
+    ],
+    [
+      "Settings > System > Activation shows why. A digital licence often kicks in within an hour of being online.",
+      "Причину покажет «Параметры > Система > Активация». Цифровая лицензия часто срабатывает в течение часа после выхода в интернет."
+    ],
+    [
+      "DayZero is paused. Press CONTINUE to carry on with the remaining steps.",
+      "DayZero на паузе. Нажмите «ПРОДОЛЖИТЬ», чтобы выполнить оставшиеся шаги."
+    ],
+    [
+      "The engine stopped with an error: {0}",
+      "Выполнение остановилось из-за ошибки: {0}"
+    ],
+    [
+      "Press 'Retry failed steps'. Many failures (downloads, Store apps) work on a second try, especially after Windows Update.",
+      "Нажмите «Повторить неудавшиеся шаги». Многие сбои (загрузки, приложения из Магазина) проходят со второй попытки, особенно после обновления Windows."
+    ],
+    [
+      "Open Word or Excel and sign in with your Microsoft account to activate Microsoft 365.",
+      "Откройте Word или Excel и войдите в учётную запись Microsoft, чтобы активировать Microsoft 365."
+    ],
+    [
+      "Some tweaks (GPU scheduling, Memory Integrity, mouse) take effect after the next restart.",
+      "Некоторые настройки (планирование GPU, целостность памяти, мышь) начнут действовать после перезагрузки."
+    ],
+    [
+      "Changed your mind? Run {0} -Undo to put every tweak back and reinstall removed apps.",
+      "Передумали? Запустите {0} -Undo, чтобы вернуть все настройки и переустановить удалённые приложения."
+    ],
+    [
+      "Restart the PC once you are done, to finish drivers and updates.",
+      "Когда закончите, перезагрузите компьютер, чтобы завершить установку драйверов и обновлений."
+    ],
+    [
+      "You set a temporary password: Windows asks for a new one at your next sign-in.",
+      "Вы задали временный пароль: при следующем входе Windows попросит новый."
+    ],
+    [
+      "This was a DRY RUN. Open the logs to see everything DayZero would have done.",
+      "Это был ПРОБНЫЙ ЗАПУСК. Откройте журналы, чтобы увидеть всё, что сделал бы DayZero."
+    ],
+    [
+      "Press FINISH to switch off automatic sign-in and remove the setup helpers.",
+      "Нажмите «ЗАВЕРШИТЬ», чтобы отключить автоматический вход и удалить служебные файлы установки."
+    ],
+    [
+      "Something went wrong:",
+      "Что-то пошло не так:"
+    ],
+    [
+      "Some cleanup steps failed (see the log). You can re-run DayZero.cmd later to try again.",
+      "Некоторые шаги очистки не удались (см. журнал). Позже можно снова запустить DayZero.cmd и повторить."
+    ],
+    [
+      "DayZero is still working on:",
+      "DayZero ещё выполняет:"
+    ],
+    [
+      "Pause after this step and close? It continues at your next sign-in.",
+      "Поставить на паузу после этого шага и закрыть? Работа продолжится при следующем входе."
+    ],
+    [
+      "Windows 10 support ended on October 14, 2025. Microsoft's Extended Security Updates (ESU) program keeps sending security fixes to Windows 10 PCs until October 12, 2027.",
+      "Поддержка Windows 10 закончилась 14 октября 2025 года. Программа расширенных обновлений безопасности (ESU) от Microsoft продолжает присылать исправления безопасности для Windows 10 до 12 октября 2027 года."
+    ],
+    [
+      "How to enroll:  Settings > Update & Security > Windows Update > \"Enroll now\".",
+      "Как подключиться:  Параметры > Обновление и безопасность > Центр обновления Windows > «Зарегистрироваться»."
+    ],
+    [
+      "Free if you sync your PC settings with Windows Backup, or 1,000 Microsoft Rewards points, or a one-time purchase (US$30).",
+      "Бесплатно, если синхронизировать параметры ПК через «Программу архивации данных», либо за 1000 баллов Microsoft Rewards, либо разовая покупка (30 долларов США)."
+    ],
+    [
+      "Needs Windows 10 version 22H2 with the latest updates installed.",
+      "Нужна Windows 10 версии 22H2 с последними обновлениями."
+    ],
+    [
+      "Enrolling needs a Microsoft account. DayZero created a local account; you can sign in to a Microsoft account during enrollment.",
+      "Для подключения нужна учётная запись Microsoft. DayZero создал локальную учётную запись; войти в учётную запись Microsoft можно при подключении."
+    ],
+    [
+      "If this PC meets the Windows 11 requirements, upgrading is free and needs no ESU.",
+      "Если компьютер соответствует требованиям Windows 11, обновление бесплатно и ESU не нужна."
+    ],
+    [
+      "Auto - match the PC's built-in key (recommended)",
+      "Авто: по встроенному ключу компьютера (рекомендуется)"
+    ],
+    [
+      "Home",
+      "Домашняя"
+    ],
+    [
+      "Pro",
+      "Pro"
+    ],
+    [
+      "Use my own product key",
+      "Использовать мой ключ продукта"
+    ],
+    [
+      "Microsoft 365 Personal / Family",
+      "Microsoft 365 персональный / для семьи"
+    ],
+    [
+      "Microsoft 365 Business Standard / Premium",
+      "Microsoft 365 бизнес стандарт / премиум"
+    ],
+    [
+      "Microsoft 365 E3 / E5 (enterprise)",
+      "Microsoft 365 E3 / E5 (корпоративный)"
+    ],
+    [
+      "Pick a Windows 10 or 11 ISO file",
+      "Выберите ISO-файл Windows 10 или 11"
+    ],
+    [
+      "Windows ISO files",
+      "ISO-файлы Windows"
+    ],
+    [
+      "Pick an empty folder for the DayZero test files",
+      "Выберите пустую папку для тестовых файлов DayZero"
+    ],
+    [
+      "none yet",
+      "пока нет"
+    ],
+    [
+      "{0} script(s): {1}",
+      "Скриптов: {0} ({1})"
+    ],
+    [
+      "Temporary password: {0}  - write it down. You type it once after DayZero finishes, then Windows asks you for a new one.",
+      "Временный пароль: {0}  - запишите его. Вы введёте его один раз после завершения DayZero, затем Windows попросит новый."
+    ],
+    [
+      "Still working. The window can be closed when this is finished.",
+      "Работа ещё идёт. Окно можно будет закрыть, когда она закончится."
+    ],
+    [
+      "Looking for Windows installation USB sticks...",
+      "Поиск установочных флешек Windows..."
+    ],
+    [
+      "No installation USB found yet.",
+      "Установочная флешка пока не найдена."
+    ],
+    [
+      "No USB stick found yet.",
+      "Флешка пока не найдена."
+    ],
+    [
+      "Reading the Windows image on {0} ...",
+      "Чтение образа Windows на {0} ..."
+    ],
+    [
+      "Reading the ISO file...",
+      "Чтение ISO-файла..."
+    ],
+    [
+      "Cancelled.",
+      "Отменено."
+    ],
+    [
+      "Writing...",
+      "Запись..."
+    ],
+    [
+      "Adding the answer file and the DayZero toolkit...",
+      "Добавляем файл ответов и набор DayZero..."
+    ],
+    [
+      "Failed: {0}",
+      "Ошибка: {0}"
+    ],
+    [
+      "Done! Build {0} written to {1}",
+      "Готово! Сборка {0} записана на {1}"
+    ],
+    [
+      "Checking {0} of {1}: {2}",
+      "Проверка {0} из {1}: {2}"
+    ],
+    [
+      "All {0} package ids exist in winget.",
+      "Все {0} идентификаторов пакетов есть в winget."
+    ],
+    [
+      "{0} package id(s) not found; see the log.",
+      "Не найдено идентификаторов пакетов: {0}; см. журнал."
+    ],
+    [
+      "Asking Microsoft for the current Windows {0} download...",
+      "Запрашиваем у Microsoft актуальную загрузку Windows {0}..."
+    ],
+    [
+      "Downloading Windows {0} from Microsoft: {1} of {2} GB ({3}%)",
+      "Загрузка Windows {0} с сайта Microsoft: {1} из {2} ГБ ({3}%)"
+    ],
+    [
+      "Downloading Windows {0} from Microsoft ...",
+      "Загрузка Windows {0} с сайта Microsoft ..."
+    ],
+    [
+      "Checking the download ({0}%)",
+      "Проверка загрузки ({0}%)"
+    ],
+    [
+      "Checking the download",
+      "Проверка загрузки"
+    ],
+    [
+      "Unpacking the Windows setup files ({0}%)",
+      "Распаковка файлов установки Windows ({0}%)"
+    ],
+    [
+      "Unpacking the Windows setup files",
+      "Распаковка файлов установки Windows"
+    ],
+    [
+      "Unpacking Windows PE ({0}%)",
+      "Распаковка Windows PE ({0}%)"
+    ],
+    [
+      "Unpacking Windows PE",
+      "Распаковка Windows PE"
+    ],
+    [
+      "Unpacking Windows Setup ({0}%)",
+      "Распаковка программы установки Windows ({0}%)"
+    ],
+    [
+      "Unpacking Windows Setup",
+      "Распаковка программы установки Windows"
+    ],
+    [
+      "Unpacking {0} ({1} of {2}; this is the slow part) ({3}%)",
+      "Распаковка {0} ({1} из {2}; это самый долгий этап) ({3}%)"
+    ],
+    [
+      "Unpacking {0} ({1} of {2}; this is the slow part)",
+      "Распаковка {0} ({1} из {2}; это самый долгий этап)"
+    ],
+    [
+      "Splitting the Windows image for the USB stick ({0}%)",
+      "Разделение образа Windows для флешки ({0}%)"
+    ],
+    [
+      "Splitting the Windows image for the USB stick",
+      "Разделение образа Windows для флешки"
+    ],
+    [
+      "Erasing and formatting the USB stick",
+      "Стирание и форматирование флешки"
+    ],
+    [
+      "Erasing and formatting the USB stick (trying again)",
+      "Стирание и форматирование флешки (ещё одна попытка)"
+    ],
+    [
+      "Waiting for the new drive letter...",
+      "Ожидание буквы нового диска..."
+    ],
+    [
+      "Copying Windows to the USB stick",
+      "Копирование Windows на флешку"
+    ],
+    [
+      "Copying Windows to the USB stick: {0} of {1} GB, {2} MB/s ({3}%)",
+      "Копирование Windows на флешку: {0} из {1} ГБ, {2} МБ/с ({3}%)"
+    ],
+    [
+      "Copying Windows to the USB stick: {0} of {1} GB ({2}%)",
+      "Копирование Windows на флешку: {0} из {1} ГБ ({2}%)"
+    ],
+    [
+      "Checking the finished stick...",
+      "Проверка готовой флешки..."
+    ],
+    [
+      "No Windows installation USB found. Make one with the Media Creation Tool or Rufus, plug it in, then press Refresh.",
+      "Установочная флешка Windows не найдена. Создайте её в Media Creation Tool или Rufus, вставьте и нажмите «Обновить»."
+    ],
+    [
+      "Could not read the Windows image: {0}",
+      "Не удалось прочитать образ Windows: {0}"
+    ],
+    [
+      "Windows {0} (build {1}), {2}, language {3}.",
+      "Windows {0} (сборка {1}), {2}, язык {3}."
+    ],
+    [
+      "ISO: Windows {0} (build {1}), {2}, language {3}.",
+      "ISO: Windows {0} (сборка {1}), {2}, язык {3}."
+    ],
+    [
+      "Editions: {0}",
+      "Редакции: {0}"
+    ],
+    [
+      "32-bit media is not supported by DayZero.",
+      "DayZero не поддерживает 32-разрядные носители."
+    ],
+    [
+      "This stick already has an autounattend.xml (for example from Rufus \"Windows User Experience\" options). It will be renamed to a backup, not deleted.",
+      "На этой флешке уже есть autounattend.xml (например, от параметров Rufus «Windows User Experience»). Он будет переименован в резервную копию, а не удалён."
+    ],
+    [
+      "Only {0} MB free on the stick. DayZero needs about 50 MB plus any drivers you add.",
+      "На флешке свободно только {0} МБ. DayZero нужно около 50 МБ плюс место для ваших драйверов."
+    ],
+    [
+      "No USB stick found. Plug one in (8 GB or more) and press Refresh. Internal disks and drives over 300 GB are never offered.",
+      "Флешка не найдена. Вставьте флешку (от 8 ГБ) и нажмите «Обновить». Внутренние диски и накопители больше 300 ГБ никогда не предлагаются."
+    ],
+    [
+      "EVERYTHING on this stick will be erased: {0}, {1} GB{2}.",
+      "ВСЁ на этой флешке будет стёрто: {0}, {1} ГБ{2}."
+    ],
+    [
+      "It gets one 32 GB partition (the FAT32 limit); the rest of the stick stays unused.",
+      "На ней будет один раздел 32 ГБ (предел FAT32); остальное место останется незанятым."
+    ],
+    [
+      "Pick a Windows 10 or 11 ISO file from Microsoft.",
+      "Выберите ISO-файл Windows 10 или 11 от Microsoft."
+    ],
+    [
+      "Could not read the ISO file: {0}",
+      "Не удалось прочитать ISO-файл: {0}"
+    ],
+    [
+      "Windows {0} ({1}) is already on this PC from last time; only a newer release would be downloaded.",
+      "Windows {0} ({1}) уже есть на этом компьютере с прошлого раза; загружен будет только более новый выпуск."
+    ],
+    [
+      "Windows {0} is downloaded from Microsoft (the files the Media Creation Tool uses), checked against Microsoft's checksum and kept for next time. The first time takes a while: about 5 GB to download, then 15 to 40 minutes to unpack.",
+      "Windows {0} загружается с сайта Microsoft (те же файлы, что использует Media Creation Tool), сверяется с контрольной суммой Microsoft и сохраняется на будущее. В первый раз это долго: около 5 ГБ загрузки, затем 15-40 минут распаковки."
+    ],
+    [
+      "Writes autounattend.xml and the DayZero folder into an empty folder. Make an ISO of it with tools\\New-DzTestIso.ps1 and attach it to your test VM next to the Windows ISO (see TESTING.md).",
+      "Записывает autounattend.xml и папку DayZero в пустую папку. Сделайте из неё ISO с помощью tools\\New-DzTestIso.ps1 и подключите к тестовой виртуальной машине рядом с ISO Windows (см. TESTING.md)."
+    ],
+    [
+      "Setup reads the product key built into the PC's firmware (most laptops and prebuilt PCs have one), installs that edition, and Windows activates by itself. PCs without one show Setup's normal edition picker.",
+      "Программа установки читает ключ продукта из прошивки компьютера (он есть у большинства ноутбуков и готовых ПК), ставит эту редакцию, и Windows активируется сама. На компьютерах без ключа появится обычный выбор редакции."
+    ],
+    [
+      "Installs Home using Microsoft's generic install key. It selects the edition but never activates. Windows activates on its own only if the PC has a Home licence (firmware key or digital licence).",
+      "Ставит «Домашнюю» с общим установочным ключом Microsoft. Он выбирает редакцию, но ничего не активирует. Windows активируется сама, только если у компьютера есть лицензия на «Домашнюю» (ключ в прошивке или цифровая лицензия)."
+    ],
+    [
+      "Installs Pro using Microsoft's generic install key. It selects the edition but never activates. Windows activates on its own only if the PC has a Pro licence. A PC with a Home key would end up with an unactivated Pro.",
+      "Ставит Pro с общим установочным ключом Microsoft. Он выбирает редакцию, но ничего не активирует. Windows активируется сама, только если у компьютера есть лицензия Pro. На компьютере с ключом «Домашней» получится неактивированная Pro."
+    ],
+    [
+      "Type your own product key. It decides the edition, and it is stored in plain text in autounattend.xml on the stick.",
+      "Введите свой ключ продукта. Он определяет редакцию и хранится открытым текстом в autounattend.xml на флешке."
+    ],
+    [
+      "{0} (This PC - the one running the builder - has a built-in {1} key.)",
+      "{0} (У этого компьютера, на котором запущена программа, встроенный ключ: {1}.)"
+    ],
+    [
+      "Please fix these first:",
+      "Сначала исправьте:"
+    ],
+    [
+      "DayZero Builder",
+      "DayZero: создание флешки"
+    ],
+    [
+      "Pick the USB stick to make into a Windows installer (plug one in and press Refresh).",
+      "Выберите флешку для установщика Windows (вставьте её и нажмите «Обновить»)."
+    ],
+    [
+      "Pick the Windows ISO file (or switch to the download).",
+      "Выберите ISO-файл Windows (или переключитесь на загрузку)."
+    ],
+    [
+      "The Windows ISO file is gone.",
+      "ISO-файл Windows больше не найден."
+    ],
+    [
+      "The Windows ISO file could not be read. Pick another one.",
+      "Не удалось прочитать ISO-файл Windows. Выберите другой."
+    ],
+    [
+      "Pick the Windows installation USB stick (or switch to Folder).",
+      "Выберите установочную флешку Windows (или переключитесь на «Папку»)."
+    ],
+    [
+      "Drive {0} is gone. Plug it back in and press Refresh.",
+      "Диск {0} пропал. Вставьте его снова и нажмите «Обновить»."
+    ],
+    [
+      "Pick an export folder.",
+      "Выберите папку для экспорта."
+    ],
+    [
+      "The export folder does not exist.",
+      "Папка для экспорта не существует."
+    ],
+    [
+      "The Windows media contains Windows {0}, but Windows {1} is selected.",
+      "На носителе Windows {0}, а выбрана Windows {1}."
+    ],
+    [
+      "32-bit Windows media is not supported.",
+      "32-разрядные носители Windows не поддерживаются."
+    ],
+    [
+      "ARM64 media: the answer file works, but some DayZero apps and drivers are x64-only.",
+      "Носитель ARM64: файл ответов работает, но часть программ и драйверов DayZero есть только для x64."
+    ],
+    [
+      "Your product key is stored in plain text in autounattend.xml.",
+      "Ваш ключ продукта хранится открытым текстом в autounattend.xml."
+    ],
+    [
+      "The Windows media has no plain Windows {0} {1} edition.",
+      "На носителе нет обычной редакции Windows {0} {1}."
+    ],
+    [
+      "Enter a password.",
+      "Введите пароль."
+    ],
+    [
+      "The two passwords do not match.",
+      "Пароли не совпадают."
+    ],
+    [
+      "The password is shorter than 8 characters.",
+      "Пароль короче 8 символов."
+    ],
+    [
+      "The password is stored base64-encoded (not encrypted) on the stick. Consider a temporary password.",
+      "Пароль хранится на флешке в base64 (без шифрования). Подумайте о временном пароле."
+    ],
+    [
+      "Pick the Windows display language.",
+      "Выберите язык интерфейса Windows."
+    ],
+    [
+      "Pick a region format.",
+      "Выберите региональный формат."
+    ],
+    [
+      "Pick a keyboard layout.",
+      "Выберите раскладку клавиатуры."
+    ],
+    [
+      "Pick a time zone.",
+      "Выберите часовой пояс."
+    ],
+    [
+      "The display language must be one that is on the Windows media: {0}.",
+      "Язык интерфейса должен быть одним из тех, что есть на носителе Windows: {0}."
+    ],
+    [
+      "Microsoft has no Windows download in {0}. Pick another display language.",
+      "У Microsoft нет загрузки Windows на языке {0}. Выберите другой язык интерфейса."
+    ],
+    [
+      "Custom mode with nothing picked yet: you'll tick everything on the new PC.",
+      "Свой режим, но пока ничего не выбрано: всё отметите на новом компьютере."
+    ],
+    [
+      "Automatic sign-in is off: after each restart you must sign in yourself for DayZero to continue.",
+      "Автоматический вход выключен: после каждой перезагрузки нужно входить самому, чтобы DayZero продолжил."
+    ],
+    [
+      "Make a Windows {0} install USB with DayZero on this stick?",
+      "Создать на этой флешке установщик Windows {0} с DayZero?"
+    ],
+    [
+      "EVERYTHING ON IT WILL BE ERASED:",
+      "ВСЁ НА НЕЙ БУДЕТ СТЁРТО:"
+    ],
+    [
+      "no drive letter",
+      "без буквы диска"
+    ],
+    [
+      "Windows from: {0}",
+      "Windows из: {0}"
+    ],
+    [
+      "Windows from: Microsoft download ({0})",
+      "Windows из: загрузка с сайта Microsoft ({0})"
+    ],
+    [
+      "Write DayZero to the USB stick {0}?",
+      "Записать DayZero на флешку {0}?"
+    ],
+    [
+      "Write DayZero to the folder {0}?",
+      "Записать DayZero в папку {0}?"
+    ],
+    [
+      "Windows {0}, edition: {1}",
+      "Windows {0}, редакция: {1}"
+    ],
+    [
+      "Account: {0}{1}",
+      "Учётная запись: {0}{1}"
+    ],
+    [
+      " (temporary password)",
+      " (временный пароль)"
+    ],
+    [
+      "Temporary password: {0}   <- write it down",
+      "Временный пароль: {0}   <- запишите его"
+    ],
+    [
+      "Default mode: {0}, clean-up level: {1}{2}",
+      "Режим по умолчанию: {0}, уровень очистки: {1}{2}"
+    ],
+    [
+      " (DRY RUN)",
+      " (ПРОБНЫЙ ЗАПУСК)"
+    ],
+    [
+      "Booting a PC from this stick starts an automatic Windows install, but Setup will always stop and let you choose the disk.",
+      "Загрузка компьютера с этой флешки запускает автоматическую установку Windows, но программа установки всегда остановится и даст вам выбрать диск."
+    ],
+    [
+      "Please note:",
+      "Обратите внимание:"
+    ],
+    [
+      "auto",
+      "авто"
+    ],
+    [
+      "home",
+      "Домашняя"
+    ],
+    [
+      "pro",
+      "Pro"
+    ],
+    [
+      "key",
+      "свой ключ"
+    ],
+    [
+      "gaming",
+      "Игры"
+    ],
+    [
+      "office",
+      "Офис"
+    ],
+    [
+      "everything",
+      "Всё сразу"
+    ],
+    [
+      "custom",
+      "Свой"
+    ],
+    [
+      "clear",
+      "Без изменений"
+    ],
+    [
+      "minimal",
+      "Минимальный"
+    ],
+    [
+      "standard",
+      "Стандартный"
+    ],
+    [
+      "advanced",
+      "Расширенный"
+    ],
+    [
+      "Writing failed:",
+      "Запись не удалась:"
+    ],
+    [
+      "The USB stick may already be erased and is not usable yet. Fix the problem, press Refresh and try again.",
+      "Возможно, флешка уже стёрта и пока непригодна. Устраните проблему, нажмите «Обновить» и попробуйте снова."
+    ],
+    [
+      "The offline installers were skipped (less than 400 MB free on the stick).",
+      "Автономные установщики пропущены (на флешке меньше 400 МБ свободно)."
+    ],
+    [
+      "These offline installers could not be downloaded (the new PC will download them instead):",
+      "Эти автономные установщики не удалось загрузить (новый компьютер загрузит их сам):"
+    ],
+    [
+      "All done!",
+      "Всё готово!"
+    ],
+    [
+      "Next steps:",
+      "Дальнейшие шаги:"
+    ],
+    [
+      "1. Eject the stick safely.",
+      "1. Безопасно извлеките флешку."
+    ],
+    [
+      "2. Boot the PC from it (boot menu key is often F12, F11, F8 or Esc).",
+      "2. Загрузите с неё компьютер (меню загрузки обычно открывается клавишей F12, F11, F8 или Esc)."
+    ],
+    [
+      "3. When Setup asks where to install Windows, pick the disk yourself.",
+      "3. Когда программа установки спросит, куда ставить Windows, выберите диск сами."
+    ],
+    [
+      "4. Everything else runs on its own; the DayZero wizard starts after the first sign-in.",
+      "4. Остальное пройдёт само; мастер DayZero запустится после первого входа."
+    ],
+    [
+      "Exported!",
+      "Экспорт выполнен!"
+    ],
+    [
+      "Next: run tools\\New-DzTestIso.ps1 -SourceFolder \"{0}\" to make an ISO, attach it to your VM as a second DVD drive, and follow TESTING.md.",
+      "Дальше: запустите tools\\New-DzTestIso.ps1 -SourceFolder \"{0}\", чтобы сделать ISO, подключите его к виртуальной машине вторым DVD-приводом и следуйте TESTING.md."
+    ],
+    [
+      "winget was not found on this PC. Install or update \"App Installer\" from the Microsoft Store, then try again.",
+      "winget не найден на этом компьютере. Установите или обновите «Установщик приложений» из Microsoft Store и попробуйте снова."
+    ],
+    [
+      "Not found in winget:",
+      "Не найдено в winget:"
+    ],
+    [
+      "The log shows what 'winget search' found. Fix the ids in kit\\config\\apps.json or drivers.json.",
+      "В журнале показано, что нашёл «winget search». Исправьте идентификаторы в kit\\config\\apps.json или drivers.json."
+    ],
+    [
+      "The USB stick is gone. Plug it back in and press Refresh.",
+      "Флешка пропала. Вставьте её снова и нажмите «Обновить»."
+    ],
+    [
+      "The drives changed since you picked the USB stick. Press Refresh and pick it again.",
+      "Список дисков изменился после выбора флешки. Нажмите «Обновить» и выберите её снова."
+    ],
+    [
+      "The drives changed while formatting. Press Refresh and pick the USB stick again.",
+      "Список дисков изменился во время форматирования. Нажмите «Обновить» и выберите флешку снова."
+    ],
+    [
+      "This drive cannot be used: {0}",
+      "Этот диск нельзя использовать: {0}"
+    ],
+    [
+      "It is not a USB drive.",
+      "Это не USB-накопитель."
+    ],
+    [
+      "Windows is running from it.",
+      "С него запущена Windows."
+    ],
+    [
+      "It holds the drive Windows is running from.",
+      "На нём находится диск, с которого запущена Windows."
+    ],
+    [
+      "It is write-protected.",
+      "Он защищён от записи."
+    ],
+    [
+      "It is smaller than 8 GB.",
+      "Он меньше 8 ГБ."
+    ],
+    [
+      "It is larger than 300 GB, so it looks like an external hard drive, not a USB stick.",
+      "Он больше 300 ГБ и похож на внешний жёсткий диск, а не на флешку."
+    ],
+    [
+      "Formatting the USB stick failed ({0}) Something is still using the stick: close every File Explorer window that shows it, wait a few seconds and try again. If that does not help, unplug the stick, plug it back in and press Refresh.",
+      "Не удалось отформатировать флешку ({0}) Флешку всё ещё что-то использует: закройте все окна Проводника с ней, подождите несколько секунд и попробуйте снова. Если не поможет, выньте флешку, вставьте обратно и нажмите «Обновить»."
+    ],
+    [
+      "This Windows needs {0} GB on the stick, but the stick only holds {1} GB. Use a 16 GB (or larger) stick.",
+      "Этой Windows нужно {0} ГБ на флешке, а на ней помещается только {1} ГБ. Возьмите флешку на 16 ГБ или больше."
+    ],
+    [
+      "Not enough free space on {0} to prepare Windows: {1} GB needed, {2} GB free.",
+      "На {0} недостаточно места для подготовки Windows: нужно {1} ГБ, свободно {2} ГБ."
+    ],
+    [
+      "The download keeps failing. Check the internet connection and try again.",
+      "Загрузка постоянно обрывается. Проверьте подключение к интернету и попробуйте снова."
+    ],
+    [
+      "The download failed: {0}",
+      "Загрузка не удалась: {0}"
+    ],
+    [
+      "The downloaded file has the wrong size. Try again.",
+      "У загруженного файла неверный размер. Попробуйте снова."
+    ],
+    [
+      "The downloaded file does not match Microsoft's checksum, so it was deleted. Try again.",
+      "Загруженный файл не совпал с контрольной суммой Microsoft и был удалён. Попробуйте снова."
+    ],
+    [
+      "Could not get Microsoft's Windows {0} download list: {1}",
+      "Не удалось получить у Microsoft список загрузок Windows {0}: {1}"
+    ],
+    [
+      "Microsoft does not offer Windows {0} in {1}. Pick another display language.",
+      "Microsoft не предлагает Windows {0} на языке {1}. Выберите другой язык интерфейса."
+    ],
+    [
+      "Copying Windows to the USB stick failed (robocopy exit code {0}): {1}",
+      "Не удалось скопировать Windows на флешку (код robocopy {0}): {1}"
+    ],
+    [
+      "The USB stick was formatted but Windows gave it no drive letter. Unplug it, plug it back in and use \"A Windows USB stick I already made\".",
+      "Флешка отформатирована, но Windows не дала ей букву диска. Выньте её, вставьте обратно и выберите «Готовая флешка с Windows»."
+    ],
+    [
+      "None",
+      "Нет"
+    ],
+    [
+      "Privacy and clean-up",
+      "Конфиденциальность и очистка"
+    ],
+    [
+      "Clean-up level",
+      "Уровень очистки"
+    ],
+    [
+      "Tweaks",
+      "Настройки"
+    ],
+    [
+      "Drivers",
+      "Драйверы"
+    ],
+    [
+      "Your scripts",
+      "Ваши скрипты"
+    ],
+    [
+      "Run your own scripts after the apps",
+      "Запустить ваши скрипты после установки программ"
+    ],
+    [
+      "Run your own scripts",
+      "Запустить ваши скрипты"
+    ],
+    [
+      "From the Scripts folder, in this order: {0}",
+      "Из папки Scripts, в таком порядке: {0}"
+    ],
+    [
+      "Only for Windows {0}.",
+      "Только для Windows {0}."
+    ],
+    [
+      "Needs Windows build {0} or newer.",
+      "Нужна сборка Windows {0} или новее."
+    ],
+    [
+      "Desktops only.",
+      "Только для настольных ПК."
+    ],
+    [
+      "Laptops only.",
+      "Только для ноутбуков."
+    ],
+    [
+      "Not available for {0}.",
+      "Недоступно для {0}."
+    ],
+    [
+      "Not for the {0} edition.",
+      "Не для редакции {0}."
+    ],
+    [
+      "Not useful in a virtual machine.",
+      "Бесполезно в виртуальной машине."
+    ],
+    [
+      "Needs a {0} graphics card.",
+      "Нужна видеокарта {0}."
+    ],
+    [
+      "Nothing is ticked yet. Press 'Choose apps and options' to pick now, or pick everything on the new PC.",
+      "Пока ничего не отмечено. Нажмите «Выбрать программы и параметры», чтобы выбрать сейчас, или выберите всё на новом компьютере."
+    ],
+    [
+      "No apps",
+      "Без программ"
+    ],
+    [
+      "Tweaks: {0}",
+      "Настройки: {0}"
+    ],
+    [
+      "{0} (off on laptops)",
+      "{0} (выкл. на ноутбуках)"
+    ],
+    [
+      "Offered but off unless you tick them: {0}",
+      "Предлагаются, но выключены, пока вы их не отметите: {0}"
+    ],
+    [
+      "Clean-up and privacy: the level you pick below.",
+      "Очистка и конфиденциальность: уровень, который вы выберете ниже."
+    ],
+    [
+      "Always: Windows Update with drivers, restore point first, activation check, graphics-card app, PC-brand tool (you're asked), Windows 10 ESU reminder.",
+      "Всегда: обновление Windows с драйверами, сначала точка восстановления, проверка активации, приложение видеокарты, утилита производителя ПК (спросим), напоминание об ESU для Windows 10."
+    ],
+    [
+      "Everything can still be ticked or unticked on the new PC before DayZero starts.",
+      "На новом компьютере всё это можно отметить или снять до запуска DayZero."
+    ],
+    [
+      "You can still tick single privacy tweaks on the new PC.",
+      "Отдельные настройки конфиденциальности можно отметить на новом компьютере."
+    ],
+    [
+      "Changes: {0}",
+      "Изменения: {0}"
+    ],
+    [
+      "Removes {0} preinstalled app(s): {1}",
+      "Удаляет предустановленных приложений: {0} ({1})"
+    ],
+    [
+      "Never removed: Microsoft Store, Calculator, Photos, Notepad, Paint, Snipping Tool, Camera, Clock, Sticky Notes, Xbox apps, Windows Security.",
+      "Никогда не удаляются: Microsoft Store, Калькулятор, Фотографии, Блокнот, Paint, Ножницы, Камера, Часы, Записки, приложения Xbox, Безопасность Windows."
+    ],
+    [
+      "Based on Chris Titus Tech's WinUtil presets. Every change is recorded and undone by DayZero.cmd -Undo.",
+      "Основано на пресетах WinUtil от Chris Titus Tech. Каждое изменение записывается и отменяется командой DayZero.cmd -Undo."
+    ],
+    [
+      "Check this PC",
+      "Проверка компьютера"
+    ],
+    [
+      "Install drivers from the USB stick",
+      "Установка драйверов с флешки"
+    ],
+    [
+      "Connect to the internet",
+      "Подключение к интернету"
+    ],
+    [
+      "Check Windows activation",
+      "Проверка активации Windows"
+    ],
+    [
+      "Create a restore point",
+      "Создание точки восстановления"
+    ],
+    [
+      "Get winget (Windows Package Manager) ready",
+      "Подготовка winget (диспетчер пакетов Windows)"
+    ],
+    [
+      "Windows Update (including drivers)",
+      "Обновление Windows (включая драйверы)"
+    ],
+    [
+      "Install the {0}",
+      "Установка: {0}"
+    ],
+    [
+      "Install {0}",
+      "Установка: {0}"
+    ],
+    [
+      "Remove preinstalled apps ({0} clean-up)",
+      "Удаление предустановленных приложений (уровень «{0}»)"
+    ],
+    [
+      "Install Microsoft 365 Apps",
+      "Установка приложений Microsoft 365"
+    ],
+    [
+      "Final Windows Update check",
+      "Заключительная проверка обновлений Windows"
+    ],
+    [
+      "Online.",
+      "Интернет есть."
+    ],
+    [
+      "Activated.",
+      "Активирована."
+    ],
+    [
+      "Activated ({0}).",
+      "Активирована ({0})."
+    ],
+    [
+      "Not activated yet. A digital licence often activates within an hour; otherwise enter your key in Settings > System > Activation.",
+      "Пока не активирована. Цифровая лицензия часто срабатывает в течение часа; иначе введите ключ в «Параметры > Система > Активация»."
+    ],
+    [
+      "Created. To roll back: Start > \"Create a restore point\" > System Restore.",
+      "Создана. Чтобы откатиться: Пуск > «Создание точки восстановления» > Восстановление системы."
+    ],
+    [
+      "Not available in this DayZero version.",
+      "Недоступно в этой версии DayZero."
+    ],
+    [
+      "Could not read the activation status: {0}",
+      "Не удалось прочитать состояние активации: {0}"
+    ],
+    [
+      "GAMING",
+      "ИГРЫ"
+    ],
+    [
+      "OFFICE",
+      "ОФИС"
+    ],
+    [
+      "EVERYTHING",
+      "ВСЁ СРАЗУ"
+    ],
+    [
+      "CUSTOM",
+      "СВОЙ"
+    ],
+    [
+      "Max FPS, zero clutter",
+      "Максимум FPS, ничего лишнего"
+    ],
+    [
+      "Work-ready in one go",
+      "Готов к работе за один заход"
+    ],
+    [
+      "The whole toolbox",
+      "Полный набор"
+    ],
+    [
+      "You pick every app",
+      "Каждую программу выбираете вы"
+    ],
+    [
+      "Game launchers, chat and capture tools, your graphics card's app and the gaming tweaks that actually do something.",
+      "Игровые лаунчеры, чат и запись, приложение вашей видеокарты и игровые настройки, которые действительно что-то дают."
+    ],
+    [
+      "Microsoft 365 Apps plus the everyday essentials, and no performance tweaks.",
+      "Приложения Microsoft 365 и всё нужное на каждый день, без настроек производительности."
+    ],
+    [
+      "Gaming and Office together, plus PowerToys, VS Code, Windows Terminal and the runtimes many apps and games need.",
+      "«Игры» и «Офис» вместе, плюс PowerToys, VS Code, Терминал Windows и библиотеки, нужные многим программам и играм."
+    ],
+    [
+      "Nothing is ticked until you tick it: choose your browsers, messengers, AI apps, Microsoft 365 and each tweak. Picks made in the USB builder arrive pre-ticked.",
+      "Ничего не отмечено, пока вы не отметите сами: выберите браузеры, мессенджеры, ИИ-приложения, Microsoft 365 и каждую настройку. Выбор, сделанный при создании флешки, будет уже отмечен."
+    ],
+    [
+      "Steam, Epic, Discord, OBS, Afterburner, HWiNFO",
+      "Steam, Epic, Discord, OBS, Afterburner, HWiNFO"
+    ],
+    [
+      "Game launchers stop auto-starting",
+      "Лаунчеры больше не запускаются сами"
+    ],
+    [
+      "Game Mode, GPU scheduling, raw mouse input",
+      "Игровой режим, планирование GPU, мышь без ускорения"
+    ],
+    [
+      "Performance power plan (asks first on laptops)",
+      "Схема питания «Производительность» (на ноутбуках сначала спросим)"
+    ],
+    [
+      "Microsoft 365 Apps (sign in to activate)",
+      "Приложения Microsoft 365 (войдите, чтобы активировать)"
+    ],
+    [
+      "Chrome, Acrobat Reader, Spotify, VLC, 7-Zip",
+      "Chrome, Acrobat Reader, Spotify, VLC, 7-Zip"
+    ],
+    [
+      "Notepad++, Everything search, WizTree",
+      "Notepad++, поиск Everything, WizTree"
+    ],
+    [
+      "LibreOffice optional, no performance tweaks",
+      "LibreOffice по желанию, без настроек производительности"
+    ],
+    [
+      "Everything from Gaming and Office",
+      "Всё из режимов «Игры» и «Офис»"
+    ],
+    [
+      "PowerToys, VS Code, Windows Terminal",
+      "PowerToys, VS Code, Терминал Windows"
+    ],
+    [
+      "Visual C++, .NET 10 and DirectX runtimes",
+      "Библиотеки Visual C++, .NET 10 и DirectX"
+    ],
+    [
+      "Gaming tweaks included",
+      "Игровые настройки включены"
+    ],
+    [
+      "Browsers, messaging, AI apps and more",
+      "Браузеры, мессенджеры, ИИ-приложения и другое"
+    ],
+    [
+      "7-Zip or WinRAR, Microsoft 365 or LibreOffice",
+      "7-Zip или WinRAR, Microsoft 365 или LibreOffice"
+    ],
+    [
+      "Choose each tweak yourself",
+      "Каждую настройку выбираете сами"
+    ],
+    [
+      "Nothing happens that you didn't tick",
+      "Не делается ничего, что вы не отметили"
+    ],
+    [
+      "Web browsers",
+      "Браузеры"
+    ],
+    [
+      "Messaging",
+      "Мессенджеры"
+    ],
+    [
+      "Gaming",
+      "Игры"
+    ],
+    [
+      "Streaming & monitoring",
+      "Стриминг и мониторинг"
+    ],
+    [
+      "Music & video",
+      "Музыка и видео"
+    ],
+    [
+      "Office & documents",
+      "Офис и документы"
+    ],
+    [
+      "Compression (pick one)",
+      "Архиваторы (выберите один)"
+    ],
+    [
+      "Compression",
+      "Архиваторы"
+    ],
+    [
+      "Utilities",
+      "Утилиты"
+    ],
+    [
+      "AI assistants",
+      "ИИ-ассистенты"
+    ],
+    [
+      "Developer tools",
+      "Инструменты разработчика"
+    ],
+    [
+      "Runtimes",
+      "Библиотеки"
+    ],
+    [
+      "Built into Windows; this only updates it.",
+      "Встроен в Windows; здесь он только обновляется."
+    ],
+    [
+      "Installed for your user account.",
+      "Устанавливается для вашей учётной записи."
+    ],
+    [
+      "From the Microsoft Store.",
+      "Из Microsoft Store."
+    ],
+    [
+      "Valve's game store and launcher.",
+      "Магазин игр и лаунчер от Valve."
+    ],
+    [
+      "Epic's store, free weekly games, Fortnite.",
+      "Магазин Epic, бесплатные игры каждую неделю, Fortnite."
+    ],
+    [
+      "Recording and streaming.",
+      "Запись и трансляции."
+    ],
+    [
+      "GPU monitoring, fan curves, in-game FPS overlay.",
+      "Мониторинг видеокарты, кривые вентиляторов, счётчик FPS в играх."
+    ],
+    [
+      "Temperatures, clocks and voltages.",
+      "Температуры, частоты и напряжения."
+    ],
+    [
+      "Its installer refuses admin rights, so DayZero installs it as you.",
+      "Его установщик не работает с правами администратора, поэтому DayZero ставит его от вашего имени."
+    ],
+    [
+      "Plays every video and audio format.",
+      "Воспроизводит любые форматы видео и аудио."
+    ],
+    [
+      "Word, Excel, PowerPoint, Outlook, OneNote. Sign in to activate.",
+      "Word, Excel, PowerPoint, Outlook, OneNote. Войдите, чтобы активировать."
+    ],
+    [
+      "Free office suite.",
+      "Бесплатный офисный пакет."
+    ],
+    [
+      "PDF reader.",
+      "Просмотр PDF."
+    ],
+    [
+      "Free; opens zip, 7z, rar and more.",
+      "Бесплатный; открывает zip, 7z, rar и другие."
+    ],
+    [
+      "Trial software (shareware).",
+      "Пробная версия (условно-бесплатная)."
+    ],
+    [
+      "Shows what fills up your disk, in seconds.",
+      "За секунды показывает, чем занят диск."
+    ],
+    [
+      "FancyZones, PowerToys Run, color picker and more.",
+      "FancyZones, PowerToys Run, пипетка цветов и другое."
+    ],
+    [
+      "Finds any file by name instantly.",
+      "Мгновенно находит любой файл по имени."
+    ],
+    [
+      "Text and code editor.",
+      "Редактор текста и кода."
+    ],
+    [
+      "Anthropic's desktop app. Installed for your user account.",
+      "Настольное приложение Anthropic. Устанавливается для вашей учётной записи."
+    ],
+    [
+      "OpenAI's desktop app.",
+      "Настольное приложение OpenAI."
+    ],
+    [
+      "Code editor.",
+      "Редактор кода."
+    ],
+    [
+      "Already built into Windows 11.",
+      "Уже встроен в Windows 11."
+    ],
+    [
+      "Needed by many games and apps.",
+      "Нужен многим играм и программам."
+    ],
+    [
+      "Same, for 32-bit programs.",
+      "То же самое для 32-разрядных программ."
+    ],
+    [
+      "Current long-term-support .NET.",
+      "Текущая версия .NET с долгосрочной поддержкой."
+    ],
+    [
+      "Only for older apps that ask for it; out of support since 10 Nov 2026.",
+      "Только для старых программ, которые его требуют; не поддерживается с 10 ноября 2026 г."
+    ],
+    [
+      "Legacy DirectX 9-11 files older games look for.",
+      "Старые файлы DirectX 9-11, которые ищут старые игры."
+    ],
+    [
+      "NVIDIA's driver and game-settings app (GeForce Game Ready drivers, overlay, recording).",
+      "Приложение NVIDIA для драйверов и настроек игр (драйверы GeForce Game Ready, оверлей, запись)."
+    ],
+    [
+      "AMD's Radeon driver and settings app. The page offers AMD's auto-detect installer.",
+      "Приложение AMD для драйверов и настроек Radeon. На странице есть установщик AMD с автоопределением."
+    ],
+    [
+      "Keeps Intel graphics, Wi-Fi and Bluetooth drivers up to date.",
+      "Обновляет драйверы графики, Wi-Fi и Bluetooth от Intel."
+    ],
+    [
+      "Dell's BIOS, firmware and driver updater.",
+      "Обновление BIOS, прошивок и драйверов от Dell."
+    ],
+    [
+      "Lenovo's driver, BIOS and settings app.",
+      "Приложение Lenovo для драйверов, BIOS и настроек."
+    ],
+    [
+      "HP's driver, BIOS and support app.",
+      "Приложение HP для драйверов, BIOS и поддержки."
+    ],
+    [
+      "Clear",
+      "Без изменений"
+    ],
+    [
+      "Minimal",
+      "Минимальный"
+    ],
+    [
+      "Standard",
+      "Стандартный"
+    ],
+    [
+      "Advanced",
+      "Расширенный"
+    ],
+    [
+      "Change nothing",
+      "Ничего не менять"
+    ],
+    [
+      "Privacy basics",
+      "Основы конфиденциальности"
+    ],
+    [
+      "Recommended",
+      "Рекомендуется"
+    ],
+    [
+      "Everything WinUtil offers",
+      "Всё, что предлагает WinUtil"
+    ],
+    [
+      "Windows stays exactly as Microsoft ships it: no apps removed, no privacy or clean-up tweaks.",
+      "Windows остаётся такой, какой её выпускает Microsoft: приложения не удаляются, настройки конфиденциальности и очистки не применяются."
+    ],
+    [
+      "WinUtil's Minimal preset: telemetry off, background services trimmed, no promoted apps, no firmware-installed programs. Removes only the third-party promo apps (Candy Crush, TikTok, Netflix links...).",
+      "Пресет WinUtil «Minimal»: телеметрия выключена, фоновые службы урезаны, без рекламных приложений и программ из прошивки. Удаляет только сторонние рекламные приложения (Candy Crush, TikTok, ярлыки Netflix...)."
+    ],
+    [
+      "WinUtil's Standard preset: Minimal plus activity history, location and Delivery Optimization sharing off, 'End task' on the taskbar, generic folder views, temp files and old update files cleaned. Removes Microsoft's extras too (Clipchamp, News, Weather, Copilot, Solitaire, To Do, Get Help...).",
+      "Пресет WinUtil «Standard»: «Минимальный» плюс выключены журнал действий, определение местоположения и раздача обновлений, «Снять задачу» на панели задач, общий вид папок, очистка временных файлов и старых файлов обновлений. Удаляет и дополнения Microsoft (Clipchamp, Новости, Погода, Copilot, Solitaire, To Do, Техническая поддержка...)."
+    ],
+    [
+      "WinUtil's Advanced preset: Standard plus Copilot, Recall and Notepad AI off, Widgets off, no Bing results in Start search, the classic right-click menu, and OneDrive removed. Also removes new Outlook, preinstalled Teams, Phone Link, Movies & TV, Maps and Family Safety.",
+      "Пресет WinUtil «Advanced»: «Стандартный» плюс выключены Copilot, Recall и ИИ в Блокноте, выключены Виджеты, нет результатов Bing в поиске Пуска, классическое контекстное меню и удалён OneDrive. Также удаляет новый Outlook, предустановленный Teams, «Связь с телефоном», «Кино и ТВ», Карты и Family Safety."
+    ],
+    [
+      "Remove OneDrive",
+      "Удалить OneDrive"
+    ],
+    [
+      "Uninstalls the OneDrive app (winget uninstall Microsoft.OneDrive). Files already in your OneDrive folder stay on this PC and online.",
+      "Удаляет приложение OneDrive (winget uninstall Microsoft.OneDrive). Файлы, уже лежащие в папке OneDrive, остаются на этом компьютере и в облаке."
+    ],
+    [
+      "Files that are 'online-only' stay in the cloud and stop syncing to this PC. Undo reinstalls OneDrive.",
+      "Файлы «только в сети» остаются в облаке и перестают синхронизироваться с этим компьютером. Отмена переустанавливает OneDrive."
+    ],
+    [
+      "ASUS's driver, BIOS and settings app.",
+      "Приложение ASUS для драйверов, BIOS и настроек."
+    ],
+    [
+      "Turn on Game Mode",
+      "Включить игровой режим"
+    ],
+    [
+      "Settings > Gaming > Game Mode = On (AutoGameModeEnabled = 1).",
+      "Параметры > Игры > Игровой режим = Вкл. (AutoGameModeEnabled = 1)."
+    ],
+    [
+      "Turn on hardware-accelerated GPU scheduling",
+      "Включить планирование GPU с аппаратным ускорением"
+    ],
+    [
+      "Settings > System > Display > Graphics > Hardware-accelerated GPU scheduling = On (HwSchMode = 2).",
+      "Параметры > Система > Дисплей > Графика > Планирование графического процессора с аппаратным ускорением = Вкл. (HwSchMode = 2)."
+    ],
+    [
+      "Turn off mouse acceleration",
+      "Выключить ускорение мыши"
+    ],
+    [
+      "Control Panel > Mouse > Pointer Options > Enhance pointer precision = off (MouseSpeed, MouseThreshold1, MouseThreshold2 = 0).",
+      "Панель управления > Мышь > Параметры указателя > Включить повышенную точность установки указателя = выкл. (MouseSpeed, MouseThreshold1, MouseThreshold2 = 0)."
+    ],
+    [
+      "Stop Store apps from running in the background",
+      "Запретить приложениям из Магазина работать в фоне"
+    ],
+    [
+      "Group Policy 'Let Windows apps run in the background' = Force Deny (AppPrivacy LetAppsRunInBackground = 2).",
+      "Групповая политика «Разрешить приложениям Windows работать в фоновом режиме» = Запретить принудительно (AppPrivacy LetAppsRunInBackground = 2)."
+    ],
+    [
+      "Store apps such as Phone Link can't sync or notify in the background.",
+      "Приложения из Магазина, например «Связь с телефоном», не смогут синхронизироваться и присылать уведомления в фоне."
+    ],
+    [
+      "No Bing web results in Start search",
+      "Без веб-результатов Bing в поиске Пуска"
+    ],
+    [
+      "Policy 'Turn off display of recent search entries in the File Explorer search box' (DisableSearchBoxSuggestions = 1), which also removes web results from Start search, plus BingSearchEnabled = 0.",
+      "Политика «Отключить отображение последних поисковых запросов в поле поиска Проводника» (DisableSearchBoxSuggestions = 1), которая заодно убирает веб-результаты из поиска Пуска, плюс BingSearchEnabled = 0."
+    ],
+    [
+      "Turn off Widgets",
+      "Выключить Виджеты"
+    ],
+    [
+      "Group Policy 'Allow widgets' = disabled (Dsh AllowNewsAndInterests = 0).",
+      "Групповая политика «Разрешить мини-приложения» = отключена (Dsh AllowNewsAndInterests = 0)."
+    ],
+    [
+      "Turn off News and interests",
+      "Выключить «Новости и интересы»"
+    ],
+    [
+      "Group Policy 'Enable news and interests on the taskbar' = disabled (Windows Feeds EnableFeeds = 0).",
+      "Групповая политика «Включить новости и интересы на панели задач» = отключена (Windows Feeds EnableFeeds = 0)."
+    ],
+    [
+      "Hide Copilot",
+      "Скрыть Copilot"
+    ],
+    [
+      "Hides the Copilot taskbar button (ShowCopilotButton = 0) and sets the older 'Turn off Windows Copilot' policy. The Copilot app itself is removed by the Standard and Advanced clean-up.",
+      "Скрывает кнопку Copilot на панели задач (ShowCopilotButton = 0) и задаёт старую политику «Отключить Windows Copilot». Само приложение Copilot удаляется на уровнях очистки «Стандартный» и «Расширенный»."
+    ],
+    [
+      "Telemetry off (lowest level this edition allows)",
+      "Выключить телеметрию (минимум, который допускает редакция)"
+    ],
+    [
+      "Diagnostic data policy at its minimum (Required on Home/Pro, off on Enterprise/Education); advertising ID, tailored experiences, online speech recognition, inking and typing personalisation and contact harvesting off; no 'most used apps' tracking; Windows never asks for feedback; the Connected User Experiences and Telemetry (DiagTrack) and Windows Error Reporting services disabled; PowerShell 7 telemetry opt-out.",
+      "Политика диагностических данных на минимуме («Обязательные» в Домашней/Pro, выкл. в Корпоративной/для образования); выключены рекламный идентификатор, персонализированные возможности, распознавание речи в сети, персонализация рукописного ввода и набора и сбор контактов; не отслеживаются «часто используемые приложения»; Windows не просит отзывов; отключены службы «Функциональные возможности для подключённых пользователей и телеметрия» (DiagTrack) и «Отчёты об ошибках Windows»; отказ от телеметрии PowerShell 7."
+    ],
+    [
+      "Crash reports are no longer sent to Microsoft or app makers, and the Run box (Win+R) stops remembering what you typed.",
+      "Отчёты о сбоях больше не отправляются в Microsoft и разработчикам программ, а окно «Выполнить» (Win+R) перестаёт запоминать введённое."
+    ],
+    [
+      "Turn off Microsoft consumer experiences (policy)",
+      "Выключить потребительские возможности Microsoft (политика)"
+    ],
+    [
+      "Group Policy 'Turn off Microsoft consumer experiences' (CloudContent DisableWindowsConsumerFeatures = 1).",
+      "Групповая политика «Выключить возможности потребителя Майкрософт» (CloudContent DisableWindowsConsumerFeatures = 1)."
+    ],
+    [
+      "Don't run programs stored in the firmware (WPBT)",
+      "Не запускать программы из прошивки (WPBT)"
+    ],
+    [
+      "Session Manager DisableWpbtExecution = 1: Windows no longer runs the program a PC maker can put in the firmware's Windows Platform Binary Table.",
+      "Session Manager DisableWpbtExecution = 1: Windows больше не запускает программу, которую производитель ПК может поместить в таблицу Windows Platform Binary Table прошивки."
+    ],
+    [
+      "Firmware-based anti-theft (e.g. Absolute/Computrace) and vendor tools that install themselves this way stop doing that.",
+      "Противоугонные средства из прошивки (например, Absolute/Computrace) и утилиты производителя, которые устанавливаются таким способом, перестанут это делать."
+    ],
+    [
+      "Trim background services",
+      "Урезать фоновые службы"
+    ],
+    [
+      "Connected User Experiences and Telemetry (DiagTrack) and Offline Files (CscService) disabled; Downloaded Maps Manager (MapsBroker) and Storage Service (StorSvc) start only when needed (Manual).",
+      "Отключены «Функциональные возможности для подключённых пользователей и телеметрия» (DiagTrack) и «Автономные файлы» (CscService); «Диспетчер скачанных карт» (MapsBroker) и «Служба хранилища» (StorSvc) запускаются только по необходимости (Вручную)."
+    ],
+    [
+      "Offline Files (offline copies of network-share folders, mostly used in offices) stops working.",
+      "«Автономные файлы» (автономные копии сетевых папок, в основном используются в офисах) перестают работать."
+    ],
+    [
+      "Activity history off",
+      "Выключить журнал действий"
+    ],
+    [
+      "Group Policy: don't publish or upload user activities (System PublishUserActivities = 0, UploadUserActivities = 0).",
+      "Групповая политика: не публиковать и не отправлять действия пользователя (System PublishUserActivities = 0, UploadUserActivities = 0)."
+    ],
+    [
+      "Location off",
+      "Выключить определение местоположения"
+    ],
+    [
+      "Location access set to Deny for the whole PC, the location sensor override off, Maps' automatic updates off, and the Geolocation service (lfsvc) disabled.",
+      "Доступ к местоположению запрещён для всего компьютера, переопределение датчика местоположения выключено, автообновление Карт выключено, служба географического положения (lfsvc) отключена."
+    ],
+    [
+      "Automatic time zone, Find my device, local weather and maps can no longer use your location.",
+      "Автоматический часовой пояс, «Поиск устройства», местная погода и карты больше не смогут использовать ваше местоположение."
+    ],
+    [
+      "Don't share updates with other PCs (Delivery Optimization)",
+      "Не раздавать обновления другим компьютерам (Оптимизация доставки)"
+    ],
+    [
+      "Group Policy 'Download Mode' = 0 (HTTP only, no peering).",
+      "Групповая политика «Режим скачивания» = 0 (только HTTP, без обмена с другими ПК)."
+    ],
+    [
+      "Stop File Explorer guessing folder types",
+      "Не давать Проводнику угадывать тип папок"
+    ],
+    [
+      "Sets every folder's type to 'General items' (Shell\\Bags\\AllFolders\\Shell FolderType = NotSpecified).",
+      "Задаёт всем папкам тип «Общие элементы» (Shell\\Bags\\AllFolders\\Shell FolderType = NotSpecified)."
+    ],
+    [
+      "Folders lose their automatic layouts, e.g. Downloads is no longer grouped by date.",
+      "Папки теряют автоматическое оформление, например «Загрузки» больше не группируются по дате."
+    ],
+    [
+      "'End task' when right-clicking a taskbar app",
+      "«Снять задачу» по правому щелчку на панели задач"
+    ],
+    [
+      "TaskbarDeveloperSettings TaskbarEndTask = 1 (the 'End task' switch in Settings > System > For developers).",
+      "TaskbarDeveloperSettings TaskbarEndTask = 1 (переключатель «Завершить задачу» в «Параметры > Система > Для разработчиков»)."
+    ],
+    [
+      "Delete temporary files",
+      "Удалить временные файлы"
+    ],
+    [
+      "Empties your TEMP folder and C:\\Windows\\Temp after the apps are installed. Files in use, DayZero's own folders and .log files stay.",
+      "Очищает вашу папку TEMP и C:\\Windows\\Temp после установки программ. Занятые файлы, папки самого DayZero и файлы .log остаются."
+    ],
+    [
+      "Clean up old Windows Update files",
+      "Очистить старые файлы обновлений Windows"
+    ],
+    [
+      "DISM /Online /Cleanup-Image /StartComponentCleanup after Windows Update: removes the Windows components that updates replaced.",
+      "DISM /Online /Cleanup-Image /StartComponentCleanup после обновления Windows: удаляет компоненты Windows, заменённые обновлениями."
+    ],
+    [
+      "Windows AI features off (Recall, Notepad AI)",
+      "Выключить ИИ-функции Windows (Recall, ИИ в Блокноте)"
+    ],
+    [
+      "Group Policy 'Turn off saving snapshots for use with Recall' (WindowsAI DisableAIDataAnalysis = 1) and Notepad's AI features off (WindowsNotepad DisableAIFeatures = 1). Copilot is hidden by its own tweak and its app removed by the Standard clean-up.",
+      "Групповая политика «Отключить сохранение снимков для Recall» (WindowsAI DisableAIDataAnalysis = 1) и выключение ИИ-функций Блокнота (WindowsNotepad DisableAIFeatures = 1). Copilot скрывается отдельной настройкой, а его приложение удаляется на уровне очистки «Стандартный»."
+    ],
+    [
+      "Classic right-click menu in File Explorer",
+      "Классическое контекстное меню в Проводнике"
+    ],
+    [
+      "Creates HKCU\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32 with an empty value, so Explorer shows the full Windows 10 style menu instead of 'Show more options'.",
+      "Создаёт HKCU\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32 с пустым значением, и Проводник показывает полное меню в стиле Windows 10 вместо «Показать дополнительные параметры»."
+    ],
+    [
+      "Stop suggested and auto-installed promoted apps",
+      "Убрать рекомендуемые и автоматически устанавливаемые рекламные приложения"
+    ],
+    [
+      "Turns off 'silently installed' promoted apps (Candy Crush and friends), app suggestions in Start and Settings, and Start's tips/new-app recommendations.",
+      "Выключает «тихую» установку рекламных приложений (Candy Crush и подобных), рекомендации приложений в Пуске и Параметрах, а также советы и рекомендации новых приложений в Пуске."
+    ],
+    [
+      "Stop launchers and chat apps from starting with Windows",
+      "Убрать лаунчеры и чаты из автозагрузки"
+    ],
+    [
+      "Turns off the startup entries of Steam, Epic Games Launcher, Discord, Spotify and Microsoft Edge's auto-launch, if they have one (the same switch as Task Manager > Startup apps).",
+      "Выключает автозапуск Steam, Epic Games Launcher, Discord, Spotify и Microsoft Edge, если он у них есть (тот же переключатель, что в «Диспетчер задач > Автозагрузка приложений»)."
+    ],
+    [
+      "High-performance power plan",
+      "Схема питания «Высокая производительность»"
+    ],
+    [
+      "Activates the Ultimate Performance power plan (copied from Windows' built-in template), or High performance where Ultimate isn't offered.",
+      "Включает схему питания «Максимальная производительность» (копия встроенного шаблона Windows) или «Высокая производительность», если максимальной нет."
+    ],
+    [
+      "Laptop: keeps the processor at high clocks and noticeably shortens battery life. Leave it off unless you mostly play plugged in.",
+      "Ноутбук: держит процессор на высоких частотах и заметно сокращает время работы от батареи. Не включайте, если не играете в основном от сети."
+    ],
+    [
+      "Turn off Memory Integrity and VBS",
+      "Выключить целостность памяти и VBS"
+    ],
+    [
+      "Core isolation > Memory integrity = off (HypervisorEnforcedCodeIntegrity Enabled = 0) and virtualization-based security off (EnableVirtualizationBasedSecurity = 0).",
+      "Изоляция ядра > Целостность памяти = выкл. (HypervisorEnforcedCodeIntegrity Enabled = 0) и выключение безопасности на основе виртуализации (EnableVirtualizationBasedSecurity = 0)."
+    ],
+    [
+      "SECURITY TRADE-OFF. Memory Integrity stops malicious or vulnerable drivers from taking over Windows. Turning it off can gain a few % FPS in some games, but makes the PC easier to attack. Some anti-cheat systems require it to stay on. Undo turns it back on.",
+      "КОМПРОМИСС В БЕЗОПАСНОСТИ. Целостность памяти не даёт вредоносным или уязвимым драйверам захватить Windows. Её отключение может прибавить несколько % FPS в некоторых играх, но делает компьютер более уязвимым. Некоторые античиты требуют, чтобы она была включена. Отмена включает её обратно."
+    ],
+    [
+      "Turn off Xbox Game Bar",
+      "Выключить Xbox Game Bar"
+    ],
+    [
+      "Turns off game capture (AppCaptureEnabled = 0, GameDVR_Enabled = 0) and opening Game Bar with the controller (UseNexusForGameBarEnabled = 0). The app stays installed.",
+      "Выключает запись игр (AppCaptureEnabled = 0, GameDVR_Enabled = 0) и открытие Game Bar с геймпада (UseNexusForGameBarEnabled = 0). Приложение остаётся установленным."
+    ],
+    [
+      "Win+G, game clips and screenshots, and the controller's Xbox-button overlay stop working. Some games use Game Bar for party chat.",
+      "Win+G, игровые клипы и снимки экрана, а также оверлей по кнопке Xbox на геймпаде перестают работать. Некоторые игры используют Game Bar для голосового чата."
+    ],
+    [
+      "_Verify a stick",
+      "Проверить флешку"
+    ],
+    [
+      "Checks a finished DayZero stick: Windows files, boot files, answer file and toolkit. Changes nothing.",
+      "Проверяет готовую флешку DayZero: файлы Windows, загрузочные файлы, файл ответов и набор DayZero. Ничего не меняет."
+    ],
+    [
+      "Downloaded Windows...",
+      "Загруженные Windows..."
+    ],
+    [
+      "See how much space the downloaded Windows takes on this PC, and delete what you no longer need",
+      "Посмотреть, сколько места занимают загруженные Windows на этом компьютере, и удалить ненужное"
+    ],
+    [
+      "Nothing stored on this PC yet.",
+      "На этом компьютере пока ничего не сохранено."
+    ],
+    [
+      "{0} GB on this PC",
+      "{0} ГБ на этом компьютере"
+    ],
+    [
+      "DayZero - downloaded Windows",
+      "DayZero: загруженные Windows"
+    ],
+    [
+      "DOWNLOADED WINDOWS",
+      "ЗАГРУЖЕННЫЕ WINDOWS"
+    ],
+    [
+      "Windows that the builder downloaded and unpacked, kept so the next stick takes minutes instead of an hour. Deleting one only means it is downloaded again when you need it.",
+      "Windows, которые программа загрузила и распаковала; они хранятся, чтобы следующая флешка занимала минуты, а не час. Удаление означает лишь, что при необходимости Windows будет загружена заново."
+    ],
+    [
+      "Nothing is stored yet.",
+      "Пока ничего не сохранено."
+    ],
+    [
+      "Open the folder",
+      "Открыть папку"
+    ],
+    [
+      "Delete the ticked ones",
+      "Удалить отмеченные"
+    ],
+    [
+      "Close",
+      "Закрыть"
+    ],
+    [
+      "Total: {0} GB in {1}",
+      "Всего: {0} ГБ в {1}"
+    ],
+    [
+      "Windows {0}, {1} - {2} GB",
+      "Windows {0}, {1} - {2} ГБ"
+    ],
+    [
+      "Unfinished unpack of Windows {0}, {1} - {2} GB",
+      "Незавершённая распаковка Windows {0}, {1} - {2} ГБ"
+    ],
+    [
+      "Unfinished download of Windows {0}, {1} - {2} GB",
+      "Незавершённая загрузка Windows {0}, {1} - {2} ГБ"
+    ],
+    [
+      "Tick what you want to delete first.",
+      "Сначала отметьте, что удалить."
+    ],
+    [
+      "Delete {0} item(s), {1} GB?",
+      "Удалить элементов: {0}, {1} ГБ?"
+    ],
+    [
+      "Windows is downloaded again the next time you need it.",
+      "В следующий раз, когда понадобится, Windows будет загружена заново."
+    ],
+    [
+      "No Windows installation stick found. Plug it in and try again.",
+      "Установочная флешка Windows не найдена. Вставьте её и попробуйте снова."
+    ],
+    [
+      "Checking the stick {0} ...",
+      "Проверка флешки {0} ..."
+    ],
+    [
+      "Stick {0} ({1}):",
+      "Флешка {0} ({1}):"
+    ],
+    [
+      "All {0} checks passed.",
+      "Все проверки пройдены: {0}."
+    ],
+    [
+      "{0} of {1} checks failed.",
+      "Не пройдено проверок: {0} из {1}."
+    ],
+    [
+      "The stick is ready to use.",
+      "Флешка готова к использованию."
+    ],
+    [
+      "Write the stick again before using it.",
+      "Запишите флешку заново, прежде чем использовать."
+    ],
+    [
+      "The stick has problems; see the message.",
+      "С флешкой есть проблемы; см. сообщение."
+    ],
+    [
+      "Windows Setup files",
+      "Файлы установки Windows"
+    ],
+    [
+      "Missing: {0}",
+      "Отсутствует: {0}"
+    ],
+    [
+      "setup.exe and sources\\boot.wim are there.",
+      "setup.exe и sources\\boot.wim на месте."
+    ],
+    [
+      "Boot files",
+      "Загрузочные файлы"
+    ],
+    [
+      "Missing: efi\\boot\\bootx64.efi. The stick will not boot.",
+      "Отсутствует efi\\boot\\bootx64.efi. Флешка не загрузится."
+    ],
+    [
+      "UEFI and legacy BIOS boot files are there.",
+      "Загрузочные файлы для UEFI и старого BIOS на месте."
+    ],
+    [
+      "UEFI boot files are there (no bootmgr for legacy BIOS).",
+      "Загрузочные файлы UEFI на месте (bootmgr для старого BIOS отсутствует)."
+    ],
+    [
+      "Windows image",
+      "Образ Windows"
+    ],
+    [
+      "Missing: sources\\install.wim, install.esd or install.swm.",
+      "Отсутствует sources\\install.wim, install.esd или install.swm."
+    ],
+    [
+      "A part of the split image is missing: {0}",
+      "Отсутствует часть разделённого образа: {0}"
+    ],
+    [
+      "{0} is larger than 4 GB, which FAT32 cannot hold.",
+      "{0} больше 4 ГБ, FAT32 такой файл не вмещает."
+    ],
+    [
+      "{0} file(s), {1} GB.",
+      "Файлов: {0}, {1} ГБ."
+    ],
+    [
+      "Windows image opens",
+      "Образ Windows открывается"
+    ],
+    [
+      "Windows {0} build {1}: {2}",
+      "Windows {0}, сборка {1}: {2}"
+    ],
+    [
+      "File system",
+      "Файловая система"
+    ],
+    [
+      "FAT32: boots on UEFI (with Secure Boot) and legacy BIOS.",
+      "FAT32: загружается в UEFI (с Secure Boot) и в старом BIOS."
+    ],
+    [
+      "{0}: made by another tool; it boots only if that tool added its own boot helper.",
+      "{0}: создана другой программой; загрузится, только если та добавила свой загрузчик."
+    ],
+    [
+      "Answer file",
+      "Файл ответов"
+    ],
+    [
+      "Missing: autounattend.xml. Windows Setup would ask every question itself.",
+      "Отсутствует autounattend.xml. Программа установки Windows сама задаст все вопросы."
+    ],
+    [
+      "It contains disk settings ({0}). DayZero never writes those: do not use this stick.",
+      "В нём есть настройки диска ({0}). DayZero никогда их не записывает: не используйте эту флешку."
+    ],
+    [
+      "It was not made by DayZero (no toolkit marker in it).",
+      "Он создан не DayZero (в нём нет метки набора)."
+    ],
+    [
+      "Well-formed, no disk settings, build {0}.",
+      "Корректный, без настроек диска, сборка {0}."
+    ],
+    [
+      "autounattend.xml is not valid XML: {0}",
+      "autounattend.xml не является корректным XML: {0}"
+    ],
+    [
+      "DayZero toolkit",
+      "Набор DayZero"
+    ],
+    [
+      "Missing in DayZero\\: {0}",
+      "Отсутствует в DayZero\\: {0}"
+    ],
+    [
+      "All parts are there.",
+      "Все части на месте."
+    ],
+    [
+      "Answer file finds the toolkit",
+      "Файл ответов находит набор"
+    ],
+    [
+      "Marker build-{0}.marker is there.",
+      "Метка build-{0}.marker на месте."
+    ],
+    [
+      "DayZero\\build-{0}.marker is missing: the new PC would not find the toolkit. Write the stick again.",
+      "Отсутствует DayZero\\build-{0}.marker: новый компьютер не найдёт набор. Запишите флешку заново."
+    ],
+    [
+      "Your settings",
+      "Ваши настройки"
+    ],
+    [
+      "Mode {0}, clean-up level {1}, account {2}.",
+      "Режим: {0}, уровень очистки: {1}, учётная запись: {2}."
+    ],
+    [
+      "settings.json belongs to another build than the answer file. Write the stick again.",
+      "settings.json относится к другой сборке, чем файл ответов. Запишите флешку заново."
+    ],
+    [
+      "DayZero\\config\\settings.json is missing or unreadable.",
+      "DayZero\\config\\settings.json отсутствует или не читается."
+    ]
+  ]
+}
