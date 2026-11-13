@@ -203,6 +203,25 @@ function Select-DzWindowsDownload {
     return $pick
 }
 
+function Find-DzCatalogXml {
+    <# The unpacked catalogue in a folder: products.xml, or any file that starts like its XML. #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory = $true)][string]$Folder)
+    $files = @(Get-ChildItem -LiteralPath $Folder -File -ErrorAction SilentlyContinue | Sort-Object { $_.Name -ne 'products.xml' }, Name)
+    foreach ($f in $files) {
+        if ($f.Length -lt 1000) { continue }
+        $head = ''
+        try {
+            $reader = New-Object System.IO.StreamReader($f.FullName)
+            try { $buffer = New-Object char[] 200; $n = $reader.Read($buffer, 0, 200); $head = New-Object string ($buffer, 0, $n) } finally { $reader.Dispose() }
+        }
+        catch { $head = '' }
+        if ($head -match '<MCT>|<Catalogs>') { return $f.FullName }
+    }
+    return $null
+}
+
 function Get-DzWindowsCatalog {
     <# Downloads and unpacks Microsoft's catalogue for Windows 10 or 11. Returns the entries. #>
     [CmdletBinding()]
@@ -214,13 +233,26 @@ function Get-DzWindowsCatalog {
     catch { Write-Verbose 'Could not change the TLS setting.' }
     if (-not (Test-Path -LiteralPath $WorkDir)) { [void](New-Item -ItemType Directory -Path $WorkDir -Force) }
     $cab = Join-Path $WorkDir "products-win$WindowsVersion.cab"
-    $xml = Join-Path $WorkDir 'products.xml'
-    foreach ($old in @($cab, $xml)) { if (Test-Path -LiteralPath $old) { Remove-Item -LiteralPath $old -Force } }
+    # Unpack into its own empty folder: expand.exe names the output after the .cab when the
+    # cabinet holds one file, and then refuses to "expand the file onto itself".
+    $outDir = Join-Path $WorkDir "win$WindowsVersion"
+    $xml = Join-Path $outDir 'products.xml'
+    if (Test-Path -LiteralPath $cab) { Remove-Item -LiteralPath $cab -Force }
+    if (Test-Path -LiteralPath $outDir) { Remove-Item -LiteralPath $outDir -Recurse -Force }
+    [void](New-Item -ItemType Directory -Path $outDir -Force)
     $wc = New-Object System.Net.WebClient
     try { $wc.DownloadFile((Get-DzWindowsCatalogUrl -WindowsVersion $WindowsVersion), $cab) } finally { $wc.Dispose() }
     $expand = Join-Path $env:SystemRoot 'System32\expand.exe'
-    $r = Invoke-DzProcess -FilePath $expand -Arguments ('-F:products.xml "{0}" "{1}"' -f $cab, $WorkDir)
-    if ($r.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $xml)) { throw "Could not unpack Microsoft's download catalogue: $($r.Output)" }
+    $output = ''
+    # expand.exe behaves differently for one-file cabinets between Windows versions, so try
+    # both spellings and accept whatever XML file comes out.
+    foreach ($arguments in @(('"{0}" -F:products.xml "{1}"' -f $cab, $outDir), ('"{0}" "{1}"' -f $cab, $xml))) {
+        $r = Invoke-DzProcess -FilePath $expand -Arguments $arguments
+        $output = $r.Output
+        $found = Find-DzCatalogXml -Folder $outDir
+        if ($found) { $xml = $found; break }
+    }
+    if (-not (Find-DzCatalogXml -Folder $outDir)) { throw "Could not unpack Microsoft's download catalogue: $output" }
     $entries = @(ConvertFrom-DzProductsXml -Xml (Get-Content -LiteralPath $xml -Raw -Encoding UTF8))
     if ($entries.Count -eq 0) { throw "Microsoft's download catalogue is empty." }
     return $entries
@@ -752,7 +784,7 @@ function Set-DzUsbBootSector {
 
 Export-ModuleMember -Function @(
     'Get-DzWindowsLanguageList', 'Get-DzWindowsCatalogUrl', 'Get-DzMediaCacheRoot', 'Invoke-DzProcess',
-    'ConvertFrom-DzProductsXml', 'Test-DzWindowsDownloadEntry', 'Select-DzWindowsDownload', 'Get-DzWindowsCatalog',
+    'ConvertFrom-DzProductsXml', 'Test-DzWindowsDownloadEntry', 'Select-DzWindowsDownload', 'Find-DzCatalogXml', 'Get-DzWindowsCatalog',
     'Get-DzFileSha1', 'Save-DzLargeFile', 'Get-DzEsdImagePlan', 'Select-DzEsdEdition', 'New-DzMediaFromEsd',
     'Get-DzPreparedMedia', 'Get-DzWindowsMediaTree', 'Test-DzUsbDiskAllowed', 'Get-DzUsbDiskCandidate',
     'New-DzDiskpartScript', 'Get-DzUsbPartitionSize', 'Initialize-DzUsbDisk', 'ConvertTo-DzRobocopyPath', 'Copy-DzMediaTree',

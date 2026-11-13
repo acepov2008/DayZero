@@ -79,6 +79,17 @@ Describe 'Microsoft download catalogue' {
             Test-DzWindowsDownloadEntry -Entry $bad | Should -Not -BeNullOrEmpty
         }
     }
+    It 'finds the unpacked catalogue whatever expand.exe called it, and ignores the .cab' {
+        $dir = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+        [void](New-Item -ItemType Directory -Path $dir)
+        Find-DzCatalogXml -Folder $dir | Should -BeNullOrEmpty
+        [System.IO.File]::WriteAllBytes((Join-Path $dir 'a.cab'), [byte[]](@(77, 83, 67, 70) + (@(0) * 2000)))
+        Find-DzCatalogXml -Folder $dir | Should -BeNullOrEmpty
+        Set-Content -LiteralPath (Join-Path $dir 'products-win11.cab') -Value ($script:Catalog + (' ' * 1000))
+        Split-Path -Leaf (Find-DzCatalogXml -Folder $dir) | Should -Be 'products-win11.cab'
+        Set-Content -LiteralPath (Join-Path $dir 'products.xml') -Value ($script:Catalog + (' ' * 1000))
+        Split-Path -Leaf (Find-DzCatalogXml -Folder $dir) | Should -Be 'products.xml'
+    }
     It 'lists 38 languages, each a real culture name, including en-US' {
         $l = @(Get-DzWindowsLanguageList)
         $l.Count | Should -Be 38
