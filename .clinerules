@@ -1,0 +1,16 @@
+Project: DayZero - Windows setup toolkit on a USB stick.
+- builder\  : USB Builder (PowerShell 5.1 + WPF). Builder.ps1 + Builder.xaml. Writes autounattend.xml and copies kit\ to the stick.
+- kit\      : runs on the new PC. DayZero.ps1 = wizard. kit\lib\*.psm1 = modules (order in Modules.ps1).
+- kit\config\*.json : modes, apps (winget IDs), tweaks, debloat levels, drivers, office. Most changes are JSON only.
+- kit\ui\Theme.xaml : all colours/styles (monochrome). Keep resource key names (DzMagenta etc.), code uses them.
+- tests\    : Pester tests. Run: pwsh tools\Invoke-DzChecks.ps1 (tests + PSScriptAnalyzer). Must stay green.
+
+Hard rules:
+- .ps1/.psm1 files must be plain ASCII (PowerShell 5.1). .cmd files keep CRLF.
+- autounattend.xml must never select, wipe or partition a disk.
+- Never disable Windows Update or Defender; no third-party activators.
+- Every tweak must be reversible (backup + DayZero.cmd -Undo); no scripts in JSON.
+- winget IDs must be real (check winget-pkgs), never guessed.
+- Don't use "$name?" inside strings (write "${name}?").
+
+Workflow: small change -> run the checks -> fix -> commit.
