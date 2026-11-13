@@ -212,6 +212,37 @@ Describe 'diskpart script' {
     }
 }
 
+Describe 'Progress bar' {
+    It 'maps <Text> to <Expected>' -ForEach @(
+        @{ Text = 'Asking Microsoft for the current Windows 11 download...'; Expected = 0 },
+        @{ Text = 'Downloading Windows 11 from Microsoft: 2.1 of 4.2 GB (50%)'; Expected = 15.5 },
+        @{ Text = 'Checking the download (100%)'; Expected = 34 },
+        @{ Text = 'Unpacking Windows PE (50.0%)'; Expected = 37.5 },
+        @{ Text = 'Unpacking Windows 11 Home (1 of 4; this is the slow part)'; Expected = 42 },
+        @{ Text = 'Unpacking Windows 11 Education (3 of 4; this is the slow part) (50.0%)'; Expected = 58.25 },
+        @{ Text = 'Unpacking Windows 11 Pro (4 of 4; this is the slow part) (100.0%)'; Expected = 68 },
+        @{ Text = 'Splitting the Windows image for the USB stick (50,0%)'; Expected = 71 },
+        @{ Text = 'Erasing and formatting the USB stick'; Expected = 75 },
+        @{ Text = 'Copying Windows to the USB stick (50%)'; Expected = 86 },
+        @{ Text = 'Adding the answer file and the DayZero toolkit...'; Expected = 97 }
+    ) {
+        Get-DzBuildProgress -Text $Text | Should -Be $Expected
+    }
+    It 'ignores lines that belong to no stage' {
+        Get-DzBuildProgress -Text 'Ready.' | Should -BeNullOrEmpty
+        Get-DzBuildProgress -Text 'Downloading App Installer (winget)... 12 MB' | Should -BeNullOrEmpty
+        Get-DzBuildProgress -Text '' | Should -BeNullOrEmpty
+    }
+    It 'never leaves 0-100 and never goes backwards through the stages' {
+        Get-DzBuildProgress -Text 'Copying Windows to the USB stick (250%)' | Should -Be 96
+        $order = @('Asking Microsoft', 'Downloading Windows 11 (99%)', 'Checking the download (1%)', 'Unpacking the Windows setup files', 'Unpacking Windows PE',
+            'Unpacking Windows Setup (x)', 'Unpacking Windows 11 Home (1 of 2; x) (5.0%)', 'Unpacking Windows 11 Pro (2 of 2; x) (5.0%)',
+            'Splitting the Windows image', 'Erasing and formatting the USB stick', 'Copying Windows to the USB stick (1%)', 'Adding the answer file')
+        $last = -1
+        foreach ($t in $order) { $v = Get-DzBuildProgress -Text $t; $v | Should -BeGreaterThan $last -Because $t; $last = $v }
+    }
+}
+
 Describe 'Does Windows fit the stick' {
     It 'accepts a 16 GB stick and refuses an 8 GB one for a 7.3 GB Windows' {
         Get-DzMediaFitProblem -MediaBytes 7.3GB -DiskBytes 16000000000 | Should -BeNullOrEmpty

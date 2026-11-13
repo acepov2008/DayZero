@@ -36,7 +36,7 @@
 
         <!-- ===== Body ===== -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="16,8">
-            <Grid>
+            <Grid x:Name="BodyGrid">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
@@ -238,6 +238,7 @@
         <!-- ===== Footer ===== -->
         <Border Grid.Row="2" Background="{StaticResource DzPanelSolid}" BorderBrush="{StaticResource DzBorder}" BorderThickness="0,1,0,0">
             <StackPanel Margin="24,12">
+                <ProgressBar x:Name="BuildProgress" Minimum="0" Maximum="100" Value="0" Height="4" Margin="0,0,0,10" Visibility="Collapsed"/>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>

@@ -30,6 +30,16 @@ Describe 'Write-DzKitToTarget' {
         [void](New-Item -ItemType Directory -Path $script:root)
     }
 
+    It 'calls the tick callback while copying, so the builder window can stay responsive' {
+        $xml = New-DzUnattendXml -Options @{
+            UILanguage = 'en-US'; UserLocale = 'en-US'; InputLocale = '0409:00000409'; TimeZone = 'UTC'
+            UserName = 'Gamer'; Password = 'pw-123456'; BuildId = '0a1b2c3d'
+        }
+        $count = @{ n = 0 }
+        [void](Write-DzKitToTarget -TargetRoot $script:root -KitSource $script:KitSource -UnattendXml $xml -Settings (New-TestSetting) -Tick { $count.n++ })
+        $count.n | Should -BeGreaterThan 3
+    }
+
     It 'writes the answer file, toolkit, settings, marker and README' {
         $r = Invoke-TestWrite -Root $script:root
         Test-Path (Join-Path $script:root 'autounattend.xml') | Should -BeTrue

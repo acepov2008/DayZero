@@ -25,6 +25,7 @@ $script:Version = (Get-Content -LiteralPath (Join-Path $script:KitRoot 'VERSION'
 $script:LogLines = New-Object System.Collections.Generic.List[string]
 $script:MediaByDrive = @{}
 $script:IsoMedia = $null
+$script:Busy = $false
 $script:GeneratedPassword = $null
 $script:ThisPcFirmware = $null
 $script:BuilderConfig = $null
@@ -40,6 +41,32 @@ $script:Window = $null
 # Logging
 # ------------------------------------------------------------------------------------
 
+function Invoke-BuilderPump {
+    <#
+        Lets the window handle everything that is waiting (repaint, move, minimise, scroll the
+        log) in the middle of a long job. Without it the window looks frozen until the job ends.
+        Only used while Set-BuilderBusy has the form disabled, so no second job can start.
+    #>
+    if (-not $script:Window) { return }
+    $frame = New-Object System.Windows.Threading.DispatcherFrame
+    [void]$script:Window.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [System.Action] { $frame.Continue = $false })
+    [System.Windows.Threading.Dispatcher]::PushFrame($frame)
+}
+
+function Set-BuilderBusy {
+    <# Disables the form while a long job runs (the window itself stays movable and the log readable). #>
+    param([Parameter(Mandatory = $true)][bool]$Busy, [switch]$ShowProgress)
+    $script:Busy = $Busy
+    $ui = $script:ui
+    $ui.BuildProgress.Value = 0
+    $ui.BuildProgress.Visibility = if ($Busy -and $ShowProgress) { 'Visible' } else { 'Collapsed' }
+    $ui.BodyGrid.IsEnabled = -not $Busy
+    $ui.PreviewButton.IsEnabled = -not $Busy
+    $ui.WriteButton.IsEnabled = -not $Busy
+    $script:Window.Cursor = if ($Busy) { [System.Windows.Input.Cursors]::AppStarting } else { $null }
+    Invoke-DzUiRefresh -Element $script:Window
+}
+
 function Write-BuilderLog {
     param([Parameter(Mandatory = $true)][string]$Message)
     $line = '[{0}] {1}' -f (Get-Date -Format 'HH:mm:ss'), $Message
@@ -48,6 +75,7 @@ function Write-BuilderLog {
         $script:ui.LogText.AppendText($line + [Environment]::NewLine)
         $script:ui.LogText.ScrollToEnd()
     }
+    if ($script:Busy) { Invoke-BuilderPump }
 }
 
 function Set-BuilderStatus {
@@ -60,7 +88,13 @@ function Set-BuilderStatus {
     }
     $script:ui.StatusText.Text = $Text
     $script:ui.StatusText.Foreground = [System.Windows.Application]::Current.FindResource($brush)
-    Invoke-DzUiRefresh -Element $script:Window
+    if ($script:Busy) {
+        # The bar only moves forward: each status line maps to a point in the whole job.
+        $progress = Get-DzBuildProgress -Text $Text
+        if ($null -ne $progress -and $progress -gt $script:ui.BuildProgress.Value) { $script:ui.BuildProgress.Value = $progress }
+        Invoke-BuilderPump
+    }
+    else { Invoke-DzUiRefresh -Element $script:Window }
 }
 
 # ------------------------------------------------------------------------------------
@@ -773,13 +807,13 @@ function Invoke-Write {
     $data.Options.BuildId = $buildId
     $data.Settings.buildId = $buildId
     Write-BuilderLog "Build id $buildId"
+    Set-BuilderBusy -Busy $true -ShowProgress:($data.Kind -eq 'newusb')
     Set-BuilderStatus -Text 'Writing...'
-    $script:Window.Cursor = [System.Windows.Input.Cursors]::Wait
     $erased = $false
     try {
         if ($data.Kind -eq 'newusb') {
             $log = { param($m) Write-BuilderLog $m }
-            $tick = { param($t) if ($t) { Set-BuilderStatus -Text $t } else { Invoke-DzUiRefresh -Element $script:Window } }
+            $tick = { param($t) if ($t) { Set-BuilderStatus -Text $t } else { Invoke-BuilderPump } }
             $script:ui.LogExpander.IsExpanded = $true
             # Get Windows ready first: if the download fails, the stick has not been touched yet.
             $tree = $null
@@ -799,7 +833,7 @@ function Invoke-Write {
             Set-BuilderStatus -Text 'Adding the answer file and the DayZero toolkit...'
         }
         $xml = New-DzUnattendXml -Options $data.Options
-        $result = Write-DzKitToTarget -TargetRoot $data.Target -KitSource $script:KitRoot -UnattendXml $xml -Settings $data.Settings -Log {
+        $result = Write-DzKitToTarget -TargetRoot $data.Target -KitSource $script:KitRoot -UnattendXml $xml -Settings $data.Settings -Tick { Invoke-BuilderPump } -Log {
             param($m) Write-BuilderLog $m
         }
         $bundleNote = ''
@@ -828,7 +862,7 @@ function Invoke-Write {
         return
     }
     finally {
-        $script:Window.Cursor = $null
+        Set-BuilderBusy -Busy $false
     }
 
     Set-BuilderStatus -Text ("Done! Build $buildId written to $($data.Target)") -Kind Ok
@@ -977,6 +1011,13 @@ function Start-Builder {
             Write-BuilderLog 'Generated a temporary password.'
         })
 
+    $script:Window.Add_Closing({
+            if ($script:Busy) {
+                # Closing in the middle of formatting or copying would leave a half-made stick.
+                $args[1].Cancel = $true
+                $script:ui.StatusText.Text = 'Still working. The window can be closed when this is finished.'
+            }
+        })
     $script:Window.Add_ContentRendered({
             Update-SourceMode
             Update-UsbDiskList

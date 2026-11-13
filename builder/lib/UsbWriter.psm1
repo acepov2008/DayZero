@@ -85,13 +85,15 @@ function Copy-DzKit {
     param(
         [Parameter(Mandatory = $true)][string]$KitSource,
         [Parameter(Mandatory = $true)][string]$Destination,
-        [scriptblock]$Log
+        [scriptblock]$Log,
+        [scriptblock]$Tick
     )
     if (-not (Test-Path -LiteralPath $KitSource)) { throw "Kit folder not found: $KitSource" }
     if (-not (Test-Path -LiteralPath $Destination)) { [void](New-Item -ItemType Directory -Path $Destination -Force) }
 
     foreach ($item in @(Get-ChildItem -LiteralPath $KitSource -Force)) {
         if ($item.Name -like 'build-*.marker') { continue }
+        if ($Tick) { & $Tick }   # lets the builder window stay responsive between items
         $target = Join-Path $Destination $item.Name
         if ($script:MergedFolders -contains $item.Name) {
             if (-not (Test-Path -LiteralPath $target)) { [void](New-Item -ItemType Directory -Path $target -Force) }
@@ -128,7 +130,8 @@ function Write-DzKitToTarget {
         [Parameter(Mandatory = $true)][string]$KitSource,
         [Parameter(Mandatory = $true)][string]$UnattendXml,
         [Parameter(Mandatory = $true)][System.Collections.IDictionary]$Settings,
-        [scriptblock]$Log
+        [scriptblock]$Log,
+        [scriptblock]$Tick
     )
     if (-not (Test-Path -LiteralPath $TargetRoot)) { throw "Target not found: $TargetRoot" }
     if (Test-DzIsSystemDriveRoot -Path $TargetRoot) {
@@ -150,7 +153,7 @@ function Write-DzKitToTarget {
 
     # 2. toolkit
     $kitPath = Join-Path $TargetRoot $script:KitFolderName
-    Copy-DzKit -KitSource $KitSource -Destination $kitPath -Log $Log
+    Copy-DzKit -KitSource $KitSource -Destination $kitPath -Log $Log -Tick $Tick
 
     # 3. settings for the wizard (no passwords in here)
     $json = $Settings | ConvertTo-Json -Depth 6

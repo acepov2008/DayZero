@@ -71,6 +71,50 @@ function Invoke-DzTick {
     if ($Tick) { & $Tick $Text }
 }
 
+function Get-DzBuildProgress {
+    <#
+        Overall progress (0-100) of making the stick, worked out from a status line such as
+        "Unpacking Windows 11 Pro (4 of 4; this is the slow part) (35.0%)". $null when the
+        line belongs to no known stage. Stages that are skipped (Windows already prepared)
+        simply make the bar jump ahead.
+    #>
+    [CmdletBinding()]
+    [OutputType([double])]
+    param([AllowNull()][AllowEmptyString()][string]$Text)
+    if ([string]::IsNullOrWhiteSpace($Text)) { return $null }
+    $part = [double]0
+    $m = [regex]::Match($Text, '\((\d{1,3}(?:[.,]\d)?)\s?%\)\s*$')
+    if ($m.Success) {
+        $part = [double]::Parse($m.Groups[1].Value.Replace(',', '.'), [System.Globalization.CultureInfo]::InvariantCulture) / 100
+        if ($part -gt 1) { $part = 1 }
+    }
+    $from = $null
+    $to = $null
+    switch -Regex ($Text) {
+        '^Asking Microsoft' { $from = 0; $to = 1; break }
+        '^Downloading Windows' { $from = 1; $to = 30; break }
+        '^Checking the download' { $from = 30; $to = 34; break }
+        '^Unpacking the Windows setup files' { $from = 34; $to = 36; break }
+        '^Unpacking Windows PE' { $from = 36; $to = 39; break }
+        '^Unpacking Windows Setup' { $from = 39; $to = 42; break }
+        '^Unpacking .*\((\d+) of (\d+);' {
+            $n = [double]$Matches[1]
+            $count = [double]$Matches[2]
+            if ($count -lt 1) { $count = 1 }
+            $part = (($n - 1) + $part) / $count
+            $from = 42; $to = 68; break
+        }
+        '^Splitting the Windows image' { $from = 68; $to = 74; break }
+        '^(Erasing and formatting|Waiting for the new drive)' { $from = 75; $to = 75; break }
+        '^Copying Windows to the USB stick' { $from = 76; $to = 96; break }
+        '^Adding the answer file' { $from = 97; $to = 97; break }
+    }
+    if ($null -eq $from) { return $null }
+    if ($part -lt 0) { $part = 0 }
+    if ($part -gt 1) { $part = 1 }
+    return [double]($from + ($to - $from) * $part)
+}
+
 function Invoke-DzProcess {
     <#
         Runs a console program hidden, waits for it and returns ExitCode + Output.
@@ -277,7 +321,7 @@ function Get-DzFileSha1 {
             $done += $read
             if ($done -ge $next) {
                 Invoke-DzTick -Tick $Tick -Text ('{0} ({1:N0}%)' -f $Activity, (100 * $done / $total))
-                $next = $done + 128MB
+                $next = $done + 32MB
             }
         }
         [void]$sha.TransformFinalBlock($buffer, 0, 0)
@@ -816,7 +860,7 @@ function Set-DzUsbBootSector {
 }
 
 Export-ModuleMember -Function @(
-    'Get-DzWindowsLanguageList', 'Get-DzWindowsCatalogUrl', 'Get-DzMediaCacheRoot', 'Invoke-DzProcess',
+    'Get-DzWindowsLanguageList', 'Get-DzWindowsCatalogUrl', 'Get-DzMediaCacheRoot', 'Get-DzBuildProgress', 'Invoke-DzProcess',
     'ConvertFrom-DzProductsXml', 'Test-DzWindowsDownloadEntry', 'Select-DzWindowsDownload', 'Find-DzCatalogXml', 'Get-DzWindowsCatalog',
     'Get-DzFileSha1', 'Save-DzLargeFile', 'Get-DzEsdImagePlan', 'Select-DzEsdEdition', 'New-DzMediaFromEsd',
     'Get-DzPreparedMedia', 'Get-DzWindowsMediaTree', 'Test-DzUsbDiskAllowed', 'Get-DzUsbDiskCandidate',
