@@ -634,9 +634,18 @@ function New-DzDiskpartScript {
     param(
         [Parameter(Mandatory = $true)][ValidateRange(0, 99)][int]$DiskNumber,
         [Parameter(Mandatory = $true)][ValidateRange(7000, 32000)][int]$PartitionMB,
-        [ValidatePattern('^[A-Z0-9]{1,11}$')][string]$Label = 'DAYZERO'
+        [ValidatePattern('^[A-Z0-9]{1,11}$')][string]$Label = 'DAYZERO',
+        # Drive letters currently on that disk: their volumes are dismounted first, otherwise
+        # "clean" fails with "Access is denied" when Explorer or a scanner has the stick open.
+        [ValidatePattern('^[A-Za-z]$')][string[]]$Letter = @()
     )
-    $lines = @(
+    $lines = @()
+    foreach ($l in $Letter) {
+        if ($env:SystemDrive -and $l -ieq $env:SystemDrive.Substring(0, 1)) { throw 'Refusing to dismount the drive Windows is running from.' }
+        $lines += "select volume $($l.ToUpperInvariant())"
+        $lines += 'remove all dismount noerr'
+    }
+    $lines += @(
         "select disk $DiskNumber",
         'clean',
         'convert mbr noerr',
@@ -685,6 +694,27 @@ function Get-DzFolderSize {
     return $total
 }
 
+function Stop-DzStaleCopy {
+    <#
+        Ends robocopy processes that are still copying onto the given drive letters, left over
+        from an earlier attempt that was interrupted. They would keep the stick locked.
+    #>
+    [CmdletBinding()]
+    param([AllowEmptyCollection()][string[]]$Letter = @(), [scriptblock]$Log)
+    foreach ($l in $Letter) {
+        if ($l -notmatch '^[A-Za-z]$') { continue }
+        $pattern = '(?i)\s"?' + $l + ':\\'
+        foreach ($proc in @(Get-CimInstance -ClassName Win32_Process -Filter "Name = 'robocopy.exe'" -ErrorAction SilentlyContinue)) {
+            if ([string]$proc.CommandLine -notmatch $pattern) { continue }
+            try {
+                Stop-Process -Id $proc.ProcessId -Force -ErrorAction Stop
+                if ($Log) { & $Log "Stopped a copy to ${l}: left over from an earlier attempt." }
+            }
+            catch { if ($Log) { & $Log "Could not stop the earlier copy to ${l}: $($_.Exception.Message)" } }
+        }
+    }
+}
+
 function Initialize-DzUsbDisk {
     <#
     .SYNOPSIS
@@ -706,16 +736,32 @@ function Initialize-DzUsbDisk {
     }
     if ($now.Problem) { throw "This drive cannot be used: $($now.Problem)" }
 
-    $commands = New-DzDiskpartScript -DiskNumber $now.Number -PartitionMB (Get-DzUsbPartitionSize -DiskBytes $now.Size) -Label $script:UsbLabel
+    if ($Log) { & $Log ("Erasing disk {0} ({1}, {2} GB) and formatting it FAT32." -f $now.Number, $now.Name, $now.SizeGB) }
     $file = Join-Path ([System.IO.Path]::GetTempPath()) ('dayzero-diskpart-' + [guid]::NewGuid().ToString('N') + '.txt')
-    [System.IO.File]::WriteAllText($file, $commands, [System.Text.Encoding]::ASCII)
+    $failure = $null
     try {
-        if ($Log) { & $Log ("Erasing disk {0} ({1}, {2} GB) and formatting it FAT32." -f $now.Number, $now.Name, $now.SizeGB) }
-        $r = Invoke-DzProcess -FilePath (Join-Path $env:SystemRoot 'System32\diskpart.exe') -Arguments ('/s "{0}"' -f $file) -Activity 'Erasing and formatting the USB stick' -Tick $Tick
-        if ($r.ExitCode -ne 0) { throw "Formatting the USB stick failed (diskpart exit code $($r.ExitCode)): $((@($r.Output -split "`r?`n") | Select-Object -Last 3) -join ' ')" }
+        for ($attempt = 1; $attempt -le 3; $attempt++) {
+            # Read the disk again before every attempt: same device, still allowed, current letters.
+            $cur = @(Get-DzUsbDiskCandidate | Where-Object { $_.Number -eq $now.Number }) | Select-Object -First 1
+            if ($null -eq $cur) { throw 'The USB stick is gone. Plug it back in and press Refresh.' }
+            if ($cur.Size -ne $now.Size -or $cur.Serial -ne $now.Serial -or $cur.Name -ne $now.Name -or $cur.Problem) {
+                throw 'The drives changed while formatting. Press Refresh and pick the USB stick again.'
+            }
+            Stop-DzStaleCopy -Letter $cur.Letters -Log $Log
+            $commands = New-DzDiskpartScript -DiskNumber $cur.Number -PartitionMB (Get-DzUsbPartitionSize -DiskBytes $cur.Size) -Label $script:UsbLabel -Letter $cur.Letters
+            [System.IO.File]::WriteAllText($file, $commands, [System.Text.Encoding]::ASCII)
+            $r = Invoke-DzProcess -FilePath (Join-Path $env:SystemRoot 'System32\diskpart.exe') -Arguments ('/s "{0}"' -f $file) -Activity 'Erasing and formatting the USB stick' -Tick $Tick
+            if ($r.ExitCode -eq 0) { $failure = $null; break }
+            $failure = "diskpart exit code $($r.ExitCode): $((@($r.Output -split "`r?`n") | Select-Object -Last 3) -join ' ')"
+            if ($Log) { & $Log "Formatting attempt $attempt failed ($failure)." }
+            for ($w = 0; $w -lt 6 -and $attempt -lt 3; $w++) { Invoke-DzTick -Tick $Tick -Text 'Erasing and formatting the USB stick (trying again)'; Start-Sleep -Milliseconds 500 }
+        }
     }
     finally {
         Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue
+    }
+    if ($failure) {
+        throw "Formatting the USB stick failed ($failure) Something is still using the stick: close every File Explorer window that shows it, wait a few seconds and try again. If that does not help, unplug the stick, plug it back in and press Refresh."
     }
 
     $letter = $null
