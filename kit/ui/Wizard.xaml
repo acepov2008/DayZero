@@ -24,7 +24,7 @@
                         <ColumnDefinition Width="34"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock x:Name="Icon" Text="{Binding Icon}" FontFamily="{StaticResource DzEmoji}" FontSize="16" VerticalAlignment="Top"/>
+                    <TextBlock x:Name="Icon" Text="{Binding Icon}" FontFamily="{StaticResource DzSymbol}" FontSize="15" VerticalAlignment="Top"/>
                     <StackPanel Grid.Column="1">
                         <TextBlock x:Name="StepTitle" Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap"/>
                         <TextBlock x:Name="Detail" Text="{Binding Message}" FontSize="12" Foreground="{StaticResource DzMuted}" TextWrapping="Wrap" Margin="0,2,0,0"/>
@@ -76,7 +76,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- ===== Header with synthwave sun and grid ===== -->
+        <!-- ===== Header ===== -->
         <Grid Grid.Row="0" Height="112" ClipToBounds="True">
             <ContentControl Template="{StaticResource DzHeaderArt}"/>
             <Grid Margin="28,18,28,10">
@@ -85,21 +85,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel>
-                    <TextBlock Text="DAYZERO" Style="{StaticResource DzTitle}">
-                        <TextBlock.Effect>
-                            <DropShadowEffect Color="#FF2BD6" BlurRadius="18" ShadowDepth="0" Opacity="0.9"/>
-                        </TextBlock.Effect>
-                        <TextBlock.Triggers>
-                            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.BlurRadius)"
-                                                         From="12" To="30" Duration="0:0:1.8" AutoReverse="True" RepeatBehavior="Forever"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </EventTrigger>
-                        </TextBlock.Triggers>
-                    </TextBlock>
+                    <TextBlock Text="DAYZERO" Style="{StaticResource DzTitle}"/>
                     <TextBlock x:Name="SubtitleText" Text="SETUP WIZARD" Style="{StaticResource DzSubtitle}" Margin="2,0,0,0"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,280,0">
@@ -111,7 +97,7 @@
                 </StackPanel>
             </Grid>
         </Grid>
-        <Border Grid.Row="0" VerticalAlignment="Bottom" Height="2" Margin="0" Background="{StaticResource DzNeonGradient}" Effect="{StaticResource DzGlowMagenta}"/>
+        <Border Grid.Row="0" VerticalAlignment="Bottom" Height="1" Margin="0" Background="{StaticResource DzBorder}"/>
 
         <!-- ===== Pages ===== -->
         <Grid Grid.Row="1" Margin="20,12,20,8">
@@ -273,7 +259,7 @@
         </Border>
 
         <!-- ===== Restart overlay ===== -->
-        <Grid x:Name="RebootOverlay" Grid.RowSpan="3" Visibility="Collapsed" Background="#D90B0620">
+        <Grid x:Name="RebootOverlay" Grid.RowSpan="3" Visibility="Collapsed" Background="#E60F0F11">
             <Border Style="{StaticResource DzCard}" Width="560" VerticalAlignment="Center" HorizontalAlignment="Center"
                     BorderBrush="{StaticResource DzMagenta}" Effect="{StaticResource DzGlowMagenta}">
                 <StackPanel>

@@ -26,28 +26,13 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel>
-                <TextBlock Text="DAYZERO" Style="{StaticResource DzTitle}">
-                    <TextBlock.Effect>
-                        <DropShadowEffect Color="#FF2BD6" BlurRadius="18" ShadowDepth="0" Opacity="0.9"/>
-                    </TextBlock.Effect>
-                    <TextBlock.Triggers>
-                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.BlurRadius)"
-                                                     From="12" To="30" Duration="0:0:1.8" AutoReverse="True" RepeatBehavior="Forever"/>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-                    </TextBlock.Triggers>
-                </TextBlock>
+                <TextBlock Text="DAYZERO" Style="{StaticResource DzTitle}"/>
                 <TextBlock x:Name="VersionText" Text="USB BUILDER" Style="{StaticResource DzSubtitle}" Margin="2,0,0,0"/>
             </StackPanel>
             <TextBlock Grid.Column="1" VerticalAlignment="Center" TextAlignment="Right" Style="{StaticResource DzHint}" Margin="0,0,290,0"
                        Text="Adds an answer file + the DayZero toolkit to a Windows USB&#x0a;made with the Media Creation Tool or Rufus."/>
         </Grid>
-        <Border Grid.Row="0" VerticalAlignment="Bottom" Height="2" Margin="24,0" Background="{StaticResource DzNeonGradient}"
-                Effect="{StaticResource DzGlowMagenta}"/>
+        <Border Grid.Row="0" VerticalAlignment="Bottom" Height="1" Margin="0" Background="{StaticResource DzBorder}"/>
 
         <!-- ===== Body ===== -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="16,8">

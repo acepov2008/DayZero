@@ -179,12 +179,15 @@ changing OOBE, so results can differ between builds.
       official page in your normal browser; Intel DSA installs by itself. The PC-brand tool
       (Dell/Lenovo/HP/ASUS) installs when ticked.
 
-**Design (stage 6)**
-- [ ] Builder and wizard headers: the striped sun glows, the neon floor grid scrolls, the
-      DAYZERO title pulses. Nothing flickers or stutters.
-- [ ] Mode picker: hovering a card grows it slightly; the selected card has a magenta border
-      with a slowly breathing glow; keyboard focus shows a cyan border.
-- [ ] The progress bar has a moving shine; pages fade/slide in when you switch.
+**Design (monochrome theme)**
+- [ ] Builder and wizard: charcoal background, white title, gray text, a thin gray line under
+      the header. No colourful glows anywhere.
+- [ ] Mode cards show monochrome icons (controller, briefcase, grid, gear), not colour emoji.
+      Hover lightens the border; the selected card has a white border; keyboard focus a light
+      gray one.
+- [ ] Primary buttons (WRITE TO USB, START) are solid white with dark text and stay readable on hover.
+- [ ] The progress bar is a thin white line with a faint moving sheen; step icons are
+      single-colour symbols; pages fade/slide in when you switch.
 - [ ] Dark theme everywhere: drop-down lists, scroll bars, check boxes and tooltips are dark
       and readable (no white boxes).
 - [ ] Windows "Narrator" (Ctrl+Win+Enter) reads the mode cards as "GAMING mode: ...".

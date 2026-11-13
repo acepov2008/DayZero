@@ -7,7 +7,8 @@
     "office:  true installs Microsoft 365 Apps with the Office Deployment Tool (office.json).",
     "includes: other modes merged into this one (apps and tweaks are combined).",
     "custom:  true = nothing pre-ticked; the user picks everything (in the builder or on the review screen).",
-    "The review screen always shows the whole app catalog and every tweak, so any mode can be adjusted."
+    "The review screen always shows the whole app catalog and every tweak, so any mode can be adjusted.",
+    "icon:    Segoe Fluent Icons / MDL2 glyph shown on the mode card (monochrome); emoji is the fallback."
   ],
   "defaultMode": "gaming",
   "modes": [
@@ -15,6 +16,7 @@
       "id": "gaming",
       "title": "GAMING",
       "emoji": "🎮",
+      "icon": "\uE7FC",
       "tagline": "Max FPS, zero clutter",
       "description": "Game launchers, chat and capture tools, your graphics card's app and the gaming tweaks that actually do something.",
       "highlights": [
@@ -50,6 +52,7 @@
       "id": "office",
       "title": "OFFICE",
       "emoji": "💼",
+      "icon": "\uE821",
       "tagline": "Work-ready in one go",
       "description": "Microsoft 365 Apps plus the everyday essentials, and no performance tweaks.",
       "highlights": [
@@ -76,6 +79,7 @@
       "id": "everything",
       "title": "EVERYTHING",
       "emoji": "🧰",
+      "icon": "\uE71D",
       "tagline": "The whole toolbox",
       "description": "Gaming and Office together, plus PowerToys, VS Code, Windows Terminal and the runtimes many apps and games need.",
       "highlights": [
@@ -103,6 +107,7 @@
       "id": "custom",
       "title": "CUSTOM",
       "emoji": "🎛️",
+      "icon": "\uE713",
       "tagline": "You pick every app",
       "description": "Nothing is ticked until you tick it: choose your browsers, messengers, AI apps, Microsoft 365 and each tweak. Picks made in the USB builder arrive pre-ticked.",
       "highlights": [

@@ -36,13 +36,13 @@ $script:Cli = @{ Resume = [bool]$Resume; DryRun = [bool]$DryRun; Mode = [string]
 
 # Status icons (kept as code points so this file stays ASCII for PowerShell 5.1).
 $script:Icons = @{
-    pending = [string][char]0x25CB
-    running = [char]::ConvertFromUtf32(0x23F3)
-    done    = [char]::ConvertFromUtf32(0x2705)
-    warn    = [string][char]0x26A0
-    failed  = [char]::ConvertFromUtf32(0x274C)
-    skipped = [char]::ConvertFromUtf32(0x23ED)
-    reboot  = [char]::ConvertFromUtf32(0x1F501)
+    pending = [string][char]0x25CB   # white circle
+    running = [string][char]0x25D4   # circle with upper-right quadrant
+    done    = [string][char]0x2713   # check mark
+    warn    = [string][char]0x26A0   # warning sign (Segoe UI Symbol draws it in one colour)
+    failed  = [string][char]0x2715   # multiplication x
+    skipped = [string][char]0x2192   # arrow
+    reboot  = [string][char]0x21BB   # clockwise open circle arrow
 }
 $script:Arrow = [string][char]0x25B6
 $script:Bullet = [string][char]0x2022
@@ -191,16 +191,22 @@ function Initialize-DzModeCards {
         $rb.MinHeight = 270
         $rb.Margin = New-Object System.Windows.Thickness(8)
         $panel = New-Object System.Windows.Controls.StackPanel
-        $panel.Children.Add((New-DzTextBlock -Text ([string](Get-DzProperty $m 'emoji' '')) -Size 52 -Emoji)) | Out-Null
+        $glyph = [string](Get-DzProperty $m 'icon' '')
+        if ($glyph) {
+            $iconBlock = New-DzTextBlock -Text $glyph -Size 34 -Brush 'DzText' -Top 4
+            $iconBlock.FontFamily = Get-DzBrush 'DzIconFont'
+            $panel.Children.Add($iconBlock) | Out-Null
+        }
+        else { $panel.Children.Add((New-DzTextBlock -Text ([string](Get-DzProperty $m 'emoji' '')) -Size 52 -Emoji)) | Out-Null }
         $panel.Children[0].HorizontalAlignment = 'Center'
-        $title = New-DzTextBlock -Text ([string](Get-DzProperty $m 'title' $m.id)) -Size 22 -Bold -Top 6
+        $title = New-DzTextBlock -Text ([string](Get-DzProperty $m 'title' $m.id)) -Size 18 -Bold -Top 10
         $title.HorizontalAlignment = 'Center'
         $panel.Children.Add($title) | Out-Null
-        $tag = New-DzTextBlock -Text ([string](Get-DzProperty $m 'tagline' '')) -Size 13 -Brush 'DzCyan' -Top 2
+        $tag = New-DzTextBlock -Text ([string](Get-DzProperty $m 'tagline' '')) -Size 13 -Brush 'DzMuted' -Top 2
         $tag.HorizontalAlignment = 'Center'
         $panel.Children.Add($tag) | Out-Null
         if ([string]$m.id -eq [string]$script:Settings.defaultMode) {
-            $def = New-DzTextBlock -Text 'BUILDER DEFAULT' -Size 10 -Bold -Brush 'DzYellow' -Top 4
+            $def = New-DzTextBlock -Text 'BUILDER DEFAULT' -Size 10 -Bold -Brush 'DzCyan' -Top 6
             $def.HorizontalAlignment = 'Center'
             $panel.Children.Add($def) | Out-Null
         }

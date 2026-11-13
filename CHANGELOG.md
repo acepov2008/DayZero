@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0 - monochrome redesign
+- Sleek, professional look: charcoal, gray and white instead of neon synthwave. Solid white
+  primary buttons, thin borders, soft shadows, no glows, no animated sun or grid.
+- Monochrome Segoe icons on the mode cards and single-colour step symbols instead of emoji.
+- Thin progress bar. Resource names unchanged, so custom XAML keeps working.
+
 ## 0.8.0 - clean-up levels from WinUtil
 - New **clean-up level** choice in the builder, separate from the mode: **Clear**, **Minimal**,
   **Standard** (default) and **Advanced**, modelled on Chris Titus Tech's WinUtil presets.

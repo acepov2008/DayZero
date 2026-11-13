@@ -411,10 +411,12 @@ function New-BuilderCard {
     $rb.Margin = New-Object System.Windows.Thickness(5)
     $panel = New-Object System.Windows.Controls.StackPanel
     if ($Emoji) {
+        # Monochrome Segoe icon glyph (modes.json "icon"); falls back to the emoji font for anything else.
         $e = New-Object System.Windows.Controls.TextBlock
         $e.Text = $Emoji
-        $e.FontSize = 26
-        $e.FontFamily = Get-DzResource 'DzEmoji'
+        $e.FontSize = 22
+        $e.FontFamily = if ($Emoji.Length -eq 1 -and [int][char]$Emoji -ge 0xE000 -and [int][char]$Emoji -le 0xF8FF) { Get-DzResource 'DzIconFont' } else { Get-DzResource 'DzEmoji' }
+        $e.Foreground = Get-DzResource 'DzText'
         $e.HorizontalAlignment = 'Center'
         [void]$panel.Children.Add($e)
     }
@@ -444,7 +446,8 @@ function Initialize-BuilderModeCards {
     foreach ($m in @(Get-DzModeList -Config $script:BuilderConfig)) {
         $title = [string](Get-DzProperty $m 'title' $m.id)
         $tagline = [string](Get-DzProperty $m 'tagline' '')
-        $rb = New-BuilderCard -Group 'Mode' -Id ([string]$m.id) -Emoji ([string](Get-DzProperty $m 'emoji' '')) -Title $title -Tagline $tagline -AccessibleName ('{0} mode: {1}' -f $title, $tagline)
+        $glyph = [string](Get-DzProperty $m 'icon' (Get-DzProperty $m 'emoji' ''))
+        $rb = New-BuilderCard -Group 'Mode' -Id ([string]$m.id) -Emoji $glyph -Title $title -Tagline $tagline -AccessibleName ('{0} mode: {1}' -f $title, $tagline)
         $rb.Add_Checked({
                 param($src)
                 try { Select-BuilderMode -Id ([string]$src.Tag) } catch { Write-BuilderLog ('Mode preview failed: ' + $_.Exception.Message) }

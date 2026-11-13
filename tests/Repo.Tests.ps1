@@ -144,6 +144,9 @@ Describe 'XAML' {
             $defined[$key] | Should -BeLessThan $m.Index -Because "'$key' must be defined above its first use"
         }
     }
+    It '<Name> uses no neon colours (monochrome theme)' -ForEach $script:XamlFiles {
+        Get-Content -Raw -LiteralPath $Path | Should -Not -Match '(?i)#(FF2BD6|22E6FF|7B2FF7|0B0620|C21FA6|6A24D8)'
+    }
     It 'scripts only use theme resources that exist' {
         $keys = Get-ThemeKey
         foreach ($f in @(Get-ChildItem -Path (Join-Path $repo 'builder'), (Join-Path $repo 'kit') -Recurse -Include '*.ps1', '*.psm1')) {

@@ -8,75 +8,76 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- ===== Palette ===================================================== -->
-    <Color x:Key="DzColorBg">#0B0620</Color>
-    <Color x:Key="DzColorMagenta">#FF2BD6</Color>
-    <Color x:Key="DzColorCyan">#22E6FF</Color>
-    <Color x:Key="DzColorPurple">#7B2FF7</Color>
+    <!-- Monochrome professional palette: charcoal, grays and white. The key names are kept
+         from the first (neon) theme so code and other XAML did not have to change:
+         "Magenta" = primary accent (white), "Cyan" = secondary (light gray), "Purple" = mid gray. -->
+    <Color x:Key="DzColorBg">#0F0F11</Color>
+    <Color x:Key="DzColorMagenta">#FFFFFF</Color>
+    <Color x:Key="DzColorCyan">#C9C9CE</Color>
+    <Color x:Key="DzColorPurple">#6B6B72</Color>
 
-    <SolidColorBrush x:Key="DzBg" Color="#0B0620"/>
-    <SolidColorBrush x:Key="DzPanel" Color="#E6150C33"/>
-    <SolidColorBrush x:Key="DzPanelSolid" Color="#1A0F38"/>
-    <SolidColorBrush x:Key="DzInput" Color="#110A28"/>
-    <SolidColorBrush x:Key="DzBorder" Color="#3D2A6E"/>
-    <SolidColorBrush x:Key="DzHover" Color="#2A1A5E"/>
-    <SolidColorBrush x:Key="DzSelectedCardBg" Color="#2B0F4A"/>
-    <SolidColorBrush x:Key="DzText" Color="#F3E9FF"/>
-    <SolidColorBrush x:Key="DzMuted" Color="#A99BC9"/>
-    <SolidColorBrush x:Key="DzMagenta" Color="#FF2BD6"/>
-    <SolidColorBrush x:Key="DzCyan" Color="#22E6FF"/>
-    <SolidColorBrush x:Key="DzPurple" Color="#7B2FF7"/>
-    <SolidColorBrush x:Key="DzYellow" Color="#FFD166"/>
-    <SolidColorBrush x:Key="DzRed" Color="#FF4D6D"/>
-    <SolidColorBrush x:Key="DzGreen" Color="#3DFFB0"/>
-    <SolidColorBrush x:Key="DzScrollThumb" Color="#5A3F9E"/>
-    <SolidColorBrush x:Key="DzWarningBg" Color="#33FF4D6D"/>
-    <SolidColorBrush x:Key="DzInfoBg" Color="#2222E6FF"/>
+    <SolidColorBrush x:Key="DzBg" Color="#0F0F11"/>
+    <SolidColorBrush x:Key="DzPanel" Color="#17171A"/>
+    <SolidColorBrush x:Key="DzPanelSolid" Color="#1B1B1F"/>
+    <SolidColorBrush x:Key="DzInput" Color="#121215"/>
+    <SolidColorBrush x:Key="DzBorder" Color="#2C2C31"/>
+    <SolidColorBrush x:Key="DzHover" Color="#242428"/>
+    <SolidColorBrush x:Key="DzSelectedCardBg" Color="#222226"/>
+    <SolidColorBrush x:Key="DzText" Color="#EDEDEF"/>
+    <SolidColorBrush x:Key="DzMuted" Color="#8E8E95"/>
+    <SolidColorBrush x:Key="DzMagenta" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="DzCyan" Color="#C9C9CE"/>
+    <SolidColorBrush x:Key="DzPurple" Color="#6B6B72"/>
+    <SolidColorBrush x:Key="DzYellow" Color="#D4B45A"/>
+    <SolidColorBrush x:Key="DzRed" Color="#E0605A"/>
+    <SolidColorBrush x:Key="DzGreen" Color="#7FBF8A"/>
+    <SolidColorBrush x:Key="DzScrollThumb" Color="#3E3E44"/>
+    <SolidColorBrush x:Key="DzWarningBg" Color="#1FE0605A"/>
+    <SolidColorBrush x:Key="DzInfoBg" Color="#0DFFFFFF"/>
+    <SolidColorBrush x:Key="DzPrimaryText" Color="#0F0F11"/>
+    <SolidColorBrush x:Key="DzPrimaryHover" Color="#D9D9DD"/>
 
     <LinearGradientBrush x:Key="DzWindowBackground" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#0B0620" Offset="0"/>
-        <GradientStop Color="#160934" Offset="0.55"/>
-        <GradientStop Color="#2A0B45" Offset="1"/>
+        <GradientStop Color="#111113" Offset="0"/>
+        <GradientStop Color="#0C0C0E" Offset="1"/>
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="DzNeonGradient" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#FF2BD6" Offset="0"/>
-        <GradientStop Color="#7B2FF7" Offset="0.5"/>
-        <GradientStop Color="#22E6FF" Offset="1"/>
+        <GradientStop Color="#FFFFFF" Offset="0"/>
+        <GradientStop Color="#9A9AA0" Offset="1"/>
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="DzSunsetGradient" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#FFD166" Offset="0"/>
-        <GradientStop Color="#FF2BD6" Offset="0.6"/>
-        <GradientStop Color="#7B2FF7" Offset="1"/>
+        <GradientStop Color="#EDEDEF" Offset="0"/>
+        <GradientStop Color="#6B6B72" Offset="1"/>
     </LinearGradientBrush>
-    <LinearGradientBrush x:Key="DzPrimaryButtonBg" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#C21FA6" Offset="0"/>
-        <GradientStop Color="#6A24D8" Offset="1"/>
-    </LinearGradientBrush>
+    <SolidColorBrush x:Key="DzPrimaryButtonBg" Color="#EDEDEF"/>
 
-    <DropShadowEffect x:Key="DzGlowMagenta" Color="#FF2BD6" BlurRadius="18" ShadowDepth="0" Opacity="0.75"/>
-    <DropShadowEffect x:Key="DzGlowCyan" Color="#22E6FF" BlurRadius="14" ShadowDepth="0" Opacity="0.6"/>
-    <DropShadowEffect x:Key="DzGlowSoft" Color="#22E6FF" BlurRadius="8" ShadowDepth="0" Opacity="0.3"/>
-    <DropShadowEffect x:Key="DzTitleGlow" Color="#FF2BD6" BlurRadius="22" ShadowDepth="0" Opacity="0.9"/>
+    <!-- No neon glows: soft, low shadows for depth only. -->
+    <DropShadowEffect x:Key="DzGlowMagenta" Color="#000000" BlurRadius="16" ShadowDepth="2" Direction="270" Opacity="0.45"/>
+    <DropShadowEffect x:Key="DzGlowCyan" Color="#000000" BlurRadius="10" ShadowDepth="1" Direction="270" Opacity="0.35"/>
+    <DropShadowEffect x:Key="DzGlowSoft" Color="#000000" BlurRadius="6" ShadowDepth="1" Direction="270" Opacity="0.25"/>
+    <DropShadowEffect x:Key="DzTitleGlow" Color="#000000" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
 
     <FontFamily x:Key="DzMono">Consolas, Cascadia Mono, Courier New</FontFamily>
     <FontFamily x:Key="DzEmoji">Segoe UI Emoji, Segoe UI Symbol</FontFamily>
+    <FontFamily x:Key="DzSymbol">Segoe UI Symbol, Segoe UI</FontFamily>
+    <FontFamily x:Key="DzIconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
     <!-- ===== Text styles (keyed: implicit TextBlock styles leak into controls) ===== -->
     <Style x:Key="DzTitle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="34"/>
-        <Setter Property="FontWeight" Value="Black"/>
-        <Setter Property="Foreground" Value="{StaticResource DzNeonGradient}"/>
-        <Setter Property="Effect" Value="{StaticResource DzTitleGlow}"/>
+        <Setter Property="FontSize" Value="28"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{StaticResource DzMagenta}"/>
     </Style>
     <Style x:Key="DzSubtitle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Foreground" Value="{StaticResource DzCyan}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="Foreground" Value="{StaticResource DzMuted}"/>
     </Style>
     <Style x:Key="DzCardTitle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="15"/>
-        <Setter Property="FontWeight" Value="Bold"/>
-        <Setter Property="Foreground" Value="{StaticResource DzMagenta}"/>
-        <Setter Property="Margin" Value="0,0,0,10"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{StaticResource DzText}"/>
+        <Setter Property="Margin" Value="0,0,0,12"/>
     </Style>
     <Style x:Key="DzLabel" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource DzMuted}"/>
@@ -94,8 +95,8 @@
         <Setter Property="Background" Value="{StaticResource DzPanel}"/>
         <Setter Property="BorderBrush" Value="{StaticResource DzBorder}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="12"/>
-        <Setter Property="Padding" Value="16"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="18"/>
         <Setter Property="Margin" Value="8"/>
     </Style>
     <Style x:Key="DzWarningBox" TargetType="Border">
@@ -108,7 +109,7 @@
     </Style>
     <Style x:Key="DzInfoBox" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource DzInfoBg}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource DzCyan}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DzBorder}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="8"/>
         <Setter Property="Padding" Value="10"/>
@@ -118,8 +119,8 @@
     <!-- ===== Buttons ========================================================= -->
     <Style TargetType="Button">
         <Setter Property="Foreground" Value="{StaticResource DzText}"/>
-        <Setter Property="Background" Value="{StaticResource DzInput}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource DzCyan}"/>
+        <Setter Property="Background" Value="{StaticResource DzPanelSolid}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DzBorder}"/>
         <Setter Property="Padding" Value="14,7"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -127,22 +128,21 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1.5"
-                            Padding="{TemplateBinding Padding}" Effect="{StaticResource DzGlowSoft}">
+                    <Border x:Name="Bd" CornerRadius="6" Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"
+                            Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource DzHover}"/>
-                            <Setter TargetName="Bd" Property="Effect" Value="{StaticResource DzGlowCyan}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzPurple}"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzMagenta}"/>
-                            <Setter TargetName="Bd" Property="Effect" Value="{StaticResource DzGlowMagenta}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource DzPurple}"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource DzBorder}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.45"/>
@@ -152,12 +152,38 @@
             </Setter.Value>
         </Setter>
     </Style>
+    <!-- Primary action: solid white with dark text (the one high-contrast element on screen). -->
     <Style x:Key="DzPrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
         <Setter Property="Background" Value="{StaticResource DzPrimaryButtonBg}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource DzMagenta}"/>
-        <Setter Property="FontSize" Value="15"/>
-        <Setter Property="FontWeight" Value="Bold"/>
-        <Setter Property="Padding" Value="22,10"/>
+        <Setter Property="Foreground" Value="{StaticResource DzPrimaryText}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DzPrimaryButtonBg}"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Padding" Value="22,9"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" CornerRadius="6" Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource DzPrimaryHover}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzPurple}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource DzCyan}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- ===== Text inputs ===================================================== -->
@@ -358,7 +384,6 @@
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource DzMagenta}"/>
-                            <Setter TargetName="Box" Property="Effect" Value="{StaticResource DzGlowMagenta}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.45"/>
@@ -397,7 +422,6 @@
                             <Setter TargetName="Ring" Property="Stroke" Value="{StaticResource DzMagenta}"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="Ring" Property="Effect" Value="{StaticResource DzGlowMagenta}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.45"/>
@@ -408,8 +432,8 @@
         </Setter>
     </Style>
 
-    <!-- Big selectable mode card (a RadioButton underneath, so arrows/Space work).
-         Hover: grows a little. Selected: magenta border plus a glow ring that slowly breathes. -->
+    <!-- Big selectable card (a RadioButton underneath, so arrows/Space work).
+         Hover: lighter border. Selected: white border and a slightly lighter surface. -->
     <Style x:Key="DzModeCard" TargetType="RadioButton">
         <Setter Property="Foreground" Value="{StaticResource DzText}"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -418,51 +442,19 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5">
-                        <Grid.RenderTransform>
-                            <ScaleTransform ScaleX="1" ScaleY="1"/>
-                        </Grid.RenderTransform>
-                        <Border x:Name="GlowRing" CornerRadius="12" BorderThickness="2" BorderBrush="{StaticResource DzMagenta}"
-                                Effect="{StaticResource DzGlowMagenta}" Opacity="0"/>
-                        <Border x:Name="Bd" CornerRadius="12" BorderThickness="2" Padding="12,14"
-                                BorderBrush="{StaticResource DzBorder}" Background="{StaticResource DzInput}">
-                            <ContentPresenter HorizontalAlignment="Center"/>
-                        </Border>
-                    </Grid>
+                    <Border x:Name="Bd" CornerRadius="8" BorderThickness="1" Padding="14,16"
+                            BorderBrush="{StaticResource DzBorder}" Background="{StaticResource DzInput}">
+                        <ContentPresenter HorizontalAlignment="Center"/>
+                    </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzPurple}"/>
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.04" Duration="0:0:0.15"/>
-                                        <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.04" Duration="0:0:0.15"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.2"/>
-                                        <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.2"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource DzHover}"/>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzMagenta}"/>
                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource DzSelectedCardBg}"/>
-                            <Trigger.EnterActions>
-                                <BeginStoryboard x:Name="Breathe">
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="GlowRing" Storyboard.TargetProperty="Opacity"
-                                                         From="0.35" To="1" Duration="0:0:1.4" AutoReverse="True" RepeatBehavior="Forever"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <StopStoryboard BeginStoryboardName="Breathe"/>
-                            </Trigger.ExitActions>
+                            <Setter TargetName="Bd" Property="Effect" Value="{StaticResource DzGlowCyan}"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzCyan}"/>
@@ -473,7 +465,7 @@
         </Setter>
     </Style>
 
-    <!-- ===== Slim neon scroll bars ============================================ -->
+    <!-- ===== Slim scroll bars ============================================ -->
     <Style x:Key="DzScrollThumbStyle" TargetType="Thumb">
         <Setter Property="Template">
             <Setter.Value>
@@ -523,22 +515,21 @@
         </Style.Triggers>
     </Style>
 
-    <!-- ===== Neon progress bar with a moving shine ============================ -->
+    <!-- ===== Thin progress bar with a faint moving sheen ======================= -->
     <Style TargetType="ProgressBar">
-        <Setter Property="Height" Value="14"/>
+        <Setter Property="Height" Value="6"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ProgressBar">
                     <Grid>
-                        <Border x:Name="PART_Track" CornerRadius="7" Background="{StaticResource DzInput}"
-                                BorderBrush="{StaticResource DzBorder}" BorderThickness="1"/>
-                        <Border x:Name="PART_Indicator" CornerRadius="7" HorizontalAlignment="Left" ClipToBounds="True"
-                                Background="{StaticResource DzNeonGradient}" Effect="{StaticResource DzGlowMagenta}">
+                        <Border x:Name="PART_Track" CornerRadius="3" Background="{StaticResource DzBorder}"/>
+                        <Border x:Name="PART_Indicator" CornerRadius="3" HorizontalAlignment="Left" ClipToBounds="True"
+                                Background="{StaticResource DzMagenta}">
                             <Rectangle x:Name="Shine" Width="90" HorizontalAlignment="Left" IsHitTestVisible="False">
                                 <Rectangle.Fill>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                                         <GradientStop Color="#00FFFFFF" Offset="0"/>
-                                        <GradientStop Color="#70FFFFFF" Offset="0.5"/>
+                                        <GradientStop Color="#40000000" Offset="0.5"/>
                                         <GradientStop Color="#00FFFFFF" Offset="1"/>
                                     </LinearGradientBrush>
                                 </Rectangle.Fill>
@@ -564,72 +555,17 @@
         </Setter>
     </Style>
 
-    <!-- ===== Animated synthwave header art: striped sun + scrolling neon floor ===== -->
-    <!-- Use with <ContentControl Template="{StaticResource DzHeaderArt}"/> behind a header. -->
+    <!-- Header background: a flat panel (the neon sun and grid of earlier versions are gone).
+         Use with <ContentControl Template="{StaticResource DzHeaderArt}"/> behind a header. -->
     <ControlTemplate x:Key="DzHeaderArt" TargetType="ContentControl">
-        <Grid ClipToBounds="True" IsHitTestVisible="False">
-            <Grid HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="170" Height="170" Margin="0,0,90,-70">
-                <Ellipse Fill="{StaticResource DzSunsetGradient}" Effect="{StaticResource DzGlowMagenta}">
-                    <Ellipse.OpacityMask>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Color="White" Offset="0"/>
-                            <GradientStop Color="White" Offset="0.30"/>
-                            <GradientStop Color="Transparent" Offset="0.30"/>
-                            <GradientStop Color="Transparent" Offset="0.33"/>
-                            <GradientStop Color="White" Offset="0.33"/>
-                            <GradientStop Color="White" Offset="0.38"/>
-                            <GradientStop Color="Transparent" Offset="0.38"/>
-                            <GradientStop Color="Transparent" Offset="0.42"/>
-                            <GradientStop Color="White" Offset="0.42"/>
-                            <GradientStop Color="White" Offset="0.47"/>
-                            <GradientStop Color="Transparent" Offset="0.47"/>
-                            <GradientStop Color="Transparent" Offset="0.53"/>
-                            <GradientStop Color="White" Offset="0.53"/>
-                            <GradientStop Color="White" Offset="1"/>
-                        </LinearGradientBrush>
-                    </Ellipse.OpacityMask>
-                </Ellipse>
-            </Grid>
-            <Grid VerticalAlignment="Bottom" Height="34" ClipToBounds="True">
-                <Grid.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#000B0620" Offset="0"/>
-                        <GradientStop Color="#552A0B45" Offset="1"/>
-                    </LinearGradientBrush>
-                </Grid.Background>
-                <Canvas x:Name="FloorLines">
-                    <Canvas.RenderTransform>
-                        <TranslateTransform Y="0"/>
-                    </Canvas.RenderTransform>
-                    <Canvas.Triggers>
-                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                                                     From="-9" To="0" Duration="0:0:0.7" RepeatBehavior="Forever"/>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-                    </Canvas.Triggers>
-                    <Rectangle Canvas.Top="0" Width="4000" Height="1" Fill="#55FF2BD6"/>
-                    <Rectangle Canvas.Top="9" Width="4000" Height="1" Fill="#66FF2BD6"/>
-                    <Rectangle Canvas.Top="18" Width="4000" Height="1" Fill="#88FF2BD6"/>
-                    <Rectangle Canvas.Top="27" Width="4000" Height="1" Fill="#AAFF2BD6"/>
-                    <Rectangle Canvas.Top="36" Width="4000" Height="1" Fill="#CCFF2BD6"/>
-                </Canvas>
-                <Viewbox Stretch="Fill">
-                    <Path Stroke="#5522E6FF" StrokeThickness="1.2"
-                          Data="M500,0 L-400,34 M500,0 L-200,34 M500,0 L0,34 M500,0 L200,34 M500,0 L400,34 M500,0 L600,34 M500,0 L800,34 M500,0 L1000,34 M500,0 L1200,34 M500,0 L1400,34"/>
-                </Viewbox>
-            </Grid>
-        </Grid>
+        <Border Background="{StaticResource DzBg}" IsHitTestVisible="False"/>
     </ControlTemplate>
 
     <!-- ===== ToolTip =========================================================== -->
     <Style TargetType="ToolTip">
         <Setter Property="Background" Value="{StaticResource DzPanelSolid}"/>
         <Setter Property="Foreground" Value="{StaticResource DzText}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource DzCyan}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DzBorder}"/>
         <Setter Property="Padding" Value="8,5"/>
     </Style>
 </ResourceDictionary>

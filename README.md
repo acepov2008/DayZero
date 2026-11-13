@@ -1,9 +1,9 @@
 # DayZero
 
 A USB stick that installs Windows and then sets the PC up for you: think **Ninite + an
-unattended Windows installer + a tweak tool**, in a neon synthwave GUI.
+unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 
-> **Status: v0.8.0, all six stages built.** 586 automated tests and static checks pass,
+> **Status: v0.9.0, all six stages built.** 591 automated tests and static checks pass,
 > including a complete dry run of every mode. **It has not run on real Windows yet**: the
 > GUI (WPF) and the Windows-only steps can only be tested on Windows. Do the VM test in
 > [TESTING.md](TESTING.md) before you use it on a real PC.
@@ -74,7 +74,7 @@ Everything is in editable JSON: `kit\config\modes.json`, `apps.json`, `office.js
 ## The wizard
 
 Mode picker (big animated cards; arrows or 1-4, Enter) → review (your PC, switches, app
-checkboxes) → progress (step list with ⏳ ✅ ❌, neon progress bar, live log on **L**) →
+checkboxes) → progress (step list with ○ ✓ ✕, thin progress bar, live log on **L**) →
 summary (activation status, **Retry failed steps**, download links, Finish). Restarts are
 announced with a countdown and the wizard picks up where it left off. You can pause, or close
 the window; it continues at the next sign-in.
@@ -193,7 +193,7 @@ kit\                      everything copied to the stick and then to C:\DayZero
   config\                 the JSON files that define modes, apps, tweaks, debloat, drivers, Office
   lib\                    modules: Core, State, Engine, Plan, System, Config, Winget, Office, Tweaks,
                           Debloat, Undo, WindowsUpdate, Drivers, Steps.* and Ui
-  ui\                     Theme.xaml (neon synthwave) and Wizard.xaml
+  ui\                     Theme.xaml (monochrome) and Wizard.xaml
 tests\                    Pester tests + static checks
 tools\                    Invoke-DzChecks.ps1, New-DzTestIso.ps1, Test-DzAppIds.ps1
 ```
