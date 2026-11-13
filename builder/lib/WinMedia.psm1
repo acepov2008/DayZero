@@ -371,7 +371,7 @@ function Select-DzEsdEdition {
 function New-DzMediaFromEsd {
     <#
         Unpacks a Microsoft .esd into $OutDir so it looks like the contents of a Windows ISO:
-        setup files, sources\boot.wim and sources\install.esd. Uses only DISM.
+        setup files, sources\boot.wim and sources\install.wim (or install.swm parts). Uses only DISM.
     #>
     [CmdletBinding()]
     param(
@@ -392,24 +392,28 @@ function New-DzMediaFromEsd {
     Invoke-DzDism -Tick $Tick -Activity 'Unpacking Windows PE' -Arguments ('/Export-Image /SourceImageFile:"{0}" /SourceIndex:{1} /DestinationImageFile:"{2}" /Compress:max /CheckIntegrity' -f $EsdPath, $plan.WinPE, $boot)
     Invoke-DzDism -Tick $Tick -Activity 'Unpacking Windows Setup' -Arguments ('/Export-Image /SourceImageFile:"{0}" /SourceIndex:{1} /DestinationImageFile:"{2}" /Compress:max /CheckIntegrity /Bootable' -f $EsdPath, $plan.Setup, $boot)
 
-    $install = Join-Path $sources 'install.esd'
-    foreach ($tier in @('standard', 'small')) {
-        $editions = @(Select-DzEsdEdition -Editions $plan.Editions -Tier $tier)
-        if ($editions.Count -eq 0) { continue }
-        if (Test-Path -LiteralPath $install) { Remove-Item -LiteralPath $install -Force }
-        $n = 0
-        foreach ($e in $editions) {
-            $n++
-            Invoke-DzDism -Tick $Tick -Activity ('Unpacking {0} ({1} of {2}; this is the slow part)' -f $e.Name, $n, $editions.Count) -Arguments ('/Export-Image /SourceImageFile:"{0}" /SourceIndex:{1} /DestinationImageFile:"{2}" /Compress:recovery' -f $EsdPath, $e.Index, $install)
-        }
-        $size = (Get-Item -LiteralPath $install).Length
-        if ($size -le $script:Fat32MaxFile) {
-            if ($Log) { & $Log ('Editions on the stick: {0} (install.esd is {1:N1} GB).' -f (($editions | ForEach-Object { $_.Name -replace '^Windows 1[01] ', '' }) -join ', '), ($size / 1GB)) }
-            return $OutDir
-        }
-        if ($Log) { & $Log ('{0} editions make a {1:N1} GB file, too big for a FAT32 stick; trying fewer editions.' -f $editions.Count, ($size / 1GB)) }
+    # The editions go into install.wim. Microsoft's current images are larger than the 4 GB a
+    # FAT32 stick allows per file (even as .esd with only Home and Pro), so a big install.wim
+    # is split into install.swm parts, which Windows Setup reads natively.
+    $install = Join-Path $sources 'install.wim'
+    $editions = @(Select-DzEsdEdition -Editions $plan.Editions -Tier standard)
+    if ($editions.Count -eq 0) { throw 'The download contains no Windows editions.' }
+    $n = 0
+    foreach ($e in $editions) {
+        $n++
+        Invoke-DzDism -Tick $Tick -Activity ('Unpacking {0} ({1} of {2}; this is the slow part)' -f $e.Name, $n, $editions.Count) -Arguments ('/Export-Image /SourceImageFile:"{0}" /SourceIndex:{1} /DestinationImageFile:"{2}" /Compress:max /CheckIntegrity' -f $EsdPath, $e.Index, $install)
     }
-    throw 'The Windows image does not fit the 4 GB file limit of a FAT32 USB stick, even with only Home and Pro.'
+    $size = (Get-Item -LiteralPath $install).Length
+    $names = ($editions | ForEach-Object { $_.Name -replace '^Windows 1[01] ', '' }) -join ', '
+    if ($size -gt $script:Fat32MaxFile) {
+        $swm = Join-Path $sources 'install.swm'
+        Invoke-DzDism -Tick $Tick -Activity 'Splitting the Windows image for the USB stick' -Arguments ('/Split-Image /ImageFile:"{0}" /SWMFile:"{1}" /FileSize:3800' -f $install, $swm)
+        if (-not (Test-Path -LiteralPath $swm)) { throw 'Splitting the Windows image produced no install.swm.' }
+        Remove-Item -LiteralPath $install -Force
+        if ($Log) { & $Log ('Editions on the stick: {0} ({1:N1} GB, split into install.swm parts).' -f $names, ($size / 1GB)) }
+    }
+    elseif ($Log) { & $Log ('Editions on the stick: {0} (install.wim is {1:N1} GB).' -f $names, ($size / 1GB)) }
+    return $OutDir
 }
 
 function Get-DzPreparedMedia {
@@ -426,7 +430,7 @@ function Get-DzPreparedMedia {
     $filter = if ($Sha1) { $prefix + $Sha1.Substring(0, 10) + '.ready.json' } else { $prefix + '*.ready.json' }
     foreach ($marker in @(Get-ChildItem -LiteralPath $CacheRoot -Filter $filter -File -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)) {
         $dir = Join-Path $CacheRoot ($marker.Name -replace '\.ready\.json$', '')
-        if (Test-Path -LiteralPath (Join-Path $dir 'sources\install.esd')) {
+        if (Find-DzInstallImage -Root $dir) {
             $info = $null
             try { $info = Get-Content -LiteralPath $marker.FullName -Raw | ConvertFrom-Json } catch { Write-Verbose 'Unreadable cache marker.' }
             return [pscustomobject]@{ Path = $dir; Marker = $marker.FullName; Info = $info }
@@ -475,7 +479,7 @@ function Get-DzWindowsMediaTree {
     $name = ('win{0}-{1}-x64-{2}' -f $WindowsVersion, $Language.ToLowerInvariant(), $entry.Sha1.Substring(0, 10))
     $dir = Join-Path $CacheRoot $name
     $esd = Join-Path $CacheRoot ($name + '.esd')
-    $need = [int64]($entry.Size * 2.3)
+    $need = [int64]($entry.Size * 4)
     $drive = Get-CimInstance -ClassName Win32_LogicalDisk -Filter ("DeviceID = '{0}'" -f ([System.IO.Path]::GetPathRoot($CacheRoot).TrimEnd('\'))) -ErrorAction SilentlyContinue
     if ($drive -and [int64]$drive.FreeSpace -lt $need) {
         throw ('Not enough free space on {0} to prepare Windows: {1:N0} GB needed, {2:N0} GB free.' -f $drive.DeviceID, ($need / 1GB), ($drive.FreeSpace / 1GB))
@@ -603,6 +607,31 @@ function Get-DzUsbPartitionSize {
     $mb = [math]::Floor(([double]$DiskBytes) / 1MB) - 64
     if ($mb -gt 32000) { $mb = 32000 }
     return [int]$mb
+}
+
+function Get-DzMediaFitProblem {
+    <# Problem text when Windows (plus room for the toolkit) does not fit the stick; $null when it does. #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory = $true)][double]$MediaBytes,
+        [Parameter(Mandatory = $true)][int64]$DiskBytes
+    )
+    $room = ([double](Get-DzUsbPartitionSize -DiskBytes $DiskBytes)) * 1MB
+    $need = $MediaBytes + 400MB
+    if ($need -gt $room) {
+        return ('This Windows needs {0:N1} GB on the stick, but the stick only holds {1:N1} GB. Use a 16 GB (or larger) stick.' -f ($need / 1GB), ($room / 1GB))
+    }
+    return $null
+}
+
+function Get-DzFolderSize {
+    [CmdletBinding()]
+    [OutputType([double])]
+    param([Parameter(Mandatory = $true)][string]$Path)
+    $total = [double]0
+    foreach ($f in @(Get-ChildItem -LiteralPath $Path -Recurse -File -Force -ErrorAction SilentlyContinue)) { $total += $f.Length }
+    return $total
 }
 
 function Initialize-DzUsbDisk {
@@ -791,6 +820,6 @@ Export-ModuleMember -Function @(
     'ConvertFrom-DzProductsXml', 'Test-DzWindowsDownloadEntry', 'Select-DzWindowsDownload', 'Find-DzCatalogXml', 'Get-DzWindowsCatalog',
     'Get-DzFileSha1', 'Save-DzLargeFile', 'Get-DzEsdImagePlan', 'Select-DzEsdEdition', 'New-DzMediaFromEsd',
     'Get-DzPreparedMedia', 'Get-DzWindowsMediaTree', 'Test-DzUsbDiskAllowed', 'Get-DzUsbDiskCandidate',
-    'New-DzDiskpartScript', 'Get-DzUsbPartitionSize', 'Initialize-DzUsbDisk', 'ConvertTo-DzRobocopyPath', 'Copy-DzMediaTree',
+    'New-DzDiskpartScript', 'Get-DzUsbPartitionSize', 'Get-DzMediaFitProblem', 'Get-DzFolderSize', 'Initialize-DzUsbDisk', 'ConvertTo-DzRobocopyPath', 'Copy-DzMediaTree',
     'Invoke-DzWithMountedIso', 'Find-DzInstallImage', 'Copy-DzIsoToUsb', 'Set-DzUsbBootSector'
 )

@@ -55,7 +55,7 @@ it. This part cannot be tested in the automated checks. Use a stick with nothing
 - [ ] Unplug the network during the download: it waits and continues when you reconnect.
       If it fails, **the stick has not been erased yet**.
 - [ ] Afterwards the stick is FAT32, labelled DAYZERO, and has `setup.exe`, `sources\boot.wim`,
-      `sources\install.esd` (under 4 GB), `autounattend.xml` and `DayZero\`.
+      `sources\install.swm` + `install2.swm` (each under 4 GB), `autounattend.xml` and `DayZero\`.
 - [ ] Make a second stick: no download this time ("prepared earlier"), only a few minutes.
 - [ ] **ISO file:** pick a Windows 11 ISO from Microsoft. The hint shows its build, language and
       editions. The stick gets `sources\install.swm` and `install2.swm` instead of `install.wim`.

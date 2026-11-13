@@ -212,6 +212,24 @@ Describe 'diskpart script' {
     }
 }
 
+Describe 'Does Windows fit the stick' {
+    It 'accepts a 16 GB stick and refuses an 8 GB one for a 7.3 GB Windows' {
+        Get-DzMediaFitProblem -MediaBytes 7.3GB -DiskBytes 16000000000 | Should -BeNullOrEmpty
+        Get-DzMediaFitProblem -MediaBytes 7.3GB -DiskBytes 8000000000 | Should -Match '16 GB'
+    }
+    It 'accepts an 8 GB stick for a 5 GB Windows and handles sizes over 2 GB without overflow' {
+        Get-DzMediaFitProblem -MediaBytes 5GB -DiskBytes 8000000000 | Should -BeNullOrEmpty
+        Get-DzMediaFitProblem -MediaBytes 4529505309 -DiskBytes 256000000000 | Should -BeNullOrEmpty
+    }
+    It 'adds up a folder' {
+        $d = Join-Path $TestDrive 'size'
+        [void](New-Item -ItemType Directory -Path (Join-Path $d 'sub') -Force)
+        Set-Content -LiteralPath (Join-Path $d 'a.txt') -Value 'abc' -NoNewline
+        Set-Content -LiteralPath (Join-Path $d 'sub/b.txt') -Value 'defgh' -NoNewline
+        Get-DzFolderSize -Path $d | Should -Be 8
+    }
+}
+
 Describe 'robocopy paths' {
     It 'passes a drive root bare (a quoted E:\ would swallow the closing quote)' {
         ConvertTo-DzRobocopyPath -Path 'E:\' | Should -Be 'E:\'
@@ -261,6 +279,11 @@ Describe 'Safety of the media module' {
         foreach ($m in [regex]::Matches($script:Source, '\[math\]::(Max|Min)\(([^,]+),')) {
             $m.Groups[2].Value | Should -Match '^\[double\]' -Because $m.Value
         }
+    }
+    It 'splits a Windows image that is too big for FAT32 instead of giving up' {
+        $body = [regex]::Match($script:Source, '(?s)function New-DzMediaFromEsd \{.*?\n\}\r?\n').Value
+        $body | Should -Match '/Split-Image'
+        $body | Should -Not -Match 'does not fit'
     }
     It 'checks size and SHA-1 before unpacking a download' {
         $body = [regex]::Match($script:Source, '(?s)function Get-DzWindowsMediaTree \{.*?\n\}\r?\n').Value

@@ -10,7 +10,7 @@ unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 
 ## How it works
 
-1. **Run the DayZero Builder** on any Windows PC and plug in an empty USB stick (8 GB or more).
+1. **Run the DayZero Builder** on any Windows PC and plug in an empty USB stick (16 GB recommended).
 2. **Choose your settings and press CREATE WINDOWS USB.** The builder downloads Windows 10 or
    11 from Microsoft (or uses an ISO file you have), erases the stick, puts Windows on it and
    adds `autounattend.xml` (the answer file Windows Setup reads by itself) and the `DayZero\`
@@ -22,7 +22,7 @@ unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 
 ## Quick start
 
-1. Plug in a USB stick of 8 GB or more. **It will be erased.**
+1. Plug in a USB stick, 16 GB recommended (the builder says so before erasing if yours is too small). **It will be erased.**
 2. Get DayZero: in GitHub Desktop **Clone** `acepov2008/DayZero`, or on GitHub use
    **Code > Download ZIP** (then right-click the ZIP > **Properties** > tick **Unblock** before extracting).
 3. Double-click **`Build-DayZeroUSB.cmd`** and accept the admin prompt.
@@ -36,7 +36,8 @@ unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 
 * **Download (default).** The builder reads the same catalogue as Microsoft's Media Creation
   Tool, downloads that Windows image from `dl.delivery.mp.microsoft.com`, checks its size and
-  SHA-1 against the catalogue and unpacks it with DISM. The result is kept in
+  SHA-1 against the catalogue and unpacks it with DISM (the Windows image is split into
+  `install.swm` parts, because it is larger than the 4 GB a FAT32 stick allows per file). The result is kept in
   `%LOCALAPPDATA%\DayZero\media` (about 5 GB per Windows version and language; delete the
   folder to get the space back). Windows itself is never stored in this repository.
 * **ISO file.** Pick a Windows ISO you downloaded from Microsoft. An `install.wim` over 4 GB

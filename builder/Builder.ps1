@@ -786,6 +786,10 @@ function Invoke-Write {
             if ($data.Source -eq 'download') {
                 $tree = Get-DzWindowsMediaTree -WindowsVersion ([int]$data.Settings.windowsVersion) -Language $data.Options.UILanguage -Tick $tick -Log $log
             }
+            if ($tree) {
+                $fit = Get-DzMediaFitProblem -MediaBytes (Get-DzFolderSize -Path $tree) -DiskBytes $data.UsbDisk.Size
+                if ($fit) { throw $fit }
+            }
             $erased = $true
             $data.Target = Initialize-DzUsbDisk -Disk $data.UsbDisk -Tick $tick -Log $log
             if ($tree) { Copy-DzMediaTree -Source $tree -TargetRoot $data.Target -Tick $tick }
