@@ -109,13 +109,24 @@ function Get-DzFreeDriveLetter {
 }
 
 function Select-DzEditionIndex {
-    <# The image index of plain Windows 11 Home or Pro in a list of images (Index + Name), or 0. #>
+    <#
+        The image index of plain Windows 11 Home or Pro in a list of images (Index, Name,
+        EditionId), or 0. Matches the EditionId (Core / Professional) so it works for Windows
+        in any language; falls back to the English name when no EditionId is known.
+    #>
     [CmdletBinding()]
     [OutputType([int])]
     param(
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$Images,
         [Parameter(Mandatory = $true)][ValidateSet('home', 'pro')][string]$Edition
     )
+    $id = if ($Edition -eq 'home') { 'Core' } else { 'Professional' }
+    $withId = @($Images | Where-Object { $_.PSObject.Properties['EditionId'] -and [string]$_.EditionId })
+    if ($withId.Count -gt 0) {
+        $hit = @($withId | Where-Object { [string]$_.EditionId -ieq $id }) | Select-Object -First 1
+        if ($hit) { return [int]$hit.Index }
+        return 0
+    }
     $name = if ($Edition -eq 'home') { 'Windows 11 Home' } else { 'Windows 11 Pro' }
     $hit = @($Images | Where-Object { [string]$_.Name -ceq $name }) | Select-Object -First 1
     if ($hit) { return [int]$hit.Index }
@@ -215,9 +226,18 @@ function New-DzTiny11Iso {
     )
     $image = Find-DzInstallImage -Root $MediaRoot
     if (-not $image) { throw 'No Windows image (sources\install.wim, .esd or .swm) in the Windows files.' }
-    $images = @(Get-WindowsImage -ImagePath $image -ErrorAction Stop | ForEach-Object { [pscustomobject]@{ Index = $_.ImageIndex; Name = $_.ImageName } })
+    $images = @(Get-WindowsImage -ImagePath $image -ErrorAction Stop | ForEach-Object {
+            $editionId = ''
+            try { $editionId = [string](Get-WindowsImage -ImagePath $image -Index $_.ImageIndex -ErrorAction Stop).EditionId } catch { $editionId = '' }
+            [pscustomobject]@{ Index = $_.ImageIndex; Name = $_.ImageName; EditionId = $editionId }
+        })
     $index = Select-DzEditionIndex -Images $images -Edition $Edition
-    if ($index -le 0) { throw "These Windows files have no plain Windows 11 $Edition edition, which tiny11 needs." }
+    if ($index -le 0) {
+        $found = ($images | ForEach-Object { '{0} [{1}]' -f $_.Name, $_.EditionId }) -join ', '
+        if ($Log) { & $Log "Editions in these Windows files: $found" }
+        throw "These Windows files have no plain Windows 11 $Edition edition, which tiny11 needs."
+    }
+    if ($Log) { & $Log ("tiny11 will be made from image {0}: {1} [{2}]" -f $index, ($images | Where-Object { $_.Index -eq $index }).Name, ($images | Where-Object { $_.Index -eq $index }).EditionId) }
 
     $drive = Get-CimInstance -ClassName Win32_LogicalDisk -Filter ("DeviceID = '{0}'" -f ([System.IO.Path]::GetPathRoot($WorkDir).TrimEnd('\'))) -ErrorAction SilentlyContinue
     if ($drive -and [int64]$drive.FreeSpace -lt 25GB) {

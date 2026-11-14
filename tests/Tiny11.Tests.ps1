@@ -71,6 +71,27 @@ Describe 'tiny11 choices' {
         Select-DzEditionIndex -Images @($images | Where-Object { $_.Index -ne 6 }) -Edition pro | Should -Be 0
         Select-DzEditionIndex -Images @() -Edition home | Should -Be 0
     }
+    It 'finds Home and Pro by edition id on Windows in another language' {
+        # A Russian image: only "Pro" keeps its English name.
+        $h = 'Windows 11 ' + [string][char]0x0414 + [string][char]0x043E + [string][char]0x043C
+        $images = @(
+            [pscustomobject]@{ Index = 1; Name = $h; EditionId = 'Core' },
+            [pscustomobject]@{ Index = 2; Name = "$h 1"; EditionId = 'CoreSingleLanguage' },
+            [pscustomobject]@{ Index = 3; Name = "$h 2"; EditionId = 'Education' },
+            [pscustomobject]@{ Index = 4; Name = 'Windows 11 Pro'; EditionId = 'Professional' }
+        )
+        Select-DzEditionIndex -Images $images -Edition home | Should -Be 1
+        Select-DzEditionIndex -Images $images -Edition pro | Should -Be 4
+        Select-DzEditionIndex -Images @($images | Where-Object { $_.Index -ne 1 }) -Edition home | Should -Be 0
+    }
+    It 'does not mistake Home N, Home Single Language or Pro N for Home or Pro' {
+        $images = @(
+            [pscustomobject]@{ Index = 1; Name = 'a'; EditionId = 'CoreN' }, [pscustomobject]@{ Index = 2; Name = 'b'; EditionId = 'CoreSingleLanguage' },
+            [pscustomobject]@{ Index = 3; Name = 'c'; EditionId = 'ProfessionalN' }, [pscustomobject]@{ Index = 4; Name = 'd'; EditionId = 'ProfessionalWorkstation' }
+        )
+        Select-DzEditionIndex -Images $images -Edition home | Should -Be 0
+        Select-DzEditionIndex -Images $images -Edition pro | Should -Be 0
+    }
     It 'says what tiny11 changes, including that Update and Defender stay and Undo cannot revert it' {
         $text = (Get-DzTiny11Summary) -join ' '
         $text | Should -Match 'Edge'
@@ -95,6 +116,27 @@ Describe 'Builder choices follow tiny11' {
     }
     It 'counts tiny11 only when a new stick is being made' {
         [regex]::Match($script:Builder, '(?s)function Test-Tiny11Picked \{.*?\n\}').Value | Should -Match "Get-TargetKind\) -eq 'newusb'"
+    }
+}
+
+Describe 'Editions on media in another language (builder check for Home / Pro)' {
+    BeforeAll { Import-Module (Join-Path $script:Repo 'builder/lib/Media.psm1') -Force }
+    It 'recognises Home and Pro by edition id, whatever the edition is called' {
+        $ru = @(
+            [pscustomobject]@{ Index = 1; Name = 'Windows 11 X'; EditionId = 'Core' },
+            [pscustomobject]@{ Index = 2; Name = 'Windows 11 Y'; EditionId = 'CoreSingleLanguage' },
+            [pscustomobject]@{ Index = 3; Name = 'Windows 11 Pro'; EditionId = 'Professional' }
+        )
+        Test-DzMediaHasEdition -Editions $ru -Edition home | Should -BeTrue
+        Test-DzMediaHasEdition -Editions $ru -Edition pro | Should -BeTrue
+        Test-DzMediaHasEdition -Editions @($ru | Where-Object { $_.Index -ne 1 }) -Edition home | Should -BeFalse
+        Get-DzEditionIndex -Editions $ru -Edition pro | Should -Be 3
+    }
+    It 'still works from English names when no edition id is known' {
+        $en = @([pscustomobject]@{ Index = 1; Name = 'Windows 10 Home' }, [pscustomobject]@{ Index = 2; Name = 'Windows 10 Home N' }, [pscustomobject]@{ Index = 3; Name = 'Windows 10 Pro' })
+        Test-DzMediaHasEdition -Editions $en -Edition home | Should -BeTrue
+        Get-DzEditionIndex -Editions $en -Edition pro | Should -Be 3
+        Test-DzMediaHasEdition -Editions @($en | Where-Object { $_.Index -eq 2 }) -Edition home | Should -BeFalse
     }
 }
 

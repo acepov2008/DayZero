@@ -80,7 +80,13 @@ function Get-DzMediaInfo {
     try {
         $images = @(Get-WindowsImage -ImagePath $ImagePath -ErrorAction Stop)
         if ($images.Count -eq 0) { throw 'The image file lists no Windows editions.' }
-        $result.Editions = @($images | ForEach-Object { [pscustomobject]@{ Index = $_.ImageIndex; Name = $_.ImageName } })
+        # EditionId (Core, Professional...) is the same in every language; the name is not
+        # ("Windows 11 Home" is "Windows 11 <translated>" on a Russian or German image).
+        $result.Editions = @($images | ForEach-Object {
+                $editionId = ''
+                try { $editionId = [string](Get-WindowsImage -ImagePath $ImagePath -Index $_.ImageIndex -ErrorAction Stop).EditionId } catch { $editionId = '' }
+                [pscustomobject]@{ Index = $_.ImageIndex; Name = $_.ImageName; EditionId = $editionId }
+            })
 
         $detail = Get-WindowsImage -ImagePath $ImagePath -Index $images[0].ImageIndex -ErrorAction Stop
         $result.Version = [string]$detail.Version
@@ -105,6 +111,32 @@ function Get-DzMediaInfo {
     return [pscustomobject]$result
 }
 
+function Get-DzEditionIndex {
+    <#
+        Image index of plain Home or Pro in a list of editions (Index, Name, optional
+        EditionId), or 0 when it is not there. Uses the EditionId (Core / Professional), which
+        does not depend on the language of the image; the English name is only a fallback
+        for lists that carry no EditionId.
+    #>
+    [CmdletBinding()]
+    [OutputType([int])]
+    param(
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$Editions,
+        [Parameter(Mandatory = $true)][ValidateSet('home', 'pro')][string]$Edition
+    )
+    $id = if ($Edition -eq 'home') { 'Core' } else { 'Professional' }
+    $pattern = if ($Edition -eq 'home') { '^Windows 1[01] Home$' } else { '^Windows 1[01] Pro$' }
+    $withId = @($Editions | Where-Object { $_.PSObject.Properties['EditionId'] -and [string]$_.EditionId })
+    if ($withId.Count -gt 0) {
+        $hit = @($withId | Where-Object { [string]$_.EditionId -ieq $id }) | Select-Object -First 1
+        if ($hit) { return [int]$hit.Index }
+        return 0
+    }
+    $hit = @($Editions | Where-Object { [string]$_.Name -match $pattern }) | Select-Object -First 1
+    if ($hit) { return [int]$hit.Index }
+    return 0
+}
+
 function Test-DzMediaHasEdition {
     <# True when the media contains plain Home / plain Pro (not N, Education, Single Language...). #>
     [CmdletBinding()]
@@ -113,9 +145,7 @@ function Test-DzMediaHasEdition {
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$Editions,
         [Parameter(Mandatory = $true)][ValidateSet('home', 'pro')][string]$Edition
     )
-    $pattern = if ($Edition -eq 'home') { '^Windows 1[01] Home$' } else { '^Windows 1[01] Pro$' }
-    foreach ($e in $Editions) { if ([string]$e.Name -match $pattern) { return $true } }
-    return $false
+    return ((Get-DzEditionIndex -Editions $Editions -Edition $Edition) -gt 0)
 }
 
 function Get-DzThisPcFirmwareEdition {
@@ -144,5 +174,5 @@ function Get-DzThisPcFirmwareEdition {
 
 Export-ModuleMember -Function @(
     'Get-DzInstallMediaCandidate', 'ConvertTo-DzArchitectureName', 'Get-DzMediaInfo',
-    'Test-DzMediaHasEdition', 'Get-DzThisPcFirmwareEdition'
+    'Get-DzEditionIndex', 'Test-DzMediaHasEdition', 'Get-DzThisPcFirmwareEdition'
 )

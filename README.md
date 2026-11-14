@@ -3,7 +3,7 @@
 A USB stick that installs Windows and then sets the PC up for you: think **Ninite + an
 unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 
-> **Status: v0.13.0, all six stages built.** 1,076 automated tests and static checks cover it,
+> **Status: v0.13.0, all six stages built.** 1,080 automated tests and static checks cover it,
 > including a complete dry run of every mode. **It has not run on real Windows yet**: the
 > GUI (WPF) and the Windows-only steps can only be tested on Windows. Do the VM test in
 > [TESTING.md](TESTING.md) before you use it on a real PC.
