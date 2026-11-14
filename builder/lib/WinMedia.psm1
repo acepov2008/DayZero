@@ -788,6 +788,18 @@ function Stop-DzStaleCopy {
     }
 }
 
+function Get-DzDiskStatusText {
+    <# One line about a disk as Windows sees it right now, for the log when formatting fails. #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory = $true)][int]$Number)
+    try {
+        $d = Get-Disk -Number $Number -ErrorAction Stop
+        return ('disk {0}: status {1}, health {2}, partition style {3}, offline {4}, read-only {5}, {6:N1} GB, bus {7}' -f $Number, (@($d.OperationalStatus) -join '/'), $d.HealthStatus, $d.PartitionStyle, $d.IsOffline, $d.IsReadOnly, ($d.Size / 1GB), $d.BusType)
+    }
+    catch { return ("disk {0}: Windows cannot read its state ({1})" -f $Number, $_.Exception.Message) }
+}
+
 function Initialize-DzUsbDisk {
     <#
     .SYNOPSIS
@@ -821,12 +833,17 @@ function Initialize-DzUsbDisk {
                 throw 'The drives changed while formatting. Press Refresh and pick the USB stick again.'
             }
             Stop-DzStaleCopy -Letter $cur.Letters -Log $Log
+            if ($Log) { & $Log ('Before formatting, attempt {0}: {1}' -f $attempt, (Get-DzDiskStatusText -Number $cur.Number)) }
             $commands = New-DzDiskpartScript -DiskNumber $cur.Number -PartitionMB (Get-DzUsbPartitionSize -DiskBytes $cur.Size) -Label $script:UsbLabel
             [System.IO.File]::WriteAllText($file, $commands, [System.Text.Encoding]::ASCII)
             $r = Invoke-DzProcess -FilePath (Join-Path $env:SystemRoot 'System32\diskpart.exe') -Arguments ('/s "{0}"' -f $file) -Activity 'Erasing and formatting the USB stick' -Tick $Tick
             if ($r.ExitCode -eq 0) { $failure = $null; break }
             $failure = "diskpart exit code $($r.ExitCode): $((@($r.Output -split "`r?`n") | Select-Object -Last 3) -join ' ')"
-            if ($Log) { & $Log "Formatting attempt $attempt failed ($failure)." }
+            if ($Log) {
+                & $Log "Formatting attempt $attempt failed ($failure)."
+                & $Log ('diskpart said: ' + (($r.Output -split "`r?`n" | Where-Object { $_.Trim() }) -join ' | '))
+                & $Log ('After the failure: ' + (Get-DzDiskStatusText -Number $cur.Number))
+            }
             # "Access is denied" usually clears by itself: the failed clean has already made Windows
             # let go of the stick, so a second try a few seconds later goes through.
             for ($w = 0; $w -lt 10 -and $attempt -lt 3; $w++) { Invoke-DzTick -Tick $Tick -Text 'Erasing and formatting the USB stick (trying again)'; Start-Sleep -Milliseconds 500 }
@@ -1036,6 +1053,6 @@ Export-ModuleMember -Function @(
     'ConvertFrom-DzProductsXml', 'Test-DzWindowsDownloadEntry', 'Select-DzWindowsDownload', 'Find-DzCatalogXml', 'Get-DzWindowsCatalog',
     'Get-DzFileSha1', 'Save-DzLargeFile', 'Get-DzEsdImagePlan', 'Select-DzEsdEdition', 'New-DzMediaFromEsd',
     'Get-DzPreparedMedia', 'Get-DzMediaCacheItem', 'Remove-DzMediaCacheItem', 'Get-DzWindowsMediaTree', 'Test-DzUsbDiskAllowed', 'Get-DzUsbDiskCandidate',
-    'New-DzDiskpartScript', 'Get-DzUsbPartitionSize', 'Get-DzMediaFitProblem', 'Get-DzFolderSize', 'Initialize-DzUsbDisk', 'ConvertTo-DzRobocopyPath', 'Update-DzCopyState', 'Get-DzCopyStateBytes', 'Copy-DzMediaTree',
+    'New-DzDiskpartScript', 'Get-DzUsbPartitionSize', 'Get-DzMediaFitProblem', 'Get-DzFolderSize', 'Get-DzDiskStatusText', 'Initialize-DzUsbDisk', 'ConvertTo-DzRobocopyPath', 'Update-DzCopyState', 'Get-DzCopyStateBytes', 'Copy-DzMediaTree',
     'Invoke-DzWithMountedIso', 'Find-DzInstallImage', 'Copy-DzIsoToUsb', 'Set-DzUsbBootSector'
 )
