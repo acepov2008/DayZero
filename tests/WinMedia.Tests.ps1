@@ -237,22 +237,10 @@ Describe 'diskpart script' {
         $lines | Should -Contain 'format fs=fat32 quick label=DAYZERO'
         $lines[-1] | Should -Be 'exit'
     }
-    It 'dismounts the stick volumes first, so an open Explorer window cannot block the erase' {
-        $lines = @((New-DzDiskpartScript -DiskNumber 2 -PartitionMB 14000 -Letter @('e', 'F')) -split "`r`n" | Where-Object { $_ })
-        $lines[0..3] | Should -Be @('select volume E', 'remove all dismount noerr', 'select volume F', 'remove all dismount noerr')
-        $lines[4] | Should -Be 'select disk 2'
-        $lines[5] | Should -Be 'clean'
-        @($lines | Where-Object { $_ -eq 'clean' }).Count | Should -Be 1
-    }
-    It 'never dismounts the system drive and rejects anything that is not a single letter' {
-        $old = $env:SystemDrive
-        try {
-            $env:SystemDrive = 'C:'
-            { New-DzDiskpartScript -DiskNumber 2 -PartitionMB 14000 -Letter @('c') } | Should -Throw '*Windows is running*'
-        }
-        finally { $env:SystemDrive = $old }
-        { New-DzDiskpartScript -DiskNumber 2 -PartitionMB 14000 -Letter @('E:') } | Should -Throw
-        { New-DzDiskpartScript -DiskNumber 2 -PartitionMB 14000 -Letter @("E`r`nselect disk 0") } | Should -Throw
+    It 'does not dismount or eject the stick before erasing it (that leaves it "not ready")' {
+        $script = New-DzDiskpartScript -DiskNumber 2 -PartitionMB 14000
+        $script | Should -Not -Match '(?i)dismount|remove|select volume|offline'
+        { New-DzDiskpartScript -DiskNumber 2 -PartitionMB 14000 -Letter @('E') } | Should -Throw
     }
     It 'uses CRLF line endings and plain ASCII' {
         $s = New-DzDiskpartScript -DiskNumber 1 -PartitionMB 8000

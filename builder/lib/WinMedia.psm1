@@ -714,18 +714,11 @@ function New-DzDiskpartScript {
     param(
         [Parameter(Mandatory = $true)][ValidateRange(0, 99)][int]$DiskNumber,
         [Parameter(Mandatory = $true)][ValidateRange(7000, 32000)][int]$PartitionMB,
-        [ValidatePattern('^[A-Z0-9]{1,11}$')][string]$Label = 'DAYZERO',
-        # Drive letters currently on that disk: their volumes are dismounted first, otherwise
-        # "clean" fails with "Access is denied" when Explorer or a scanner has the stick open.
-        [ValidatePattern('^[A-Za-z]$')][string[]]$Letter = @()
+        [ValidatePattern('^[A-Z0-9]{1,11}$')][string]$Label = 'DAYZERO'
     )
-    $lines = @()
-    foreach ($l in $Letter) {
-        if ($env:SystemDrive -and $l -ieq $env:SystemDrive.Substring(0, 1)) { throw 'Refusing to dismount the drive Windows is running from.' }
-        $lines += "select volume $($l.ToUpperInvariant())"
-        $lines += 'remove all dismount noerr'
-    }
-    $lines += @(
+    # No "remove ... dismount" before "clean": on a removable stick that works like Eject, and
+    # the stick then answers "The device is not ready" until it is unplugged and plugged in again.
+    $lines = @(
         "select disk $DiskNumber",
         'clean',
         'convert mbr noerr',
@@ -828,20 +821,22 @@ function Initialize-DzUsbDisk {
                 throw 'The drives changed while formatting. Press Refresh and pick the USB stick again.'
             }
             Stop-DzStaleCopy -Letter $cur.Letters -Log $Log
-            $commands = New-DzDiskpartScript -DiskNumber $cur.Number -PartitionMB (Get-DzUsbPartitionSize -DiskBytes $cur.Size) -Label $script:UsbLabel -Letter $cur.Letters
+            $commands = New-DzDiskpartScript -DiskNumber $cur.Number -PartitionMB (Get-DzUsbPartitionSize -DiskBytes $cur.Size) -Label $script:UsbLabel
             [System.IO.File]::WriteAllText($file, $commands, [System.Text.Encoding]::ASCII)
             $r = Invoke-DzProcess -FilePath (Join-Path $env:SystemRoot 'System32\diskpart.exe') -Arguments ('/s "{0}"' -f $file) -Activity 'Erasing and formatting the USB stick' -Tick $Tick
             if ($r.ExitCode -eq 0) { $failure = $null; break }
             $failure = "diskpart exit code $($r.ExitCode): $((@($r.Output -split "`r?`n") | Select-Object -Last 3) -join ' ')"
             if ($Log) { & $Log "Formatting attempt $attempt failed ($failure)." }
-            for ($w = 0; $w -lt 6 -and $attempt -lt 3; $w++) { Invoke-DzTick -Tick $Tick -Text 'Erasing and formatting the USB stick (trying again)'; Start-Sleep -Milliseconds 500 }
+            # "Access is denied" usually clears by itself: the failed clean has already made Windows
+            # let go of the stick, so a second try a few seconds later goes through.
+            for ($w = 0; $w -lt 10 -and $attempt -lt 3; $w++) { Invoke-DzTick -Tick $Tick -Text 'Erasing and formatting the USB stick (trying again)'; Start-Sleep -Milliseconds 500 }
         }
     }
     finally {
         Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue
     }
     if ($failure) {
-        throw "Formatting the USB stick failed ($failure) Something is still using the stick: close every File Explorer window that shows it, wait a few seconds and try again. If that does not help, unplug the stick, plug it back in and press Refresh."
+        throw "Formatting the USB stick failed ($failure) Unplug the stick, plug it back in, press Refresh and try again. If it says access is denied, also close every File Explorer window that shows the stick."
     }
 
     $letter = $null

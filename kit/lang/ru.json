@@ -1304,8 +1304,8 @@
       "Он больше 300 ГБ и похож на внешний жёсткий диск, а не на флешку."
     ],
     [
-      "Formatting the USB stick failed ({0}) Something is still using the stick: close every File Explorer window that shows it, wait a few seconds and try again. If that does not help, unplug the stick, plug it back in and press Refresh.",
-      "Не удалось отформатировать флешку ({0}) Флешку всё ещё что-то использует: закройте все окна Проводника с ней, подождите несколько секунд и попробуйте снова. Если не поможет, выньте флешку, вставьте обратно и нажмите «Обновить»."
+      "Formatting the USB stick failed ({0}) Unplug the stick, plug it back in, press Refresh and try again. If it says access is denied, also close every File Explorer window that shows the stick.",
+      "Не удалось отформатировать флешку ({0}) Выньте флешку, вставьте обратно, нажмите «Обновить» и попробуйте снова. Если написано «отказано в доступе», закройте также все окна Проводника с этой флешкой."
     ],
     [
       "This Windows needs {0} GB on the stick, but the stick only holds {1} GB. Use a 16 GB (or larger) stick.",
