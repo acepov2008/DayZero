@@ -115,6 +115,7 @@
                                 <RadioButton x:Name="Win11Radio" GroupName="WinVer" IsChecked="True" Content="Windows 11"/>
                                 <RadioButton x:Name="Win10Radio" GroupName="WinVer" Content="Windows 10"/>
                             </StackPanel>
+                            <TextBlock x:Name="WinVersionHintText" Style="{StaticResource DzHint}" Visibility="Collapsed"/>
                             <TextBlock Text="Edition" Style="{StaticResource DzLabel}"/>
                             <ComboBox x:Name="EditionCombo" DisplayMemberPath="Label" SelectedValuePath="Value"/>
                             <TextBox x:Name="ProductKeyText" Margin="0,8,0,0" Visibility="Collapsed" MaxLength="29"

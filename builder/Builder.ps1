@@ -121,18 +121,20 @@ function Initialize-BuilderChoiceLists {
     $ui = $script:ui
     $edition = [string]$ui.EditionCombo.SelectedValue
     $plan = [string]$ui.OfficePlanCombo.SelectedValue
-    $ui.EditionCombo.ItemsSource = @(
-        (New-ListItem -Label "Auto - match the PC's built-in key (recommended)" -Value 'auto'),
-        (New-ListItem -Label 'Home' -Value 'home'),
-        (New-ListItem -Label 'Pro' -Value 'pro'),
-        (New-ListItem -Label 'Use my own product key' -Value 'key')
-    )
+    # tiny11 holds a single edition, so only Home and Pro can be picked with it.
+    $editions = @((New-ListItem -Label 'Home' -Value 'home'), (New-ListItem -Label 'Pro' -Value 'pro'))
+    if (-not (Test-Tiny11Picked)) {
+        $editions = @((New-ListItem -Label "Auto - match the PC's built-in key (recommended)" -Value 'auto')) + $editions + @((New-ListItem -Label 'Use my own product key' -Value 'key'))
+    }
+    $ui.EditionCombo.ItemsSource = $editions
+    if (@($editions | Where-Object { $_.Value -eq $edition }).Count -eq 0) { $edition = '' }
     $ui.OfficePlanCombo.ItemsSource = @(
         (New-ListItem -Label 'Microsoft 365 Personal / Family' -Value 'personal'),
         (New-ListItem -Label 'Microsoft 365 Business Standard / Premium' -Value 'business'),
         (New-ListItem -Label 'Microsoft 365 E3 / E5 (enterprise)' -Value 'enterprise')
     )
     if ($edition) { $ui.EditionCombo.SelectedValue = $edition } else { $ui.EditionCombo.SelectedIndex = 0 }
+    Update-EditionHint
     if ($plan) { $ui.OfficePlanCombo.SelectedValue = $plan } else { $ui.OfficePlanCombo.SelectedIndex = 0 }
 }
 
@@ -306,6 +308,7 @@ function Update-MediaInfo {
     }
     if ($drive.FreeMB -lt 200) { $lines.Add(("Only {0} MB free on the stick. DayZero needs about 50 MB plus any drivers you add." -f $drive.FreeMB)) }
     $ui.MediaInfoText.Text = Get-DzText $(($lines -join [Environment]::NewLine))
+    Update-WindowsChoice
     Update-EditionHint
     Set-BuilderStatus -Text 'Ready.'
 }
@@ -365,11 +368,53 @@ function Update-NewUsbInfo {
     $ui.MediaInfoText.Text = Get-DzText $(($lines -join [Environment]::NewLine))
 }
 
+function Test-Tiny11Picked {
+    return ((Get-TargetKind) -eq 'newusb' -and $script:ui.Tiny11Check.IsChecked -eq $true)
+}
+
+function Update-WindowsChoice {
+    <#
+        Windows 10 / 11 is only a real choice when Windows is downloaded. When something else
+        already decides it (tiny11, the ISO you picked, the stick you already made), the
+        answer is filled in, the two buttons are locked and a line says why.
+    #>
+    $ui = $script:ui
+    $kind = Get-TargetKind
+    $forced = $null
+    $why = ''
+    if (Test-Tiny11Picked) {
+        $forced = 11
+        $why = 'Windows 11, because tiny11 is made from Windows 11 only.'
+    }
+    elseif ($kind -eq 'newusb' -and $ui.SourceIsoRadio.IsChecked -eq $true -and $script:IsoMedia -and -not $script:IsoMedia.Error -and $script:IsoMedia.WindowsVersion) {
+        $forced = [int]$script:IsoMedia.WindowsVersion
+        $why = 'Set by the ISO file you picked.'
+    }
+    elseif ($kind -eq 'usb') {
+        $drive = $ui.DriveCombo.SelectedItem
+        if ($drive -and $script:MediaByDrive.ContainsKey($drive.Drive)) {
+            $info = $script:MediaByDrive[$drive.Drive]
+            if (-not $info.Error -and $info.WindowsVersion) {
+                $forced = [int]$info.WindowsVersion
+                $why = 'Set by the Windows that is on the stick.'
+            }
+        }
+    }
+    if ($forced -eq 10) { $ui.Win10Radio.IsChecked = $true } elseif ($forced -eq 11) { $ui.Win11Radio.IsChecked = $true }
+    $ui.Win10Radio.IsEnabled = ($null -eq $forced)
+    $ui.Win11Radio.IsEnabled = ($null -eq $forced)
+    $ui.WinVersionHintText.Text = Get-DzText $why
+    $ui.WinVersionHintText.Visibility = if ($why) { 'Visible' } else { 'Collapsed' }
+}
+
 function Update-Tiny11Info {
     <# Shows what tiny11 changes while its box is ticked. #>
     $ui = $script:ui
     $on = ($ui.Tiny11Check.IsChecked -eq $true)
     $ui.Tiny11Box.Visibility = if ($on) { 'Visible' } else { 'Collapsed' }
+    # tiny11 decides the Windows version and limits the editions, so those choices follow it.
+    Update-WindowsChoice
+    Initialize-BuilderChoiceLists
     if (-not $on) { return }
     $bullet = [string][char]0x2022
     $lines = New-Object System.Collections.Generic.List[string]
@@ -400,6 +445,7 @@ function Update-SourceMode {
         if ($languages -notcontains $wanted) { $wanted = 'en-US' }
         Select-ComboValue -Combo $ui.DisplayLanguageCombo -Value $wanted
     }
+    Update-WindowsChoice
     Update-NewUsbInfo
 }
 
@@ -462,6 +508,9 @@ function Update-TargetMode {
         $ui.DisplayLanguageCombo.ItemsSource = Get-RegionItemList
         Select-ComboValue -Combo $ui.DisplayLanguageCombo -Value (Get-UICulture).Name
     }
+    # tiny11 only counts while a new stick is being made, so the version lock and the edition list follow the target.
+    Update-WindowsChoice
+    Initialize-BuilderChoiceLists
 }
 
 function Select-ExportFolder {

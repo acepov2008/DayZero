@@ -80,6 +80,24 @@ Describe 'tiny11 choices' {
     }
 }
 
+Describe 'Builder choices follow tiny11' {
+    BeforeAll { $script:Builder = Get-Content -Raw -LiteralPath (Join-Path $script:Repo 'builder/Builder.ps1') }
+    It 'locks Windows 10 / 11 to Windows 11 while tiny11 is ticked' {
+        $body = [regex]::Match($script:Builder, '(?s)function Update-WindowsChoice \{.*?\n\}\r?\n').Value
+        $body | Should -Match '(?s)Test-Tiny11Picked\).*?\$forced = 11'
+        $body | Should -Match 'Win10Radio\.IsEnabled = \(\$null -eq \$forced\)'
+        $body | Should -Match 'Win11Radio\.IsEnabled = \(\$null -eq \$forced\)'
+        [regex]::Match($script:Builder, '(?s)function Update-Tiny11Info \{.*?\n\}\r?\n').Value | Should -Match 'Update-WindowsChoice'
+    }
+    It 'offers only Home and Pro as the edition while tiny11 is ticked' {
+        $body = [regex]::Match($script:Builder, '(?s)function Initialize-BuilderChoiceLists \{.*?\n\}\r?\n').Value
+        $body | Should -Match "(?s)if \(-not \(Test-Tiny11Picked\)\) \{.*?-Value 'auto'.*?-Value 'key'"
+    }
+    It 'counts tiny11 only when a new stick is being made' {
+        [regex]::Match($script:Builder, '(?s)function Test-Tiny11Picked \{.*?\n\}').Value | Should -Match "Get-TargetKind\) -eq 'newusb'"
+    }
+}
+
 Describe 'tiny11 cache' {
     It 'names the ISO after language, edition, source Windows and tiny11builder version' {
         $a = Get-DzTiny11IsoName -Language 'ru-RU' -Edition pro -SourceId 'win11-ru-ru-x64-920bd57e15'

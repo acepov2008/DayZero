@@ -2502,6 +2502,18 @@
     [
       "tiny11builder is working in its own window did not finish within {0} minutes and was stopped.",
       "tiny11builder не закончил работу за {0} мин и был остановлен."
+    ],
+    [
+      "Windows 11, because tiny11 is made from Windows 11 only.",
+      "Windows 11, потому что tiny11 делается только из Windows 11."
+    ],
+    [
+      "Set by the ISO file you picked.",
+      "Определяется выбранным ISO-файлом."
+    ],
+    [
+      "Set by the Windows that is on the stick.",
+      "Определяется той Windows, что уже на флешке."
     ]
   ]
 }
