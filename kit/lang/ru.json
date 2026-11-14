@@ -2390,6 +2390,118 @@
     [
       "DayZero\\config\\settings.json is missing or unreadable.",
       "DayZero\\config\\settings.json отсутствует или не читается."
+    ],
+    [
+      "Make it tiny11: a slimmed-down Windows 11, built with ntdevlabs' tiny11builder (downloaded from GitHub)",
+      "Сделать tiny11: облегчённую Windows 11, собранную программой tiny11builder от ntdevlabs (загружается с GitHub)"
+    ],
+    [
+      "tiny11 is made by ntdevlabs, not by Microsoft or DayZero. What it does to Windows:",
+      "tiny11 делает ntdevlabs, а не Microsoft или DayZero. Что он меняет в Windows:"
+    ],
+    [
+      "Removes Microsoft Edge and its WebView, OneDrive and about 50 built-in apps (Xbox apps, Terminal, Paint, Camera, Sticky Notes, Clock, Media Player, Quick Assist, Teams, Outlook, Copilot and more).",
+      "Удаляет Microsoft Edge и его WebView, OneDrive и около 50 встроенных приложений (приложения Xbox, Терминал, Paint, Камера, Записки, Часы, Медиаплеер, Быстрая поддержка, Teams, Outlook, Copilot и другие)."
+    ],
+    [
+      "Turns off telemetry, promoted apps and automatic BitLocker device encryption.",
+      "Выключает телеметрию, рекламные приложения и автоматическое шифрование устройства BitLocker."
+    ],
+    [
+      "Skips the Windows 11 hardware checks (TPM, Secure Boot, processor, memory).",
+      "Пропускает проверки оборудования Windows 11 (TPM, Secure Boot, процессор, память)."
+    ],
+    [
+      "Holds one edition only (the Home or Pro you pick).",
+      "Содержит только одну редакцию («Домашнюю» или Pro, какую выберете)."
+    ],
+    [
+      "Windows Update and Microsoft Defender stay on.",
+      "Центр обновления Windows и Microsoft Defender остаются включёнными."
+    ],
+    [
+      "These changes are built into Windows: DayZero.cmd -Undo cannot bring them back.",
+      "Эти изменения встроены в Windows: команда DayZero.cmd -Undo их не вернёт."
+    ],
+    [
+      "It needs Windows 11 with the edition set to Home or Pro, about 25 GB free on this PC and 30 to 90 extra minutes the first time. tiny11builder runs in its own window: leave that window alone.",
+      "Нужна Windows 11 с редакцией «Домашняя» или Pro, около 25 ГБ свободного места на этом компьютере и 30-90 дополнительных минут в первый раз. tiny11builder работает в отдельном окне: не трогайте это окно."
+    ],
+    [
+      "Only the standard tiny11 is offered. 'tiny11 core' switches off Windows Update and Defender, which DayZero never does.",
+      "Предлагается только стандартный tiny11. «tiny11 core» отключает Центр обновления Windows и Defender, чего DayZero никогда не делает."
+    ],
+    [
+      "tiny11 exists for Windows 11 only.",
+      "tiny11 существует только для Windows 11."
+    ],
+    [
+      "tiny11 is offered here for 64-bit Intel/AMD Windows only.",
+      "tiny11 предлагается здесь только для 64-разрядной Windows на Intel/AMD."
+    ],
+    [
+      "tiny11 holds one edition only: pick Home or Pro as the edition.",
+      "tiny11 содержит только одну редакцию: выберите редакцию «Домашняя» или Pro."
+    ],
+    [
+      "tiny11 changes Windows itself (no Edge, OneDrive or many built-in apps; hardware checks skipped). DayZero.cmd -Undo cannot bring those back.",
+      "tiny11 меняет саму Windows (нет Edge, OneDrive и многих встроенных приложений; проверки оборудования пропущены). Команда DayZero.cmd -Undo этого не вернёт."
+    ],
+    [
+      "Made into tiny11 with tiny11builder from GitHub (runs in its own window).",
+      "Будет превращена в tiny11 программой tiny11builder с GitHub (работает в отдельном окне)."
+    ],
+    [
+      "Preparing the Windows files for tiny11",
+      "Подготовка файлов Windows для tiny11"
+    ],
+    [
+      "Preparing Windows 11 {0} for tiny11",
+      "Подготовка Windows 11 {0} для tiny11"
+    ],
+    [
+      "Preparing Windows 11 {0} for tiny11 ({1}%)",
+      "Подготовка Windows 11 {0} для tiny11 ({1}%)"
+    ],
+    [
+      "tiny11builder is working in its own window ({0} min)",
+      "tiny11builder работает в отдельном окне ({0} мин)"
+    ],
+    [
+      "tiny11 (Windows 11 {0}), {1} - {2} GB",
+      "tiny11 (Windows 11 {0}), {1} - {2} ГБ"
+    ],
+    [
+      "Unfinished tiny11 build - {0} GB",
+      "Незавершённая сборка tiny11 - {0} ГБ"
+    ],
+    [
+      "tiny11 needs about 25 GB of free space on {0}; only {1} GB is free.",
+      "Для tiny11 нужно около 25 ГБ свободного места на {0}; свободно только {1} ГБ."
+    ],
+    [
+      "These Windows files have no plain Windows 11 {0} edition, which tiny11 needs.",
+      "В этих файлах Windows нет обычной редакции Windows 11 {0}, которая нужна tiny11."
+    ],
+    [
+      "tiny11builder did not produce tiny11.iso.",
+      "tiny11builder не создал tiny11.iso."
+    ],
+    [
+      "tiny11builder did not produce tiny11.iso. Its log is here: {0}",
+      "tiny11builder не создал tiny11.iso. Его журнал здесь: {0}"
+    ],
+    [
+      "{0} from GitHub is not the reviewed version (checksum mismatch), so it was not used.",
+      "{0} с GitHub не совпадает с проверенной версией (другая контрольная сумма) и не был использован."
+    ],
+    [
+      "Could not download {0} from GitHub: {1}",
+      "Не удалось загрузить {0} с GitHub: {1}"
+    ],
+    [
+      "tiny11builder is working in its own window did not finish within {0} minutes and was stopped.",
+      "tiny11builder не закончил работу за {0} мин и был остановлен."
     ]
   ]
 }

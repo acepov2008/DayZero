@@ -30,3 +30,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## tiny11builder (ntdevlabs)
+
+The optional "Make it tiny11" choice runs `tiny11maker.ps1` from
+https://github.com/ntdevlabs/tiny11builder. That project publishes no licence, so none of its
+files are included in DayZero. The builder downloads the script and its `autounattend.xml`
+from GitHub at commit `38f7ab6b1f177098c026a19b73ec84bca9c4b874` on the user's PC, checks their
+SHA-256, and runs the script unchanged. tiny11 and tiny11builder are the work of ntdevlabs.

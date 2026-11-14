@@ -85,6 +85,25 @@ it. This part cannot be tested in the automated checks. Use a stick with nothing
       delete it: the folder in `%LOCALAPPDATA%\DayZero\media` is gone and the hint says Windows
       will be downloaded again.
 
+## 2d. tiny11 (needs about 25 GB free and an hour or two)
+
+- [ ] Tick **Make it tiny11**: the yellow box lists what tiny11 changes. With edition **Auto**
+      or Windows 10, CREATE WINDOWS USB refuses and says to pick Home or Pro / Windows 11.
+- [ ] With Windows 11 + Pro: the Log says tiny11builder was "downloaded from GitHub and checked",
+      then a second window opens ("Tiny11 image creator") and works by itself. It must not
+      stop to ask for an image index or a key press. The builder's status counts the minutes.
+- [ ] If that window stops and waits for input, note what it asks: the builder answers its two
+      questions through standard input, and this is the part most likely to need a fix.
+- [ ] Afterwards the Log says "tiny11 is ready: ...tiny11-win11-...iso" and the stick is written.
+      `sources\install.wim` on the stick is well under 4 GB.
+- [ ] No drive letter is left behind in File Explorer (the builder maps one while tiny11builder runs).
+- [ ] Make a second tiny11 stick: "Using the tiny11 made earlier", no second window.
+- [ ] **Downloaded Windows...** lists "tiny11 (Windows 11 Pro), ...".
+- [ ] Install it in a VM without TPM: Setup does not complain about requirements, the DayZero
+      answer file still applies (no questions), Setup still stops at the disk screen, and the
+      wizard starts. Edge is gone; Windows Update and Windows Security work.
+- [ ] In the wizard, pick a mode with Chrome: winget still works on tiny11 and installs it.
+
 ## 3a. Hyper-V (Windows Pro/Enterprise)
 
 1. **New > Virtual Machine**: **Generation 2**, 4096 MB RAM or more (untick Dynamic Memory),

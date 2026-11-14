@@ -285,7 +285,7 @@ Describe 'Progress bar' {
         @{ Text = 'Unpacking Windows 11 Home (1 of 4; this is the slow part)'; Expected = 42 },
         @{ Text = 'Unpacking Windows 11 Education (3 of 4; this is the slow part) (50.0%)'; Expected = 58.25 },
         @{ Text = 'Unpacking Windows 11 Pro (4 of 4; this is the slow part) (100.0%)'; Expected = 68 },
-        @{ Text = 'Splitting the Windows image for the USB stick (50,0%)'; Expected = 71 },
+        @{ Text = 'Splitting the Windows image for the USB stick (50,0%)'; Expected = 68.5 },
         @{ Text = 'Erasing and formatting the USB stick'; Expected = 75 },
         @{ Text = 'Copying Windows to the USB stick (50%)'; Expected = 86 },
         @{ Text = 'Adding the answer file and the DayZero toolkit...'; Expected = 97 }

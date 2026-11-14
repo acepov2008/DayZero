@@ -3,7 +3,7 @@
 A USB stick that installs Windows and then sets the PC up for you: think **Ninite + an
 unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 
-> **Status: v0.12.0, all six stages built.** 1,054 automated tests and static checks cover it,
+> **Status: v0.13.0, all six stages built.** 1,073 automated tests and static checks cover it,
 > including a complete dry run of every mode. **It has not run on real Windows yet**: the
 > GUI (WPF) and the Windows-only steps can only be tested on Windows. Do the VM test in
 > [TESTING.md](TESTING.md) before you use it on a real PC.
@@ -48,6 +48,24 @@ unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 
 The stick is formatted FAT32 with one partition of up to 32 GB, so it boots on UEFI (with
 Secure Boot) and on legacy BIOS. Home, Home Single Language, Education and Pro are on it.
+
+### tiny11 (optional)
+
+Tick **Make it tiny11** to put a slimmed-down Windows 11 on the stick. It is made on your PC
+by [ntdevlabs' tiny11builder](https://github.com/ntdevlabs/tiny11builder) from the Windows 11
+the builder downloaded (or your ISO). tiny11builder is not part of DayZero: its script is
+downloaded from GitHub at one fixed commit, checked against the SHA-256 of the reviewed file,
+and run unchanged in its own window.
+
+* **What it changes:** removes Edge and its WebView, OneDrive and about 50 built-in apps (Xbox
+  apps, Terminal, Paint, Camera, Sticky Notes and more), turns off telemetry and automatic
+  BitLocker device encryption, and skips the Windows 11 hardware checks (TPM, Secure Boot,
+  processor). Windows Update and Defender stay on.
+* **Not reversible:** these changes are built into Windows, so `DayZero.cmd -Undo` cannot
+  bring them back. Apps that need Edge WebView2 install their own copy or will not start.
+* **Needs:** Windows 11, edition Home or Pro (tiny11 holds one edition), about 25 GB free and
+  30 to 90 extra minutes the first time. The result is kept for the next stick.
+* **Not offered:** "tiny11 core", which switches off Windows Update and Defender.
 
 ### Language
 
@@ -216,6 +234,7 @@ once (digital licence). The summary shows the result. No activators or bypass sc
   runs from, write-protected drives and drives over 300 GB are refused in code, and the stick
   is re-checked right before it is erased.
 * The Windows download must come from microsoft.com and match Microsoft's size and SHA-1.
+* tiny11builder (optional) is run only when its script matches the pinned SHA-256; tiny11 core is never used.
 * Only documented answer-file settings; no BypassNRO or other OOBE hacks.
 * Passwords in the answer file are base64 (warned about); temporary-password option.
 * Restore point before tweaks; every tweak recorded and reversible; dry-run mode.

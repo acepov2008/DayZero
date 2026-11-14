@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.13.0 - tiny11 option
+- New tick box under "Where Windows comes from": **Make it tiny11**. The builder turns the
+  Windows 11 it downloaded (or your ISO) into tiny11 with ntdevlabs' tiny11builder and writes
+  that to the stick, with your DayZero settings on top.
+- tiny11builder is not part of DayZero and is not stored here. Its script is downloaded from
+  GitHub at one fixed commit and only run when its SHA-256 matches the reviewed file. It runs
+  unchanged in its own window.
+- Needs Windows 11 with the edition set to Home or Pro. The finished tiny11 is kept and reused,
+  and listed in **Downloaded Windows...**.
+- Only the standard tiny11 is offered. "tiny11 core" switches off Windows Update and Defender,
+  which DayZero's rules do not allow.
+
 ## 0.12.0 - Russian, stick check, downloaded-Windows manager
 - **English or Russian**, for the builder and the wizard. A **Language** button in each header
   switches at once and is remembered; the builder's choice travels to the new PC. The first

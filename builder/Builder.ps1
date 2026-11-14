@@ -160,6 +160,7 @@ function Switch-BuilderLanguage {
     }
     Update-EditionHint
     Update-ScriptsCount
+    Update-Tiny11Info
     Set-BuilderStatus -Text 'Ready.'
     Write-BuilderLog "Interface language: $next"
 }
@@ -364,6 +365,21 @@ function Update-NewUsbInfo {
     $ui.MediaInfoText.Text = Get-DzText $(($lines -join [Environment]::NewLine))
 }
 
+function Update-Tiny11Info {
+    <# Shows what tiny11 changes while its box is ticked. #>
+    $ui = $script:ui
+    $on = ($ui.Tiny11Check.IsChecked -eq $true)
+    $ui.Tiny11Box.Visibility = if ($on) { 'Visible' } else { 'Collapsed' }
+    if (-not $on) { return }
+    $bullet = [string][char]0x2022
+    $lines = New-Object System.Collections.Generic.List[string]
+    $lines.Add('tiny11 is made by ntdevlabs, not by Microsoft or DayZero. What it does to Windows:')
+    foreach ($l in @(Get-DzTiny11Summary)) { $lines.Add("$bullet $l") }
+    $lines.Add('It needs Windows 11 with the edition set to Home or Pro, about 25 GB free on this PC and 30 to 90 extra minutes the first time. tiny11builder runs in its own window: leave that window alone.')
+    $lines.Add("Only the standard tiny11 is offered. 'tiny11 core' switches off Windows Update and Defender, which DayZero never does.")
+    $ui.Tiny11Text.Text = Get-DzText ($lines -join [Environment]::NewLine)
+}
+
 function Update-SourceMode {
     <# Download or ISO: fills the display-language list to match what the Windows media will contain. #>
     $ui = $script:ui
@@ -502,6 +518,7 @@ function Get-BuilderInput {
     $kind = Get-TargetKind
     $isUsb = ($kind -eq 'usb')
     $usbDisk = $null
+    $tiny11 = $false
     $source = $null
     $isoPath = $null
     if ($kind -eq 'newusb') {
@@ -516,6 +533,7 @@ function Get-BuilderInput {
             else { $media = $script:IsoMedia }
         }
         else { $source = 'download' }
+        $tiny11 = ($ui.Tiny11Check.IsChecked -eq $true)
     }
     elseif ($isUsb) {
         $drive = $ui.DriveCombo.SelectedItem
@@ -552,6 +570,12 @@ function Get-BuilderInput {
     if ($media -and -not $media.Error -and ($edition -eq 'home' -or $edition -eq 'pro') -and
         -not (Test-DzMediaHasEdition -Editions $media.Editions -Edition $edition)) {
         $errors.Add("The Windows media has no plain Windows $winVer $edition edition.")
+    }
+
+    if ($tiny11) {
+        $problem = Test-DzTiny11Choice -WindowsVersion $winVer -Edition $edition -Architecture $arch
+        if ($problem) { $errors.Add($problem) }
+        else { $warnings.Add('tiny11 changes Windows itself (no Edge, OneDrive or many built-in apps; hardware checks skipped). DayZero.cmd -Undo cannot bring those back.') }
     }
 
     $userName = $ui.UserNameText.Text.Trim()
@@ -625,6 +649,7 @@ function Get-BuilderInput {
         debloatLevel      = [string]$script:SelectedLevel
         dryRun            = $dryRun
         appLanguage       = (Get-DzLanguage)
+        tiny11            = [bool]$tiny11
         officePlan        = [string]$ui.OfficePlanCombo.SelectedValue
         uiLanguage        = $display
         userLocale        = $region
@@ -640,6 +665,7 @@ function Get-BuilderInput {
         IsUsb    = $isUsb
         UsbDisk  = $usbDisk
         Source   = $source
+        Tiny11   = [bool]$tiny11
         IsoPath  = $isoPath
         Target   = $target
         Media    = $media
@@ -851,6 +877,7 @@ function Invoke-Write {
         $summary.Add(('   {0}, {1} GB, {2}' -f $disk.Name, $disk.SizeGB, $(if ($disk.Volumes) { $disk.Volumes } else { 'no drive letter' })))
         $summary.Add('')
         $summary.Add($(if ($data.Source -eq 'iso') { "Windows from: $($data.IsoPath)" } else { "Windows from: Microsoft download ($($data.Options.UILanguage))" }))
+        if ($data.Tiny11) { $summary.Add('Made into tiny11 with tiny11builder from GitHub (runs in its own window).') }
     }
     else {
         $what = if ($data.IsUsb) { "the USB stick $($data.Target)" } else { "the folder $($data.Target)" }
@@ -889,6 +916,26 @@ function Invoke-Write {
             $tree = $null
             if ($data.Source -eq 'download') {
                 $tree = Get-DzWindowsMediaTree -WindowsVersion ([int]$data.Settings.windowsVersion) -Language $data.Options.UILanguage -Tick $tick -Log $log
+            }
+            if ($data.Tiny11) {
+                # tiny11: made once from these Windows files, kept as an ISO, then written like any ISO.
+                $sourceId = if ($tree) { Split-Path -Leaf $tree } else { $item = Get-Item -LiteralPath $data.IsoPath; '{0}|{1}|{2}' -f $item.FullName, $item.Length, $item.LastWriteTimeUtc.Ticks }
+                $cache = Get-DzMediaCacheRoot
+                $tinyIso = Join-Path $cache (Get-DzTiny11IsoName -Language $data.Options.UILanguage -Edition $data.Options.Edition -SourceId $sourceId)
+                if (Test-Path -LiteralPath $tinyIso) { Write-BuilderLog "Using the tiny11 made earlier: $tinyIso" }
+                else {
+                    $work = Join-Path $cache 'tiny11-work'
+                    $tinyEdition = [string]$data.Options.Edition
+                    if ($tree) { [void](New-DzTiny11Iso -MediaRoot $tree -Edition $data.Options.Edition -WorkDir $work -OutIso $tinyIso -Tick $tick -Log $log) }
+                    else {
+                        Invoke-DzWithMountedIso -IsoPath $data.IsoPath -Action {
+                            param($isoRoot)
+                            [void](New-DzTiny11Iso -MediaRoot $isoRoot -Edition $tinyEdition -WorkDir $work -OutIso $tinyIso -Tick $tick -Log $log)
+                        }.GetNewClosure()
+                    }
+                }
+                $tree = $null
+                $data.IsoPath = $tinyIso
             }
             if ($tree) {
                 $fit = Get-DzMediaFitProblem -MediaBytes (Get-DzFolderSize -Path $tree) -DiskBytes $data.UsbDisk.Size
@@ -1133,6 +1180,7 @@ function Start-Builder {
     Import-Module (Join-Path $script:BuilderRoot 'lib\Media.psm1') -Force
     Import-Module (Join-Path $script:BuilderRoot 'lib\UsbWriter.psm1') -Force
     Import-Module (Join-Path $script:BuilderRoot 'lib\WinMedia.psm1') -Force
+    Import-Module (Join-Path $script:BuilderRoot 'lib\Tiny11.psm1') -Force
 
     # Files downloaded from the internet carry a "blocked" mark; clear it so the copy on
     # the USB stick runs cleanly on the new PC.
@@ -1179,6 +1227,8 @@ function Start-Builder {
     $ui.UsbDiskCombo.Add_SelectionChanged({ Update-NewUsbInfo })
     $ui.SourceDownloadRadio.Add_Checked({ Update-SourceMode })
     $ui.SourceIsoRadio.Add_Checked({ Update-SourceMode })
+    $ui.Tiny11Check.Add_Checked({ Update-Tiny11Info })
+    $ui.Tiny11Check.Add_Unchecked({ Update-Tiny11Info })
     $ui.BrowseIsoButton.Add_Click({
             try { Select-IsoFile } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
         })

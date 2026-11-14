@@ -11,6 +11,7 @@ Hard rules:
 - autounattend.xml must never select, wipe or partition a disk.
 - The builder may erase only a USB stick that passes Test-DzUsbDiskAllowed and that the user confirmed. Never weaken that check.
 - Windows downloads must come from microsoft.com and match the catalogue size and SHA-1.
+- tiny11 (builder\lib\Tiny11.psm1): the tiny11builder script is downloaded at a pinned commit and run only when its SHA-256 matches. Never copy it into this repo, never follow a branch, never add tiny11 core (it disables Windows Update and Defender).
 - Never disable Windows Update or Defender; no third-party activators.
 - Every tweak must be reversible (backup + DayZero.cmd -Undo); no scripts in JSON.
 - winget IDs must be real (check winget-pkgs), never guessed.

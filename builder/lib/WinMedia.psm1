@@ -104,7 +104,14 @@ function Get-DzBuildProgress {
             $part = (($n - 1) + $part) / $count
             $from = 42; $to = 68; break
         }
-        '^Splitting the Windows image' { $from = 68; $to = 74; break }
+        '^Splitting the Windows image' { $from = 68; $to = 69; break }
+        '^Preparing the Windows files for tiny11' { $from = 69; $to = 70; break }
+        '^Preparing Windows 11 (Home|Pro) for tiny11' { $from = 70; $to = 71; break }
+        '^tiny11builder is working in its own window \((\d+) min\)' {
+            # No real progress from the other window: move slowly towards the end of its usual hour.
+            $part = [double]$Matches[1] / 60
+            $from = 71; $to = 74; break
+        }
         '^(Erasing and formatting|Waiting for the new drive)' { $from = 75; $to = 75; break }
         '^Copying Windows to the USB stick' { $from = 76; $to = 96; break }
         '^Adding the answer file' { $from = 97; $to = 97; break }
@@ -501,6 +508,24 @@ function Get-DzMediaCacheItem {
     if (-not (Test-Path -LiteralPath $CacheRoot)) { return }
     $pattern = '^win(\d+)-([a-z0-9-]+)-x64-[0-9a-f]{10}$'
     foreach ($entry in @(Get-ChildItem -LiteralPath $CacheRoot -Force -ErrorAction SilentlyContinue | Sort-Object Name)) {
+        $tiny = [regex]::Match($entry.Name, '^tiny11-win11-([a-z0-9-]+)-(home|pro)-[0-9a-f]{10}-[0-9a-f]{8}\.iso$')
+        if ($tiny.Success -or $entry.Name -eq 'tiny11-work') {
+            $isWork = -not $tiny.Success
+            $bytes = if ($entry.PSIsContainer) { Get-DzFolderSize -Path $entry.FullName } else { [double]$entry.Length }
+            $sizeGB = [math]::Round($bytes / 1GB, 1)
+            $what = if ($isWork) { 'Unfinished tiny11 build' } else { 'tiny11 (Windows 11 {0}), {1}' -f $(if ($tiny.Groups[2].Value -eq 'home') { 'Home' } else { 'Pro' }), $tiny.Groups[1].Value }
+            [pscustomobject]@{
+                Kind           = $(if ($isWork) { 'leftover' } else { 'windows' })
+                Name           = $entry.Name
+                WindowsVersion = 11
+                Language       = $(if ($isWork) { '' } else { $tiny.Groups[1].Value })
+                Bytes          = $bytes
+                SizeGB         = $sizeGB
+                Prepared       = $entry.LastWriteTime
+                Display        = ('{0} - {1:N1} GB' -f $what, $sizeGB)
+            }
+            continue
+        }
         $base = $entry.Name -replace '\.esd$', ''
         if ($entry.Name -like '*.ready.json' -or $base -notmatch $pattern) { continue }
         $version = [int]$Matches[1]
@@ -536,7 +561,8 @@ function Remove-DzMediaCacheItem {
         [Parameter(Mandatory = $true)][string]$Name,
         [string]$CacheRoot = (Get-DzMediaCacheRoot)
     )
-    if ($Name -notmatch '^win\d+-[a-z0-9-]+-x64-[0-9a-f]{10}(\.esd)?$') { throw "Not a DayZero cache item: $Name" }
+    $known = '^win\d+-[a-z0-9-]+-x64-[0-9a-f]{10}(\.esd)?$|^tiny11-win11-[a-z0-9-]+-(home|pro)-[0-9a-f]{10}-[0-9a-f]{8}\.iso$|^tiny11-work$'
+    if ($Name -notmatch $known) { throw "Not a DayZero cache item: $Name" }
     $base = $Name -replace '\.esd$', ''
     foreach ($leaf in @(($base + '.ready.json'), $Name)) {
         $path = Join-Path $CacheRoot $leaf
@@ -1011,7 +1037,7 @@ function Set-DzUsbBootSector {
 }
 
 Export-ModuleMember -Function @(
-    'Get-DzWindowsLanguageList', 'Get-DzWindowsCatalogUrl', 'Get-DzMediaCacheRoot', 'Get-DzBuildProgress', 'Invoke-DzProcess',
+    'Get-DzWindowsLanguageList', 'Get-DzWindowsCatalogUrl', 'Get-DzMediaCacheRoot', 'Get-DzBuildProgress', 'Invoke-DzProcess', 'Invoke-DzDism',
     'ConvertFrom-DzProductsXml', 'Test-DzWindowsDownloadEntry', 'Select-DzWindowsDownload', 'Find-DzCatalogXml', 'Get-DzWindowsCatalog',
     'Get-DzFileSha1', 'Save-DzLargeFile', 'Get-DzEsdImagePlan', 'Select-DzEsdEdition', 'New-DzMediaFromEsd',
     'Get-DzPreparedMedia', 'Get-DzMediaCacheItem', 'Remove-DzMediaCacheItem', 'Get-DzWindowsMediaTree', 'Test-DzUsbDiskAllowed', 'Get-DzUsbDiskCandidate',
