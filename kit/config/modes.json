@@ -22,7 +22,7 @@
       "highlights": [
         "Steam, Epic, Discord, OBS, Afterburner, HWiNFO",
         "Game launchers stop auto-starting",
-        "Game Mode, GPU scheduling, raw mouse input",
+        "Game Mode and GPU scheduling",
         "Performance power plan (asks first on laptops)"
       ],
       "debloat": "standard",
@@ -40,7 +40,6 @@
       "tweaks": [
         "game-mode",
         "gpu-scheduling",
-        "mouse-accel-off",
         "background-apps-off",
         "startup-trim",
         "power-plan",

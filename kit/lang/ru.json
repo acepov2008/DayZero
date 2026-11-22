@@ -1600,8 +1600,8 @@
       "Лаунчеры больше не запускаются сами"
     ],
     [
-      "Game Mode, GPU scheduling, raw mouse input",
-      "Игровой режим, планирование GPU, мышь без ускорения"
+      "Game Mode and GPU scheduling",
+      "Игровой режим и планирование GPU"
     ],
     [
       "Performance power plan (asks first on laptops)",

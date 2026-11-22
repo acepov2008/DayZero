@@ -108,9 +108,12 @@ Describe 'tweaks.json is documented and safe' {
     }
     It 'gives every gaming tweak the user asked for (privacy ones through the clean-up level)' {
         $g = Get-DzMode -Config $script:Config -Id 'gaming'
-        foreach ($id in 'game-mode', 'gpu-scheduling', 'mouse-accel-off', 'background-apps-off', 'startup-trim', 'power-plan', 'memory-integrity-off', 'game-bar-off') {
+        foreach ($id in 'game-mode', 'gpu-scheduling', 'background-apps-off', 'startup-trim', 'power-plan', 'memory-integrity-off', 'game-bar-off') {
             @($g.tweaks) | Should -Contain $id
         }
+        # Mouse acceleration stays as Windows has it unless ticked by hand on the review screen.
+        @($g.tweaks) | Should -Not -Contain 'mouse-accel-off'
+        @($script:Config.tweaks.tweaks | Where-Object { $_.id -eq 'mouse-accel-off' }).Count | Should -Be 1
         $g.debloat | Should -Be 'standard'
         @((Get-DzDebloatLevel -Config $script:Config -Id 'standard').tweaks) | Should -Contain 'telemetry-off'
         foreach ($id in 'bing-search-off', 'widgets-off', 'copilot-off') { @((Get-DzDebloatLevel -Config $script:Config -Id 'advanced').tweaks) | Should -Contain $id }
