@@ -2514,6 +2514,126 @@
     [
       "Set by the Windows that is on the stick.",
       "Определяется той Windows, что уже на флешке."
+    ],
+    [
+      "Waiting for the internet",
+      "Ждём интернет"
+    ],
+    [
+      "Reading the package lists",
+      "Читаем списки пакетов"
+    ],
+    [
+      "Installing updates",
+      "Устанавливаем обновления"
+    ],
+    [
+      "Installing graphics and other drivers",
+      "Устанавливаем драйверы видеокарты и другие"
+    ],
+    [
+      "Setting up Flathub (the app store for Linux apps)",
+      "Настраиваем Flathub (магазин приложений для Linux)"
+    ],
+    [
+      "Adding Flathub",
+      "Подключаем Flathub"
+    ],
+    [
+      "Installing {0}",
+      "Устанавливаем {0}"
+    ],
+    [
+      "Running your script {0}",
+      "Запускаем ваш скрипт {0}"
+    ],
+    [
+      "DayZero finished: {0} of {1} steps worked.",
+      "DayZero закончил: успешно {0} из {1} шагов."
+    ],
+    [
+      "These did not work:",
+      "Не получилось:"
+    ],
+    [
+      "To try them again, run: sudo python3 /opt/dayzero/dayzero.py retry",
+      "Чтобы попробовать ещё раз, выполните: sudo python3 /opt/dayzero/dayzero.py retry"
+    ],
+    [
+      "Restart the PC to finish the updates.",
+      "Перезагрузите компьютер, чтобы завершить обновления."
+    ],
+    [
+      "The full log is in {0}",
+      "Полный журнал: {0}"
+    ],
+    [
+      "Run this as root: sudo python3 /opt/dayzero/dayzero.py run",
+      "Запустите от root: sudo python3 /opt/dayzero/dayzero.py run"
+    ],
+    [
+      "DayZero is done.",
+      "DayZero всё сделал."
+    ],
+    [
+      "DayZero is setting up this PC. You can keep using it.",
+      "DayZero настраивает этот компьютер. Им можно пользоваться."
+    ],
+    [
+      "DayZero has not started yet.",
+      "DayZero ещё не запускался."
+    ],
+    [
+      "Press Enter to close this window.",
+      "Нажмите Enter, чтобы закрыть окно."
+    ],
+    [
+      "DayZero setup",
+      "Настройка DayZero"
+    ],
+    [
+      "Enter a user name.",
+      "Введите имя пользователя."
+    ],
+    [
+      "On Linux the user name must start with a small letter and use only small letters, digits, - and _ (up to 32).",
+      "В Linux имя пользователя должно начинаться со строчной буквы и состоять только из строчных латинских букв, цифр, - и _ (до 32 знаков)."
+    ],
+    [
+      "The user name '{0}' is used by Linux itself. Pick another one.",
+      "Имя «{0}» занято самим Linux. Выберите другое."
+    ],
+    [
+      "The computer name may use letters, digits and - (not at the start or end), up to 63.",
+      "В имени компьютера допустимы латинские буквы, цифры и - (не в начале и не в конце), до 63 знаков."
+    ],
+    [
+      "These files are too large for a FAT32 stick: {0}. Write the ISO as-is instead (no DayZero automation).",
+      "Эти файлы слишком велики для флешки FAT32: {0}. Запишите ISO как есть (без автоматизации DayZero)."
+    ],
+    [
+      "Refusing to write to the root of the running system. Pick the USB stick or a folder.",
+      "Не пишу в корень работающей системы. Выберите флешку или папку."
+    ],
+    [
+      "The download stopped before the end. Try again: it continues where it stopped.",
+      "Загрузка оборвалась. Попробуйте ещё раз: она продолжится с того же места."
+    ],
+    [
+      "The downloaded {0} does not match its published SHA-256, so it was deleted. Try again.",
+      "Скачанный {0} не совпадает с опубликованной суммой SHA-256, поэтому удалён. Попробуйте ещё раз."
+    ],
+    [
+      "Downloading {0}: {1} of {2} GB, {3} MB/s ({4}%)",
+      "Скачиваем {0}: {1} из {2} ГБ, {3} МБ/с ({4}%)"
+    ],
+    [
+      "Checking {0} ({1}%)",
+      "Проверяем {0} ({1}%)"
+    ],
+    [
+      "Asking {0} for the newest {1}...",
+      "Спрашиваем у {0} свежую версию {1}..."
     ]
   ]
 }

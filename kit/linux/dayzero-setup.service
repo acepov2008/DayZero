@@ -1,0 +1,15 @@
+[Unit]
+Description=DayZero first-boot setup (updates, drivers, apps, your scripts)
+Documentation=file:/opt/dayzero/README.txt
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=!/var/lib/dayzero/done
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/dayzero/dayzero.py run
+Nice=5
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

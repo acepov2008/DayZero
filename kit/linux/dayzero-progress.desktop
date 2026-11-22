@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=DayZero setup
+Comment=Shows what DayZero is installing on this PC
+Exec=/usr/bin/python3 /opt/dayzero/dayzero.py progress
+Terminal=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true

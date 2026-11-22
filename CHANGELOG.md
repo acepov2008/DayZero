@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased - Linux
+- **Linux install sticks (groundwork).** `builder\lib\Linux.psm1` downloads Ubuntu Desktop
+  (26.04 LTS or 24.04 LTS) from releases.ubuntu.com, picks the newest point release from the
+  published `SHA256SUMS` and keeps the ISO only when its SHA-256 matches.
+- It writes an Ubuntu `autoinstall.yaml`: account (password stored as a SHA-512 hash), computer
+  name, language, keyboard (Windows layouts mapped to Linux, US added before Cyrillic and other
+  non-Latin layouts), time zone (CLDR table), drivers, codecs and all updates. The disk screen
+  always stays interactive: DayZero still never picks, wipes or partitions a disk.
+- **Linux first-boot setup** (`kit\linux\dayzero.py`): runs once in the background after the
+  install, resumes after restarts and shows a progress window after sign-in. It installs
+  updates and drivers, sets up Flathub, installs the apps of your mode (35 checked Flathub
+  apps in `kit\linux\apps.json`) and runs your scripts from `kit\Scripts-Linux`.
+
 ## 0.13.0 - tiny11 option
 - New tick box under "Where Windows comes from": **Make it tiny11**. The builder turns the
   Windows 11 it downloaded (or your ISO) into tiny11 with ntdevlabs' tiny11builder and writes

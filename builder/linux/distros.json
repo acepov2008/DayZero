@@ -1,0 +1,39 @@
+{
+  "_doc": [
+    "Linux systems the DayZero builder can put on a USB stick (builder/lib/Linux.psm1).",
+    "baseUrl:     official HTTPS download folder. Only hosts in allowedHosts are accepted (tests check this).",
+    "sums:        checksum file in that folder (sha256sum format). The ISO must match it, byte for byte.",
+    "isoPattern:  regex for the ISO name inside the checksum file; the newest point release wins.",
+    "automation:  'ubuntu-autoinstall' = DayZero writes autoinstall.yaml + the Linux kit (kit/linux).",
+    "             The disk screen ALWAYS stays interactive: DayZero never picks, wipes or partitions a disk.",
+    "largestFile: biggest single file seen in the ISO (bytes). FAT32 holds files up to 4 GB - 1 byte;",
+    "             the builder checks the real files again before it erases anything.",
+    "Any other Linux ISO can still be written as-is ('raw' write) with no DayZero automation."
+  ],
+  "allowedHosts": [ "releases.ubuntu.com", "cdimage.ubuntu.com" ],
+  "defaultDistro": "ubuntu-26.04",
+  "distros": [
+    {
+      "id": "ubuntu-26.04",
+      "name": "Ubuntu 26.04 LTS",
+      "family": "ubuntu",
+      "automation": "ubuntu-autoinstall",
+      "supportedUntil": "2031-04",
+      "baseUrl": "https://releases.ubuntu.com/26.04/",
+      "sums": "SHA256SUMS",
+      "isoPattern": "^ubuntu-26\\.04(\\.[0-9]+)*-desktop-amd64\\.iso$",
+      "largestFile": 3432136704
+    },
+    {
+      "id": "ubuntu-24.04",
+      "name": "Ubuntu 24.04 LTS",
+      "family": "ubuntu",
+      "automation": "ubuntu-autoinstall",
+      "supportedUntil": "2029-04",
+      "baseUrl": "https://releases.ubuntu.com/24.04/",
+      "sums": "SHA256SUMS",
+      "isoPattern": "^ubuntu-24\\.04(\\.[0-9]+)*-desktop-amd64\\.iso$",
+      "largestFile": 2238521344
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+# Flathub ids used in kit/linux/apps.json, each checked on 2026-11-22.
+# Checked: github.com/flathub/<id> exists and is not archived (gh api search/repositories q=repo:flathub/<id>).
+# com.obsproject.Studio: its flathub repo is archived because OBS publishes it from its own repository;
+#   checked: obsproject/obs-studio has build-aux/com.obsproject.Studio.json.
+# Firefox is not listed: Ubuntu already ships it, and org.mozilla.firefox has no flathub repo to check.
+com.anydesk.Anydesk
+com.bitwarden.desktop
+com.brave.Browser
+com.discordapp.Discord
+com.github.tchx84.Flatseal
+com.google.Chrome
+com.heroicgameslauncher.hgl
+com.microsoft.Edge
+com.obsproject.Studio
+com.opera.Opera
+com.rustdesk.RustDesk
+com.slack.Slack
+com.spotify.Client
+com.usebottles.bottles
+com.valvesoftware.Steam
+com.visualstudio.code
+io.github.peazip.PeaZip
+io.missioncenter.MissionCenter
+io.mpv.Mpv
+md.obsidian.Obsidian
+net.davidotek.pupgui2
+net.lutris.Lutris
+org.audacityteam.Audacity
+org.gimp.GIMP
+org.kde.kdenlive
+org.kde.krita
+org.keepassxc.KeePassXC
+org.libreoffice.LibreOffice
+org.onlyoffice.desktopeditors
+org.prismlauncher.PrismLauncher
+org.qbittorrent.qBittorrent
+org.signal.Signal
+org.telegram.desktop
+org.videolan.VLC
+us.zoom.Zoom

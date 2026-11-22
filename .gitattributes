@@ -6,3 +6,12 @@
 # These lines must come AFTER "* text=auto": later lines win.
 *.cmd -text
 *.bat -text
+
+# Files that run on Linux (the Linux kit, the Linux launcher) must keep LF endings even on a
+# Windows checkout: sh and systemd do not accept CRLF.
+*.sh text eol=lf
+*.py text eol=lf
+*.service text eol=lf
+*.desktop text eol=lf
+*.yaml text eol=lf
+kit/linux/** text eol=lf
