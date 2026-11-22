@@ -29,6 +29,7 @@ $script:Busy = $false
 $script:CacheWindow = $null
 $script:CacheNames = $null
 $script:GeneratedPassword = $null
+$script:TimeZoneCities = $null
 $script:ThisPcFirmware = $null
 $script:BuilderConfig = $null
 $script:SelectedMode = 'gaming'
@@ -226,20 +227,29 @@ function Get-KeyboardItemList {
 
 function Get-TimeZoneLabel {
     <#
-        A time zone's name in the builder's language. TimeZoneInfo.DisplayName is in Windows' own
-        language; for English the registry's "Display" value is used, which Windows keeps in
-        English ("(UTC+03:00) Moscow, St. Petersburg"). The localized one is in "MUI_Display".
+        A time zone's name in the builder's language. Windows gives DisplayName (and the registry's
+        "Display" text) in its own language only, so for English the name is built from what is
+        always English: the offset, the main city of the zone (Unicode CLDR table in
+        builder\linux\timezones.json) and the Windows id, e.g. "(UTC+03:00) Moscow - Russian Standard Time".
+        Russian keeps Windows' own name.
     #>
     param([Parameter(Mandatory = $true)][System.TimeZoneInfo]$Zone)
-    if ((Get-DzLanguage) -eq 'en') {
+    if ((Get-DzLanguage) -ne 'en') { return $Zone.DisplayName }
+    if ($null -eq $script:TimeZoneCities) {
+        $script:TimeZoneCities = @{}
         try {
-            $key = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\' + $Zone.Id
-            $english = [string](Get-ItemProperty -LiteralPath $key -Name 'Display' -ErrorAction Stop).Display
-            if ($english -and $english -notmatch '^@') { return $english }
+            $map = (Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $PSScriptRoot 'linux\timezones.json') | ConvertFrom-Json).zones
+            foreach ($p in $map.PSObject.Properties) { $script:TimeZoneCities[$p.Name] = [string]$p.Value }
         }
-        catch { Write-Verbose "No English name in the registry for $($Zone.Id)." }
+        catch { Write-Verbose 'No time zone city table.' }
     }
-    return $Zone.DisplayName
+    $o = $Zone.BaseUtcOffset
+    $offset = if ($o -eq [TimeSpan]::Zero) { '(UTC)' } else { '(UTC{0}{1:hh\:mm})' -f $(if ($o -lt [TimeSpan]::Zero) { '-' } else { '+' }), $o.Duration() }
+    $city = ''
+    $iana = $script:TimeZoneCities[$Zone.Id]
+    if ($iana -and $iana -notmatch '^Etc/') { $city = (($iana -split '/')[-1]) -replace '_', ' ' }
+    if ($city) { return ('{0} {1} - {2}' -f $offset, $city, $Zone.Id) }
+    return ('{0} {1}' -f $offset, $Zone.Id)
 }
 
 function Get-TimeZoneItemList {

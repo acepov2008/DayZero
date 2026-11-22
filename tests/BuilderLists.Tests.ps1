@@ -11,6 +11,7 @@ BeforeAll {
         $f = $ast.Find({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $name }, $true)
         . ([scriptblock]::Create($f.Extent.Text))
     }
+    $script:TimeZoneCities = $null
     $script:NewCombo = { param($items, $picked) $c = [pscustomobject]@{ ItemsSource = $items; SelectedItem = $null; SelectedValue = $picked }; $c }
 }
 
@@ -37,6 +38,24 @@ Describe 'Language and region lists' {
         @($combo.ItemsSource)[1].Label | Should -Be 'Russian (Russia)  (ru-RU)'
         @($combo.ItemsSource)[2].Label | Should -Be "This PC's keyboard (x)"
         $combo.SelectedItem.Value | Should -Be 'ru-RU'
+    }
+    It 'names time zones in English from the offset, the main city and the Windows id' {
+        [void](Set-DzLanguage -Code 'en')
+        $script:TimeZoneCities = @{ 'Russian Standard Time' = 'Europe/Moscow'; 'Dateline Standard Time' = 'Etc/GMT+12'; 'Pacific SA Standard Time' = 'America/Santiago' }
+        $msk = [System.TimeZoneInfo]::CreateCustomTimeZone('Russian Standard Time', [TimeSpan]::FromHours(3), 'x', 'x')
+        Get-TimeZoneLabel -Zone $msk | Should -Be '(UTC+03:00) Moscow - Russian Standard Time'
+        $dl = [System.TimeZoneInfo]::CreateCustomTimeZone('Dateline Standard Time', [TimeSpan]::FromHours(-12), 'x', 'x')
+        Get-TimeZoneLabel -Zone $dl | Should -Be '(UTC-12:00) Dateline Standard Time'
+        $utc = [System.TimeZoneInfo]::CreateCustomTimeZone('UTC', [TimeSpan]::Zero, 'x', 'x')
+        Get-TimeZoneLabel -Zone $utc | Should -Be '(UTC) UTC'
+        $nd = [System.TimeZoneInfo]::CreateCustomTimeZone('Newfoundland Standard Time', [TimeSpan]::FromMinutes(-210), 'x', 'x')
+        Get-TimeZoneLabel -Zone $nd | Should -Be '(UTC-03:30) Newfoundland Standard Time'
+        $script:TimeZoneCities = $null
+    }
+    It 'keeps Windows'' own time zone name in Russian' {
+        [void](Set-DzLanguage -Code 'ru')
+        $z = [System.TimeZoneInfo]::CreateCustomTimeZone('Russian Standard Time', [TimeSpan]::FromHours(3), 'Windows name', 'x')
+        Get-TimeZoneLabel -Zone $z | Should -Be 'Windows name'
     }
     It 'keeps every time zone and the picked one' {
         $zones = @(Get-TimeZoneItemList)
