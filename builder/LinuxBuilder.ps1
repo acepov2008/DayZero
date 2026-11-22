@@ -621,6 +621,8 @@ function Update-LinuxPanelLanguage {
     if (-not $script:lx) { return }
     $picked = Get-LxSystem
     Update-DzTranslation -Root $script:LxRoot
+    Update-ListLanguage -Combo $script:lx.LxLanguageCombo -Kind culture
+    Update-ListLanguage -Combo $script:lx.LxTimeZoneCombo -Kind timezone
     Initialize-LxDistros
     if ($picked.Kind -like 'download*') { foreach ($r in $script:LxDistroRadios) { $r.IsChecked = ([string]$r.Tag -eq $picked.DistroId) } }
     Initialize-LxModes

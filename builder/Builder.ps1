@@ -165,6 +165,8 @@ function Switch-BuilderLanguage {
     Update-EditionHint
     Update-ScriptsCount
     Update-Tiny11Info
+    foreach ($c in @($script:ui.RegionCombo, $script:ui.DisplayLanguageCombo)) { Update-ListLanguage -Combo $c -Kind culture }
+    Update-ListLanguage -Combo $script:ui.TimeZoneCombo -Kind timezone
     Update-LinuxPanelLanguage
     Set-BuilderStatus -Text 'Ready.'
     Write-BuilderLog "Interface language: $next"
@@ -179,21 +181,31 @@ function New-ListItem {
     return [pscustomobject]@{ Label = [string](Get-DzText $Label); Value = $Value }
 }
 
+function Get-CultureLabel {
+    <#
+        A language/region name in the builder's language. English: the English name ("Russian
+        (Russia)"), whatever language Windows itself is in. Russian: the name Windows gives it
+        (Russian on a Russian Windows).
+    #>
+    param([Parameter(Mandatory = $true)][System.Globalization.CultureInfo]$Culture)
+    $name = if ((Get-DzLanguage) -eq 'en') { $Culture.EnglishName } else { $Culture.DisplayName }
+    return ('{0}  ({1})' -f $name, $Culture.Name)
+}
+
 function Get-CultureItem {
     param([Parameter(Mandatory = $true)][string]$Name)
     try {
         $c = [System.Globalization.CultureInfo]::GetCultureInfo($Name)
-        return (New-ListItem -Label ('{0}  ({1})' -f $c.DisplayName, $c.Name) -Value $c.Name)
+        return [pscustomobject]@{ Label = (Get-CultureLabel -Culture $c); Value = $c.Name }
     }
     catch {
-        return (New-ListItem -Label $Name -Value $Name)
+        return [pscustomobject]@{ Label = $Name; Value = $Name }
     }
 }
 
 function Get-RegionItemList {
-    $cultures = [System.Globalization.CultureInfo]::GetCultures([System.Globalization.CultureTypes]::SpecificCultures) |
-        Sort-Object -Property DisplayName
-    return @($cultures | ForEach-Object { New-ListItem -Label ('{0}  ({1})' -f $_.DisplayName, $_.Name) -Value $_.Name })
+    $cultures = [System.Globalization.CultureInfo]::GetCultures([System.Globalization.CultureTypes]::SpecificCultures)
+    return @($cultures | ForEach-Object { [pscustomobject]@{ Label = (Get-CultureLabel -Culture $_); Value = $_.Name } } | Sort-Object -Property Label)
 }
 
 function Get-KeyboardItemList {
@@ -212,8 +224,52 @@ function Get-KeyboardItemList {
     return @($items | Sort-Object -Property Label)
 }
 
+function Get-TimeZoneLabel {
+    <#
+        A time zone's name in the builder's language. TimeZoneInfo.DisplayName is in Windows' own
+        language; for English the registry's "Display" value is used, which Windows keeps in
+        English ("(UTC+03:00) Moscow, St. Petersburg"). The localized one is in "MUI_Display".
+    #>
+    param([Parameter(Mandatory = $true)][System.TimeZoneInfo]$Zone)
+    if ((Get-DzLanguage) -eq 'en') {
+        try {
+            $key = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\' + $Zone.Id
+            $english = [string](Get-ItemProperty -LiteralPath $key -Name 'Display' -ErrorAction Stop).Display
+            if ($english -and $english -notmatch '^@') { return $english }
+        }
+        catch { Write-Verbose "No English name in the registry for $($Zone.Id)." }
+    }
+    return $Zone.DisplayName
+}
+
 function Get-TimeZoneItemList {
-    return @([System.TimeZoneInfo]::GetSystemTimeZones() | ForEach-Object { New-ListItem -Label $_.DisplayName -Value $_.Id })
+    return @([System.TimeZoneInfo]::GetSystemTimeZones() | ForEach-Object { [pscustomobject]@{ Label = (Get-TimeZoneLabel -Zone $_); Value = $_.Id } })
+}
+
+function Update-ListLanguage {
+    <#
+        After the language button: the language, region and time-zone drop-downs get their names in
+        the new language. Same entries in the same order, same one picked.
+    #>
+    param([Parameter(Mandatory = $true)][object]$Combo, [Parameter(Mandatory = $true)][ValidateSet('culture', 'timezone')][string]$Kind)
+    $items = @($Combo.ItemsSource)
+    if ($items.Count -eq 0) { return }
+    $picked = [string]$Combo.SelectedValue
+    $zones = @{}
+    if ($Kind -eq 'timezone') { foreach ($z in [System.TimeZoneInfo]::GetSystemTimeZones()) { $zones[$z.Id] = $z } }
+    $new = foreach ($i in $items) {
+        $v = [string]$i.Value
+        if ($Kind -eq 'culture') {
+            $c = $null
+            try { $c = [System.Globalization.CultureInfo]::GetCultureInfo($v) } catch { $c = $null }
+            if ($c -and $i.Label -match '\(' + [regex]::Escape($v) + '\)$') { [pscustomobject]@{ Label = (Get-CultureLabel -Culture $c); Value = $v } } else { $i }
+        }
+        elseif ($zones.ContainsKey($v)) { [pscustomobject]@{ Label = (Get-TimeZoneLabel -Zone $zones[$v]); Value = $v } }
+        else { $i }
+    }
+    if ($Kind -eq 'culture' -and @($items).Count -gt 50) { $new = @($new | Sort-Object -Property Label) }
+    $Combo.ItemsSource = @($new)
+    if ($picked) { Select-ComboValue -Combo $Combo -Value $picked }
 }
 
 function Get-CurrentKeyboardValue {
