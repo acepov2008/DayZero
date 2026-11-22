@@ -3142,6 +3142,42 @@
     [
       "ISO file not found: {0}",
       "ISO-файл не найден: {0}"
+    ],
+    [
+      "{0} - downloaded from {1}, written as it is (no DayZero)",
+      "{0} - загрузка с {1}, запись как есть (без DayZero)"
+    ],
+    [
+      "Downloaded once from the project's own site, checked against its published SHA-256 and kept for the next stick, then written to the stick exactly as it is and read back. You install it by hand; your account, apps and scripts below are not used.",
+      "Скачивается один раз с официального сайта проекта, сверяется с опубликованной суммой SHA-256 и сохраняется для следующей флешки, затем записывается на флешку точно как есть и проверяется повторным чтением. Устанавливаете вручную; учётная запись, приложения и скрипты ниже не используются."
+    ],
+    [
+      "Download {0} and write it to this stick as it is?",
+      "Скачать {0} и записать на эту флешку как есть?"
+    ],
+    [
+      "It is downloaded from the project's own site and checked against its published SHA-256 first. You install it by hand.",
+      "Сначала он скачивается с официального сайта проекта и сверяется с опубликованной суммой SHA-256. Устанавливаете вручную."
+    ],
+    [
+      "Unknown -System {0}. Use one of: {1}",
+      "Неизвестный -System {0}. Возможные значения: {1}"
+    ],
+    [
+      "Could not find the current {0} release on {1}.",
+      "Не удалось найти текущий выпуск {0} на {1}."
+    ],
+    [
+      "Could not find a {0} release folder in {1}.",
+      "Не удалось найти папку выпуска {0} в {1}."
+    ],
+    [
+      "No checksum file for {0} in {1}.",
+      "Нет файла контрольных сумм для {0} в {1}."
+    ],
+    [
+      "Download interrupted ({0}); continuing where it stopped.",
+      "Загрузка прервалась ({0}); продолжаем с того же места."
     ]
   ]
 }

@@ -47,7 +47,7 @@ function Get-LxProgress {
     if ($m.Success) { $p = [double]$m.Groups[1].Value / 100 }
     switch -Regex ($Text) {
         '^Downloading' { return 2 + 38 * $p }
-        '^Checking Ubuntu' { return 40 + 5 * $p }
+        '^Checking (?!what)' { return 40 + 5 * $p }
         '^Erasing' { return 46 }
         '^Copying Ubuntu' { return 48 + 46 * $p }
         '^Adding DayZero' { return 96 }
@@ -86,13 +86,23 @@ function Set-LxBusy {
 # ------------------------------------------------------------------------------------
 
 function Get-LxSystem {
-    <# Kind: 'download' (DistroId), 'ubuntu-iso' or 'raw-iso' (IsoPath). #>
+    <#
+        Kind: 'download' (Ubuntu with DayZero, DistroId), 'download-raw' (another distro from its
+        official site, written as it is, DistroId), 'ubuntu-iso' or 'raw-iso' (IsoPath).
+    #>
     $lx = $script:lx
     if ($lx.LxUbuntuIsoRadio.IsChecked -eq $true) { return [pscustomobject]@{ Kind = 'ubuntu-iso'; DistroId = ''; IsoPath = [string]$lx.LxIsoPathText.Text } }
     if ($lx.LxRawIsoRadio.IsChecked -eq $true) { return [pscustomobject]@{ Kind = 'raw-iso'; DistroId = ''; IsoPath = [string]$lx.LxIsoPathText.Text } }
     $r = @($script:LxDistroRadios | Where-Object { $_.IsChecked -eq $true }) | Select-Object -First 1
     $id = if ($r) { [string]$r.Tag } else { (Get-DzLinuxCatalog).DefaultDistro }
-    return [pscustomobject]@{ Kind = 'download'; DistroId = $id; IsoPath = '' }
+    $kind = if ([string](Get-DzLinuxDistro -Id $id).automation -eq 'ubuntu-autoinstall') { 'download' } else { 'download-raw' }
+    return [pscustomobject]@{ Kind = $kind; DistroId = $id; IsoPath = '' }
+}
+
+function Test-LxRawKind {
+    <# $true when the stick gets an ISO written as it is (no DayZero on it). #>
+    param([string]$Kind)
+    return ($Kind -eq 'raw-iso' -or $Kind -eq 'download-raw')
 }
 
 function Initialize-LxDistros {
@@ -105,7 +115,8 @@ function Initialize-LxDistros {
         $r.GroupName = 'LxSystem'
         $r.Tag = [string]$d.id
         $r.Margin = New-Object System.Windows.Thickness(0, 0, 0, 6)
-        $r.Content = (Get-DzText '{0} - downloaded from ubuntu.com, with DayZero (supported until {1})') -f $d.name, $d.supportedUntil
+        $r.Content = if ([string]$d.automation -eq 'ubuntu-autoinstall') { (Get-DzText '{0} - downloaded from ubuntu.com, with DayZero (supported until {1})') -f $d.name, $d.supportedUntil }
+        else { (Get-DzText '{0} - downloaded from {1}, written as it is (no DayZero)') -f $d.name, $d.site }
         $r.IsChecked = ([string]$d.id -eq $catalog.DefaultDistro)
         $r.Add_Checked({ Update-LxSystemMode })
         [void]$panel.Children.Add($r)
@@ -117,14 +128,15 @@ function Initialize-LxDistros {
 function Update-LxSystemMode {
     $lx = $script:lx
     $sys = Get-LxSystem
-    $raw = ($sys.Kind -eq 'raw-iso')
-    $lx.LxIsoPanel.Visibility = if ($sys.Kind -eq 'download') { 'Collapsed' } else { 'Visible' }
+    $raw = Test-LxRawKind -Kind $sys.Kind
+    $lx.LxIsoPanel.Visibility = if ($sys.Kind -like 'download*') { 'Collapsed' } else { 'Visible' }
     foreach ($n in 'LxAccountCard', 'LxRegionCard', 'LxAppsCard', 'LxOptionsCard') { $lx[$n].IsEnabled = -not $raw }
     $lx.LxPreviewButton.IsEnabled = -not $raw
     if ($raw -and $lx.LxTargetExistingRadio.IsChecked -eq $true) { $lx.LxTargetNewRadio.IsChecked = $true }
     $lx.LxTargetExistingRadio.IsEnabled = -not $raw
     $hint = switch ($sys.Kind) {
         'download' { Get-DzText 'Downloaded once (about 6 GB) from releases.ubuntu.com, checked against Ubuntu''s published SHA-256 and kept for the next stick. The PC needs UEFI (any PC from the last ten years).' }
+        'download-raw' { Get-DzText 'Downloaded once from the project''s own site, checked against its published SHA-256 and kept for the next stick, then written to the stick exactly as it is and read back. You install it by hand; your account, apps and scripts below are not used.' }
         'ubuntu-iso' { Get-DzText 'Pick an Ubuntu Desktop ISO, 24.04 or newer. Its files are copied to the stick, with DayZero added. The PC needs UEFI.' }
         default { Get-DzText 'The ISO is written to the stick exactly as it is and read back to check it, like Rufus in DD mode or balenaEtcher. You install it by hand; your account, apps and scripts below are not used.' }
     }
@@ -290,7 +302,7 @@ function Get-LxInput {
     $errors = New-Object System.Collections.Generic.List[string]
     $warnings = New-Object System.Collections.Generic.List[string]
     $sys = Get-LxSystem
-    $existing = ($lx.LxTargetExistingRadio.IsChecked -eq $true -and $sys.Kind -ne 'raw-iso')
+    $existing = ($lx.LxTargetExistingRadio.IsChecked -eq $true -and -not (Test-LxRawKind -Kind $sys.Kind))
     $disk = $null
     $root = $null
     if ($existing) {
@@ -301,11 +313,12 @@ function Get-LxInput {
         $disk = $lx.LxUsbDiskCombo.SelectedItem
         if ($null -eq $disk) { $errors.Add('Pick the USB stick to erase.') }
     }
-    if ($sys.Kind -ne 'download' -and -not $existing) {
+    if ($sys.Kind -notlike 'download*' -and -not $existing) {
         if (-not $sys.IsoPath -or -not (Test-Path -LiteralPath $sys.IsoPath -PathType Leaf)) { $errors.Add('Pick the ISO file.') }
     }
     $data = [pscustomobject]@{ System = $sys; Existing = $existing; Disk = $disk; Root = $root; Errors = $errors; Warnings = $warnings; Options = $null; Settings = $null; DistroName = '' }
-    if ($sys.Kind -eq 'raw-iso') { return $data }
+    if ($sys.Kind -eq 'download-raw') { $data.DistroName = [string](Get-DzLinuxDistro -Id $sys.DistroId).name }
+    if (Test-LxRawKind -Kind $sys.Kind) { return $data }
 
     $user = ([string]$lx.LxUserNameText.Text).Trim()
     $problem = Test-DzLinuxUserName -Name $user
@@ -424,13 +437,17 @@ function Invoke-LxWrite {
     }
     else {
         $disk = $data.Disk
-        $summary.Add($(if ($sys.Kind -eq 'raw-iso') { (Get-DzText 'Write {0} to this stick as it is?') -f (Split-Path -Leaf $sys.IsoPath) } else { (Get-DzText 'Make a {0} install USB with DayZero on this stick?') -f $data.DistroName }))
+        $summary.Add($(if ($sys.Kind -eq 'raw-iso') { (Get-DzText 'Write {0} to this stick as it is?') -f (Split-Path -Leaf $sys.IsoPath) } elseif ($sys.Kind -eq 'download-raw') { (Get-DzText 'Download {0} and write it to this stick as it is?') -f $data.DistroName } else { (Get-DzText 'Make a {0} install USB with DayZero on this stick?') -f $data.DistroName }))
         $summary.Add('')
         $summary.Add((Get-DzText 'EVERYTHING ON IT WILL BE ERASED:'))
         $summary.Add(('   {0}, {1} GB, {2}' -f $disk.Name, $disk.SizeGB, $(if ($disk.Volumes) { $disk.Volumes } else { Get-DzText 'no drive letter' })))
     }
     if ($sys.Kind -eq 'raw-iso') {
         if (-not (Test-LxHybridIso -Path $sys.IsoPath)) { $summary.Add(''); $summary.Add((Get-DzText 'Warning: this file has no boot record, so it may not start from a USB stick.')) }
+    }
+    elseif ($sys.Kind -eq 'download-raw') {
+        $summary.Add('')
+        $summary.Add((Get-DzText 'It is downloaded from the project''s own site and checked against its published SHA-256 first. You install it by hand.'))
     }
     else {
         $summary.Add('')
@@ -453,18 +470,20 @@ function Invoke-LxWrite {
     Set-LxBusy -Busy $true -ShowProgress:(-not $data.Existing)
     $script:lx.LxLogExpander.IsExpanded = $true
     try {
-        if ($sys.Kind -eq 'raw-iso') {
-            $size = (Get-Item -LiteralPath $sys.IsoPath).Length
+        if (Test-LxRawKind -Kind $sys.Kind) {
+            $imagePath = $sys.IsoPath
+            if ($sys.Kind -eq 'download-raw') { $imagePath = (Get-DzLinuxIso -DistroId $sys.DistroId -Tick $tick -Log $log).Path }
+            $size = (Get-Item -LiteralPath $imagePath).Length
             if ($size -gt ($data.Disk.Size - 1MB)) { throw ((Get-DzText 'The image needs {0} GB but the stick only holds {1} GB.') -f ('{0:N1}' -f ($size / 1GB)), ('{0:N1}' -f ($data.Disk.Size / 1GB))) }
             $erased = $true
             Set-LxStatus -Text 'Erasing the USB stick...'
             [void](Initialize-DzUsbDisk -Disk $data.Disk -CleanOnly -Tick $tick -Log $log)
             $stream = Open-DzRawDisk -Number $data.Disk.Number
-            try { $hash = Write-DzImageToStream -ImagePath $sys.IsoPath -Stream $stream -DiskBytes $data.Disk.Size -Tick $tick }
+            try { $hash = Write-DzImageToStream -ImagePath $imagePath -Stream $stream -DiskBytes $data.Disk.Size -Tick $tick }
             finally { $stream.Dispose() }
             Write-LxLog "Written and read back, SHA-256 $hash"
             Set-LxStatus -Text 'Done! The ISO is on the stick and was checked.' -Kind Ok
-            [void](Show-DzMessage -Text ((Get-DzText 'Done! {0} is on the stick and was read back to check it.') -f (Split-Path -Leaf $sys.IsoPath) + "`n`n" + (Get-DzText 'Windows may now say the stick needs formatting: do NOT format it. That is normal for Linux sticks.')) -Title 'DayZero Builder' -Kind Info -Owner $script:LxWindow)
+            [void](Show-DzMessage -Text ((Get-DzText 'Done! {0} is on the stick and was read back to check it.') -f (Split-Path -Leaf $imagePath) + "`n`n" + (Get-DzText 'Windows may now say the stick needs formatting: do NOT format it. That is normal for Linux sticks.')) -Title 'DayZero Builder' -Kind Info -Owner $script:LxWindow)
             return
         }
 

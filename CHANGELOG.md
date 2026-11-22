@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.15.0 - Fedora, Debian, Linux Mint and CachyOS
+- New choices in **Make a Linux stick...** and in the Linux terminal builder: **Fedora
+  Workstation**, **Debian (GNOME)**, **Linux Mint (Cinnamon)** and **CachyOS**. The builder finds
+  the current release itself (Fedora's newest release folder, Mint's newest version, the CachyOS
+  release named on cachyos.org), downloads it from the project's own site, checks it against the
+  published SHA-256, keeps it for the next stick and writes it as it is, then reads it back.
+- `builder\linux\distros.json` now describes how to find each distro's newest ISO
+  (`latestFrom`, `latestDir`, `path`, `sums`/`sumsPattern`, `isoPattern`), so adding a distro is a
+  catalogue entry. Fedora-style `SHA256 (file) = hash` checksum lines are read too.
+- Downloads may follow HTTPS redirects to the project's mirrors (Debian sends them to its
+  mirrors); the builder logs which mirror served the file and refuses plain http. Checksum
+  lookups are retried twice and an interrupted download continues where it stopped.
+- The terminal builder's menu and `-System` values come from the catalogue; a "written as it is"
+  ISO is downloaded and checked before you are asked to confirm the erase.
+- Tested: each of the four was found, downloaded and matched its published SHA-256 (Fedora 45,
+  Debian 13.8, Mint 22.3, CachyOS 260809), and each, written as it is, started from a USB disk
+  under UEFI in QEMU. No DayZero setup on these yet: you install them by hand.
+
 ## 0.14.0 - Linux
 - **Linux install sticks (groundwork).** `builder\lib\Linux.psm1` downloads Ubuntu Desktop
   (26.04 LTS or 24.04 LTS) from releases.ubuntu.com, picks the newest point release from the

@@ -3,7 +3,7 @@
 A USB stick that installs Windows and then sets the PC up for you: think **Ninite + an
 unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 
-> **Status: v0.14.0, now with Linux.** About 1,290 automated tests and static checks cover it,
+> **Status: v0.15.0, with Linux.** About 1,300 automated tests and static checks cover it,
 > including a complete dry run of every mode and a whole Ubuntu stick written to a test disk on
 > Linux. **The Windows GUI (WPF) and the Windows-only steps have not run on real Windows yet,
 > and no DayZero Linux stick has installed a real PC yet.** Do the VM tests in
@@ -100,8 +100,11 @@ DayZero also makes **Linux** sticks, and the whole builder also **runs on Linux*
   **still stops on the disk screen**: you pick the disk.
 * **Add DayZero to an Ubuntu stick you made with Rufus** (ISO mode, FAT32): only
   `autoinstall.yaml` and the kit are added; nothing is erased.
-* **Any other Linux ISO** (Fedora, Linux Mint, Debian, ...) written to the stick exactly as it
-  is, like Rufus' DD mode or balenaEtcher, then read back and compared. No DayZero automation.
+* **Fedora Workstation, Debian (GNOME), Linux Mint (Cinnamon) or CachyOS**, downloaded from the
+  project's own site (always the current release; the checksum always comes from the project's
+  own server and the ISO must match it), written to the stick exactly as it is and read back.
+  You install them by hand; there is no DayZero automation on these sticks yet.
+* **Any other Linux ISO file** you have, written the same way (like Rufus' DD mode or balenaEtcher).
 
 After the first start, the **DayZero Linux setup** (`/opt/dayzero/dayzero.py`, a systemd
 service) runs once in the background: all updates, the drivers Ubuntu recommends (NVIDIA,
@@ -121,7 +124,8 @@ sudo ./build-dayzero-usb.sh                 # asks everything; -ListDisks only s
 It downloads Windows from Microsoft's catalogue (same size and SHA-1 checks) and unpacks it with
 `wimlib-imagex` instead of DISM, or uses your ISO. A Windows stick made on Linux boots on UEFI
 PCs only (the legacy BIOS boot code can only be written from Windows), and tiny11 is not
-available there. Ubuntu sticks and "any Linux ISO" work the same as on Windows. The stick is
+available there. Ubuntu, Fedora, Debian, Mint, CachyOS and "any Linux ISO" work the same as on
+Windows (`-System fedora-workstation`, `debian-gnome`, `linuxmint-cinnamon`, `cachyos-desktop`, ...). The stick is
 erased only after you type its name (for example `sdb`).
 
 ## The four modes
@@ -281,8 +285,9 @@ once (digital licence). The summary shows the result. No activators or bypass sc
 * Windows Update, Defender, the firewall and the Store are never reconfigured, at any clean-up level.
 * Downloads come only from Microsoft or the vendor; installers must be signed by them.
 * Linux: `autoinstall.yaml` always keeps the disk screen interactive and never has a storage
-  section (a test fails the build otherwise). Ubuntu ISOs come only from ubuntu.com over HTTPS
-  and must match the published SHA-256. On Linux, the builder offers only USB disks that do not
+  section (a test fails the build otherwise). Linux ISOs come only from the projects' own HTTPS
+  hosts listed in `builder\linux\distros.json` (a download may be redirected to the project's
+  HTTPS mirrors, as Debian does) and must match the SHA-256 published on the project's server. On Linux, the builder offers only USB disks that do not
   hold the running system, re-checks the disk right before erasing, and erases it only after you
   type its name. A raw ISO write is read back and compared. Updates and the firewall are never
   turned off; Flathub ids are checked, never guessed.

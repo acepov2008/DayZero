@@ -28,10 +28,20 @@ dec49008a71f6098d0bcfc822021f4d042d5f2db279e4d75bdd981304f1ca5d9 *ubuntu-26.04-l
 }
 
 Describe 'Linux catalogue (builder\linux\distros.json)' {
-    It 'downloads only over https from Ubuntu''s own hosts' {
-        $script:Catalog.AllowedHosts | Should -Be @('releases.ubuntu.com', 'cdimage.ubuntu.com')
+    It 'downloads only over https from each project''s own hosts' {
+        $script:Catalog.AllowedHosts | Should -Be @('releases.ubuntu.com', 'cdimage.ubuntu.com', 'dl.fedoraproject.org', 'cdimage.debian.org', 'mirrors.edge.kernel.org', 'cachyos.org', 'mirror.cachyos.org')
         foreach ($d in $script:Catalog.Distros) {
-            Test-DzLinuxDownloadUrl -Url ([string]$d.baseUrl + [string]$d.sums) -AllowedHosts $script:Catalog.AllowedHosts | Should -BeTrue
+            Test-DzLinuxDownloadUrl -Url ([string]$d.baseUrl) -AllowedHosts $script:Catalog.AllowedHosts | Should -BeTrue -Because $d.id
+            if ($d.PSObject.Properties['latestFrom']) { Test-DzLinuxDownloadUrl -Url ([string]$d.latestFrom.page) -AllowedHosts $script:Catalog.AllowedHosts | Should -BeTrue -Because $d.id }
+        }
+    }
+    It 'offers Ubuntu with DayZero, and Fedora, Debian, Linux Mint and CachyOS written as they are' {
+        $ids = @($script:Catalog.Distros | ForEach-Object { $_.id })
+        foreach ($id in 'ubuntu-26.04', 'ubuntu-24.04', 'fedora-workstation', 'debian-gnome', 'linuxmint-cinnamon', 'cachyos-desktop') { $ids | Should -Contain $id }
+        foreach ($d in $script:Catalog.Distros) {
+            @('ubuntu-autoinstall', 'none') | Should -Contain ([string]$d.automation)
+            if ($d.automation -eq 'ubuntu-autoinstall') { [string]$d.family | Should -Be 'ubuntu' }
+            [string]$d.name | Should -Not -BeNullOrEmpty
         }
     }
     It 'has a default that exists and only files that fit FAT32' {
@@ -60,6 +70,23 @@ Describe 'Linux catalogue (builder\linux\distros.json)' {
         $s.Count | Should -Be 2
         $s[0].Sha256 | Should -Be ('ab' * 32)
         $s[1].Name | Should -Be 'b.iso'
+    }
+    It 'reads BSD-style checksum lines (Fedora) and skips PGP signature text' {
+        $t = "-----BEGIN PGP SIGNED MESSAGE-----`nHash: SHA256`n`n# Fedora-Workstation-Live-45-1.4.x86_64.iso: 2925092864 bytes`nSHA256 (Fedora-Workstation-Live-45-1.4.x86_64.iso) = 68338C6BFE4F0D64151F2E47EFE9F44A8855AD05B460E56B844FB3FA2C9A3BEB`n-----BEGIN PGP SIGNATURE-----`niQIzBAEBCAAdFiEET1Cm`n"
+        $s = @(ConvertFrom-DzSha256Sums -Text $t)
+        $s.Count | Should -Be 1
+        $s[0].Name | Should -Be 'Fedora-Workstation-Live-45-1.4.x86_64.iso'
+        $s[0].Sha256 | Should -Be '68338c6bfe4f0d64151f2e47efe9f44a8855ad05b460e56b844fb3fa2c9a3beb'
+    }
+    It 'reads the names in a web server folder listing, and nothing outside it' {
+        $html = '<a href="../">..</a><a href="?C=N;O=D">Name</a><a href="22.3/">22.3/</a><a href="./22/">22/</a><a href="https://evil.example/x.iso">x</a><a href="/pub/">pub</a><a href="a&amp;b.iso">a</a><a href="22.3/">dup</a>'
+        @(ConvertFrom-DzHtmlLinks -Html $html) | Should -Be @('22.3/', '22/', 'a&b.iso')
+    }
+    It 'picks the highest version, also for plain numbers and dates' {
+        Select-DzLatestName -Names @('21.3/', '22/', '22.3/', '22.10/') -Pattern '^[0-9.]+/$' | Should -Be '22.10/'
+        Select-DzLatestName -Names @('44/', '45/', '9/', 'test/') -Pattern '^[0-9]+/$' | Should -Be '45/'
+        Select-DzLatestName -Names @('260628', '260809') -Pattern '.' | Should -Be '260809'
+        Select-DzLatestName -Names @('x') -Pattern '^y$' | Should -BeNullOrEmpty
     }
     It 'hashes files with SHA-256' {
         $f = Join-Path $TestDrive 'abc.bin'
@@ -293,5 +320,56 @@ Describe 'Linux kit (kit\linux)' {
         $texts.Count | Should -BeGreaterThan 15
         $missing = @($texts | Where-Object { -not $have.Contains($_) } | Select-Object -Unique)
         $missing | Should -BeNullOrEmpty
+    }
+}
+
+Describe 'Finding the newest ISO of each distro (Resolve-DzLinuxIsoSource)' {
+    BeforeAll {
+        $h = '0123456789abcdef' * 4
+        $script:Pages = @{
+            'https://dl.fedoraproject.org/pub/fedora/linux/releases/' = '<a href="43/">43/</a><a href="44/">44/</a><a href="45/">45/</a><a href="9/">9/</a>'
+            'https://dl.fedoraproject.org/pub/fedora/linux/releases/45/Workstation/x86_64/iso/' = '<a href="Fedora-Workstation-45-1.4-x86_64-CHECKSUM">c</a><a href="Fedora-Workstation-Live-45-1.4.x86_64.iso">i</a>'
+            'https://dl.fedoraproject.org/pub/fedora/linux/releases/45/Workstation/x86_64/iso/Fedora-Workstation-45-1.4-x86_64-CHECKSUM' = "SHA256 (Fedora-Workstation-Live-45-1.4.x86_64.iso) = $h"
+            'https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA256SUMS' = "$h  debian-live-13.8.0-amd64-cinnamon.iso`n$h  debian-live-13.8.0-amd64-gnome.iso`n$h  debian-live-13.8.0-amd64-gnome.iso.contents"
+            'https://mirrors.edge.kernel.org/linuxmint/stable/' = '<a href="../">..</a><a href="21.3/">21.3/</a><a href="22/">22/</a><a href="22.3/">22.3/</a>'
+            'https://mirrors.edge.kernel.org/linuxmint/stable/22.3/sha256sum.txt' = "$h *linuxmint-22.3-cinnamon-64bit.iso`n$h *linuxmint-22.3-mate-64bit.iso"
+            'https://cachyos.org/download/' = 'x https://iso.cachyos.org/desktop/260809/cachyos-desktop-linux-260809.iso y https://iso.cachyos.org/handheld/260628/cachyos-handheld-linux-260628.iso'
+            'https://mirror.cachyos.org/ISO/desktop/260809/cachyos-desktop-linux-260809.iso.sha256' = "$h  cachyos-desktop-linux-260809.iso"
+        }
+        $pages = $script:Pages
+        $script:Fetch = { param($u) if (-not $pages.ContainsKey($u)) { throw "not in the test pages: $u" }; $pages[$u] }.GetNewClosure()
+        $script:Resolve = { param($id) Resolve-DzLinuxIsoSource -Distro (Get-DzLinuxDistro -Id $id) -AllowedHosts $script:Catalog.AllowedHosts -Fetch $script:Fetch }
+    }
+    It 'Fedora: the highest release folder, its CHECKSUM file, the Workstation live ISO' {
+        $r = & $script:Resolve 'fedora-workstation'
+        $r.Url | Should -Be 'https://dl.fedoraproject.org/pub/fedora/linux/releases/45/Workstation/x86_64/iso/Fedora-Workstation-Live-45-1.4.x86_64.iso'
+        $r.Version | Should -Be '45'
+        $r.Sha256 | Should -Match '^[0-9a-f]{64}$'
+    }
+    It 'Debian: the GNOME live ISO from the current release' {
+        (& $script:Resolve 'debian-gnome').Url | Should -Be 'https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-13.8.0-amd64-gnome.iso'
+    }
+    It 'Linux Mint: the newest release folder and its Cinnamon ISO' {
+        (& $script:Resolve 'linuxmint-cinnamon').Url | Should -Be 'https://mirrors.edge.kernel.org/linuxmint/stable/22.3/linuxmint-22.3-cinnamon-64bit.iso'
+    }
+    It 'CachyOS: the release cachyos.org names, not just the newest folder on the mirror' {
+        $r = & $script:Resolve 'cachyos-desktop'
+        $r.Url | Should -Be 'https://mirror.cachyos.org/ISO/desktop/260809/cachyos-desktop-linux-260809.iso'
+        $r.SumsUrl | Should -Be 'https://mirror.cachyos.org/ISO/desktop/260809/cachyos-desktop-linux-260809.iso.sha256'
+    }
+    It 'refuses addresses that are not on the allowed hosts' {
+        $d = (Get-DzLinuxDistro -Id 'debian-gnome').PSObject.Copy()
+        $d.baseUrl = 'https://evil.example/debian/'
+        { Resolve-DzLinuxIsoSource -Distro $d -AllowedHosts $script:Catalog.AllowedHosts -Fetch $script:Fetch } | Should -Throw '*not an allowed*'
+    }
+    It 'refuses a release name that could leave the folder' {
+        $pages = @{ 'https://cachyos.org/download/' = 'desktop/../../x/cachyos-desktop-linux-x.iso' }
+        $f = { param($u) $pages[$u] }.GetNewClosure()
+        { Resolve-DzLinuxIsoSource -Distro (Get-DzLinuxDistro -Id 'cachyos-desktop') -AllowedHosts $script:Catalog.AllowedHosts -Fetch $f } | Should -Throw
+    }
+    It 'says so when nothing matches' {
+        $pages = @{ 'https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA256SUMS' = '' }
+        $f = { param($u) $pages[$u] }.GetNewClosure()
+        { Resolve-DzLinuxIsoSource -Distro (Get-DzLinuxDistro -Id 'debian-gnome') -AllowedHosts $script:Catalog.AllowedHosts -Fetch $f } | Should -Throw '*No Debian*'
     }
 }

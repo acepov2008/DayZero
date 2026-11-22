@@ -278,6 +278,26 @@ exit `$LASTEXITCODE
         @($settings.apps) | Should -Contain 'steam'
         $settings.PSObject.Properties.Name | Should -Not -Contain 'password'
     }
+    It 'writes any Linux ISO as it is, and the stick then holds exactly that image' {
+        $raw = Join-Path $TestDrive 'other-linux.iso'
+        $bytes = New-Object byte[] (5MB)
+        (New-Object System.Random 11).NextBytes($bytes)
+        $bytes[510] = 0x55; $bytes[511] = 0xAA
+        [System.IO.File]::WriteAllBytes($raw, $bytes)
+        $leaf = Split-Path -Leaf $script:Loop
+        $r = & $script:RunCli @('-System', 'linux-iso', '-IsoPath', $raw, '-Disk', $script:Loop, '-PasswordStdin', '-AppLanguage', 'en') "$leaf`n"
+        $r.Code | Should -Be 0 -Because $r.Output
+        $r.Output | Should -Match 'read back'
+        $fs = [System.IO.File]::OpenRead($script:Loop)
+        try { $back = New-Object byte[] $bytes.Length; [void]$fs.Read($back, 0, $back.Length) } finally { $fs.Dispose() }
+        [System.Linq.Enumerable]::SequenceEqual([byte[]]$back, [byte[]]$bytes) | Should -BeTrue
+    }
+    It 'names the systems it knows when -System is wrong' {
+        $r = & $script:RunCli @('-System', 'windows95', '-Disk', $script:Loop, '-PasswordStdin') ''
+        $r.Code | Should -Be 1
+        $r.Output | Should -Match 'fedora-workstation'
+        $r.Output | Should -Match 'cachyos-desktop'
+    }
     It 'refuses a disk that is not offered' {
         $a = $script:Args.Clone()
         $a[5] = '/dev/vda'

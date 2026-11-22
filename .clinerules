@@ -21,7 +21,7 @@ Hard rules:
 - winget IDs must be real (check winget-pkgs), never guessed.
 - Don't use "$name?" inside strings (write "${name}?").
 - Linux: autoinstall.yaml must always list 'storage' in interactive-sections and never have a 'storage' key (Get-DzForbiddenAutoinstallKey). Without it Ubuntu wipes a single-disk PC by itself.
-- Linux ISOs only from the https hosts in builder\linux\distros.json, and only when they match the published SHA256SUMS.
+- Linux ISOs only from the https hosts in builder\linux\distros.json, and only when they match the SHA-256 published on that host. Redirects to the project's https mirrors are allowed (never http); the checksum always comes from the project's own host.
 - Flathub ids must be checked (flathub GitHub org or the app's own manifest) and listed in tests\data\flatpak-ids-verified.txt, never guessed.
 - Linux kit files (.sh .py .service .desktop) keep LF line endings (.gitattributes); the builder converts your scripts to LF.
 - Linux builder: erase only a disk from Get-DzLinuxUsbDiskCandidate with no Problem, re-checked in Initialize-DzLinuxUsbDisk right before wipefs, and only after the user typed its name. Never add loop devices or non-USB disks to the offered list (tests replace the list instead).

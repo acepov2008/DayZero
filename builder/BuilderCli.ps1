@@ -24,7 +24,9 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseCompatibleTypes', '', Justification = 'Linux only, PowerShell 7.')]
 [CmdletBinding()]
 param(
-    [ValidateSet('', 'windows11', 'windows10', 'windows-iso', 'ubuntu-26.04', 'ubuntu-24.04', 'ubuntu-iso', 'linux-iso')][string]$System = '',
+    # windows11, windows10, windows-iso, ubuntu-iso, linux-iso, or a distro id from builder/linux/distros.json
+    # (ubuntu-26.04, ubuntu-24.04, fedora-workstation, debian-gnome, linuxmint-cinnamon, cachyos-desktop).
+    [ValidatePattern('^[a-z0-9.-]*$')][string]$System = '',
     [string]$Disk,
     [string]$IsoPath,
     [string]$UserName,
@@ -146,18 +148,38 @@ function Show-Disks {
     return @($all | Where-Object { -not $_.Problem })
 }
 
+function Get-SystemChoice {
+    <# Every kind of stick this builder makes: Value (what -System takes), Label, Kind (windows, ubuntu, raw). #>
+    $items = New-Object System.Collections.Generic.List[object]
+    $items.Add([pscustomobject]@{ Label = 'Windows 11 (downloaded from Microsoft)'; Value = 'windows11'; Kind = 'windows' })
+    $items.Add([pscustomobject]@{ Label = 'Windows 10 (downloaded from Microsoft)'; Value = 'windows10'; Kind = 'windows' })
+    $items.Add([pscustomobject]@{ Label = 'Windows from an ISO file I already have'; Value = 'windows-iso'; Kind = 'windows' })
+    foreach ($d in (Get-DzLinuxCatalog).Distros) {
+        if ([string]$d.automation -eq 'ubuntu-autoinstall') {
+            $items.Add([pscustomobject]@{ Label = ((Get-DzText '{0} - downloaded from ubuntu.com, with DayZero (supported until {1})') -f $d.name, $d.supportedUntil); Value = [string]$d.id; Kind = 'ubuntu' })
+        }
+    }
+    $items.Add([pscustomobject]@{ Label = 'Ubuntu from an ISO file I already have (with DayZero)'; Value = 'ubuntu-iso'; Kind = 'ubuntu' })
+    foreach ($d in (Get-DzLinuxCatalog).Distros) {
+        if ([string]$d.automation -ne 'ubuntu-autoinstall') {
+            $items.Add([pscustomobject]@{ Label = ((Get-DzText '{0} - downloaded from {1}, written as it is (no DayZero)') -f $d.name, $d.site); Value = [string]$d.id; Kind = 'raw' })
+        }
+    }
+    $items.Add([pscustomobject]@{ Label = 'Another Linux ISO file, written as it is (no DayZero)'; Value = 'linux-iso'; Kind = 'raw' })
+    return $items.ToArray()
+}
+
 function Select-System {
-    if ($System) { return $System }
-    $items = @(
-        [pscustomobject]@{ Label = 'Windows 11 (downloaded from Microsoft)'; Value = 'windows11' },
-        [pscustomobject]@{ Label = 'Windows 10 (downloaded from Microsoft)'; Value = 'windows10' },
-        [pscustomobject]@{ Label = 'Windows from an ISO file I already have'; Value = 'windows-iso' },
-        [pscustomobject]@{ Label = 'Ubuntu 26.04 LTS (downloaded from ubuntu.com, with DayZero)'; Value = 'ubuntu-26.04' },
-        [pscustomobject]@{ Label = 'Ubuntu 24.04 LTS (downloaded from ubuntu.com, with DayZero)'; Value = 'ubuntu-24.04' },
-        [pscustomobject]@{ Label = 'Ubuntu from an ISO file I already have (with DayZero)'; Value = 'ubuntu-iso' },
-        [pscustomobject]@{ Label = 'Another Linux ISO file, written as it is (no DayZero)'; Value = 'linux-iso' }
-    )
-    return (Read-CliChoice -Prompt 'What should the stick install?' -Items $items -Default 4)
+    $choices = @(Get-SystemChoice)
+    if ($System) {
+        $c = @($choices | Where-Object { $_.Value -eq $System }) | Select-Object -First 1
+        if (-not $c) { throw ('Unknown -System {0}. Use one of: {1}' -f $System, (($choices | ForEach-Object { $_.Value }) -join ', ')) }
+        return $c
+    }
+    $menu = @($choices | ForEach-Object { [pscustomobject]@{ Label = $_.Label; Value = $_ } })
+    $default = [array]::IndexOf(@($choices | ForEach-Object { $_.Value }), 'ubuntu-26.04') + 1
+    if ($default -lt 1) { $default = 1 }
+    return (Read-CliChoice -Prompt 'What should the stick install?' -Items $menu -Default $default)
 }
 
 function Select-Disk {
@@ -364,21 +386,30 @@ function Write-WindowsStick {
 }
 
 function Write-RawStick {
-    param([object]$Target)
-    if (-not $IsoPath -or -not (Test-Path -LiteralPath $IsoPath -PathType Leaf)) { throw 'Pick the ISO file.' }
-    $size = (Get-Item -LiteralPath $IsoPath).Length
-    if ($size -gt ($Target.Size - 1MB)) { throw ((Get-DzText 'The image needs {0} GB but the stick only holds {1} GB.') -f ('{0:N1}' -f ($size / 1GB)), ('{0:N1}' -f ($Target.Size / 1GB))) }
-    Confirm-Erase -Target $Target -Summary @(((Get-DzText 'Write {0} to this stick as it is?') -f (Split-Path -Leaf $IsoPath)))
+    <# An ISO written to the stick as it is: your file (-IsoPath), or a distro downloaded from its own site. #>
+    param([object]$Target, [string]$DistroId)
     $tick = { param($t) Write-CliTick $t }
     $log = { param($m) Write-Host ''; Write-CliLog $m }
+    $image = $IsoPath
+    $what = Split-Path -Leaf ([string]$IsoPath)
+    if ($DistroId) {
+        # Downloaded and checked before anything is erased: if this fails, the stick is untouched.
+        $image = (Get-DzLinuxIso -DistroId $DistroId -CacheRoot (Join-Path $script:CacheBase 'linux') -Tick $tick -Log $log).Path
+        Write-Host ''
+        $what = Split-Path -Leaf $image
+    }
+    if (-not $image -or -not (Test-Path -LiteralPath $image -PathType Leaf)) { throw 'Pick the ISO file.' }
+    $size = (Get-Item -LiteralPath $image).Length
+    if ($size -gt ($Target.Size - 1MB)) { throw ((Get-DzText 'The image needs {0} GB but the stick only holds {1} GB.') -f ('{0:N1}' -f ($size / 1GB)), ('{0:N1}' -f ($Target.Size / 1GB))) }
+    Confirm-Erase -Target $Target -Summary @(((Get-DzText 'Write {0} to this stick as it is?') -f $what))
     [void](Initialize-DzLinuxUsbDisk -Disk $Target -CleanOnly -Tick $tick -Log $log)
     $stream = Open-DzRawDisk -DevicePath $Target.Path
-    try { $hash = Write-DzImageToStream -ImagePath $IsoPath -Stream $stream -DiskBytes $Target.Size -Tick $tick }
+    try { $hash = Write-DzImageToStream -ImagePath $image -Stream $stream -DiskBytes $Target.Size -Tick $tick }
     finally { $stream.Dispose() }
     [void](Invoke-DzTool -FilePath 'sync')
     Write-Host ''
     Write-CliLog "Written and read back, SHA-256 $hash"
-    Say ((Get-DzText 'Done! {0} is on the stick and was read back to check it.') -f (Split-Path -Leaf $IsoPath)) 'Green'
+    Say ((Get-DzText 'Done! {0} is on the stick and was read back to check it.') -f $what) 'Green'
 }
 
 # ------------------------------------------------------------------------------------
@@ -399,13 +430,16 @@ if ($Verify) {
 if ([System.Environment]::UserName -ne 'root' -and (& id -u) -ne '0') { Say 'Run this as root: sudo ./build-dayzero-usb.sh' 'Red'; exit 1 }
 
 try {
-    $kind = Select-System
+    $choice = Select-System
+    $kind = [string]$choice.Value
     if (@('windows-iso', 'ubuntu-iso', 'linux-iso') -contains $kind -and -not $IsoPath) { $IsoPath = Read-CliLine -Prompt 'Path of the ISO file' }
     if ($IsoPath -and -not (Test-Path -LiteralPath $IsoPath -PathType Leaf)) { throw "ISO file not found: $IsoPath" }
     $target = Select-Disk
-    if ($kind -eq 'linux-iso') { Write-RawStick -Target $target }
-    elseif ($kind -like 'windows*') { Write-WindowsStick -Target $target -Account (Read-Account -ForLinux $false) -Kind $kind }
-    else { Write-UbuntuStick -Target $target -Account (Read-Account -ForLinux $true) -Kind $kind }
+    switch ($choice.Kind) {
+        'raw' { Write-RawStick -Target $target -DistroId $(if ($kind -eq 'linux-iso') { '' } else { $kind }) }
+        'windows' { Write-WindowsStick -Target $target -Account (Read-Account -ForLinux $false) -Kind $kind }
+        default { Write-UbuntuStick -Target $target -Account (Read-Account -ForLinux $true) -Kind $kind }
+    }
     exit 0
 }
 catch {

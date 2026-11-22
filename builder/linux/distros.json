@@ -1,16 +1,30 @@
 {
   "_doc": [
-    "Linux systems the DayZero builder can put on a USB stick (builder/lib/Linux.psm1).",
+    "Linux systems the DayZero builder can put on a USB stick (builder/lib/Linux.psm1, Resolve-DzLinuxIsoSource).",
     "baseUrl:     official HTTPS download folder. Only hosts in allowedHosts are accepted (tests check this).",
-    "sums:        checksum file in that folder (sha256sum format). The ISO must match it, byte for byte.",
-    "isoPattern:  regex for the ISO name inside the checksum file; the newest point release wins.",
-    "automation:  'ubuntu-autoinstall' = DayZero writes autoinstall.yaml + the Linux kit (kit/linux).",
-    "             The disk screen ALWAYS stays interactive: DayZero never picks, wipes or partitions a disk.",
-    "largestFile: biggest single file seen in the ISO (bytes). FAT32 holds files up to 4 GB - 1 byte;",
-    "             the builder checks the real files again before it erases anything.",
-    "Any other Linux ISO can still be written as-is ('raw' write) with no DayZero automation."
+    "latestFrom:  {page, regex}: the current release as named on the project's own page (regex group 1 = {v}).",
+    "latestDir:   regex: take the highest-numbered folder in baseUrl ({v} = its name).",
+    "path:        added to baseUrl after that ({v} filled in).",
+    "sums / sumsPattern: the checksum file (name, or regex over the folder listing). sha256sum and BSD styles.",
+    "isoPattern:  regex for the ISO name inside the checksum file ({v} filled in); the newest match wins.",
+    "             The ISO must match the published SHA-256, byte for byte, or it is thrown away.",
+    "             The checksum always comes from baseUrl's host. The ISO itself may be redirected (https only)",
+    "             to the project's mirrors (Debian does); the checksum still decides.",
+    "automation:  'ubuntu-autoinstall' = DayZero writes autoinstall.yaml + the Linux kit (kit/linux);",
+    "             the disk screen ALWAYS stays interactive: DayZero never picks, wipes or partitions a disk.",
+    "             'none' = the ISO is written to the stick as it is (like Rufus DD mode) and read back.",
+    "largestFile: (FAT32 copies only) biggest single file seen in the ISO (bytes); checked again before erasing.",
+    "Any other Linux ISO file can still be written as-is ('raw') with no DayZero automation."
   ],
-  "allowedHosts": [ "releases.ubuntu.com", "cdimage.ubuntu.com" ],
+  "allowedHosts": [
+    "releases.ubuntu.com",
+    "cdimage.ubuntu.com",
+    "dl.fedoraproject.org",
+    "cdimage.debian.org",
+    "mirrors.edge.kernel.org",
+    "cachyos.org",
+    "mirror.cachyos.org"
+  ],
   "defaultDistro": "ubuntu-26.04",
   "distros": [
     {
@@ -34,6 +48,54 @@
       "sums": "SHA256SUMS",
       "isoPattern": "^ubuntu-24\\.04(\\.[0-9]+)*-desktop-amd64\\.iso$",
       "largestFile": 2238521344
+    },
+    {
+      "id": "fedora-workstation",
+      "name": "Fedora Workstation",
+      "family": "fedora",
+      "automation": "none",
+      "site": "fedoraproject.org",
+      "baseUrl": "https://dl.fedoraproject.org/pub/fedora/linux/releases/",
+      "latestDir": "^[0-9]+/$",
+      "path": "Workstation/x86_64/iso/",
+      "sumsPattern": "^Fedora-Workstation-{v}-[0-9.]+-x86_64-CHECKSUM$",
+      "isoPattern": "^Fedora-Workstation-Live-{v}-[0-9.]+\\.x86_64\\.iso$"
+    },
+    {
+      "id": "debian-gnome",
+      "name": "Debian (GNOME)",
+      "family": "debian",
+      "automation": "none",
+      "site": "debian.org",
+      "baseUrl": "https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/",
+      "sums": "SHA256SUMS",
+      "isoPattern": "^debian-live-[0-9.]+-amd64-gnome\\.iso$"
+    },
+    {
+      "id": "linuxmint-cinnamon",
+      "name": "Linux Mint (Cinnamon)",
+      "family": "mint",
+      "automation": "none",
+      "site": "linuxmint.com (kernel.org mirror)",
+      "baseUrl": "https://mirrors.edge.kernel.org/linuxmint/stable/",
+      "latestDir": "^[0-9]+(\\.[0-9]+)*/$",
+      "sums": "sha256sum.txt",
+      "isoPattern": "^linuxmint-{v}-cinnamon-64bit\\.iso$"
+    },
+    {
+      "id": "cachyos-desktop",
+      "name": "CachyOS",
+      "family": "arch",
+      "automation": "none",
+      "site": "cachyos.org",
+      "baseUrl": "https://mirror.cachyos.org/ISO/desktop/",
+      "latestFrom": {
+        "page": "https://cachyos.org/download/",
+        "regex": "desktop/([0-9]{6})/cachyos-desktop-linux-\\1\\.iso"
+      },
+      "path": "{v}/",
+      "sums": "cachyos-desktop-linux-{v}.iso.sha256",
+      "isoPattern": "^cachyos-desktop-linux-{v}\\.iso$"
     }
   ]
 }

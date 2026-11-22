@@ -88,20 +88,50 @@ function Test-DzLinuxDownloadUrl {
 # ------------------------------------------------------------------------------------
 
 function ConvertFrom-DzSha256Sums {
-    <# Parses a sha256sum file ("<hash> *name" or "<hash>  name") into Name/Sha256 objects. #>
+    <#
+        Parses a SHA-256 checksum file into Name/Sha256 objects. Both styles are read:
+        sha256sum ("<hash> *name" or "<hash>  name") and BSD ("SHA256 (name) = <hash>", Fedora).
+        Other lines (comments, PGP signature blocks) are ignored.
+    #>
     [CmdletBinding()]
     param([AllowEmptyString()][Parameter(Mandatory = $true)][string]$Text)
     foreach ($line in ($Text -split "`r?`n")) {
         if ($line -match '^\s*([0-9A-Fa-f]{64})\s+\*?(\S+)\s*$') {
             [pscustomobject]@{ Name = $Matches[2]; Sha256 = $Matches[1].ToLowerInvariant() }
         }
+        elseif ($line -match '^\s*SHA256 \((\S+)\) = ([0-9A-Fa-f]{64})\s*$') {
+            [pscustomobject]@{ Name = $Matches[1]; Sha256 = $Matches[2].ToLowerInvariant() }
+        }
     }
 }
 
+function ConvertFrom-DzHtmlLinks {
+    <# File and folder names linked from a web server's folder listing ('22.3/', 'x.iso'). #>
+    [CmdletBinding()]
+    param([AllowEmptyString()][Parameter(Mandatory = $true)][string]$Html)
+    $seen = @{}
+    foreach ($m in [regex]::Matches($Html, 'href="([^"]+)"')) {
+        $h = [System.Net.WebUtility]::HtmlDecode($m.Groups[1].Value)
+        if ($h.StartsWith('./')) { $h = $h.Substring(2) }
+        if ($h -match '^[A-Za-z][A-Za-z0-9+.-]*:|^/|^\.\.|\?|#') { continue }
+        if (-not $seen.ContainsKey($h)) { $seen[$h] = $true; $h }
+    }
+}
+
+function Select-DzLatestName {
+    <# The name with the highest version among those matching $Pattern, or $null. #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    param([Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]]$Names, [Parameter(Mandatory = $true)][string]$Pattern)
+    $hits = @($Names | Where-Object { $_ -match $Pattern })
+    if ($hits.Count -eq 0) { return $null }
+    return (@($hits | Sort-Object -Property @{ Expression = { Get-DzVersionKey -Name $_ } } -Descending) | Select-Object -First 1)
+}
+
 function Get-DzVersionKey {
-    <# The first dotted version in a file name ('26.04.1') as a sortable key; none sorts first. #>
+    <# The first version number in a name ('26.04.1', '45', '261122') as a sortable key; none sorts first. #>
     param([string]$Name)
-    $m = [regex]::Match($Name, '\d+(\.\d+)+')
+    $m = [regex]::Match($Name, '\d+(\.\d+)*')
     if (-not $m.Success) { return '' }
     $parts = @($m.Value.Split('.') | ForEach-Object { '{0:D6}' -f [int64]$_ })
     while ($parts.Count -lt 6) { $parts += '000000' }
@@ -177,25 +207,35 @@ function Get-DzWebText {
     [OutputType([string])]
     param([Parameter(Mandatory = $true)][string]$Url)
     Initialize-DzHttp
-    $client = New-Object System.Net.Http.HttpClient
-    try {
-        $client.Timeout = [TimeSpan]::FromSeconds(60)
-        return $client.GetStringAsync($Url).GetAwaiter().GetResult()
+    for ($attempt = 1; ; $attempt++) {
+        $client = New-Object System.Net.Http.HttpClient
+        try {
+            $client.Timeout = [TimeSpan]::FromSeconds(60)
+            return $client.GetStringAsync($Url).GetAwaiter().GetResult()
+        }
+        catch {
+            # A dropped connection is retried twice; a real error (404, refused) fails the third time too.
+            if ($attempt -ge 3) { throw }
+            Start-Sleep -Seconds (2 * $attempt)
+        }
+        finally { $client.Dispose() }
     }
-    finally { $client.Dispose() }
 }
 
 function Save-DzWebFile {
     <#
         Downloads a large file to $Path. A $Path.part left over from an interrupted download is
-        continued (HTTP Range) instead of starting again.
+        continued (HTTP Range) instead of starting again. Redirects are followed only to https
+        (projects such as Debian send downloads to their mirrors); the caller checks the file
+        against the checksum from the project's own host, so a mirror cannot change it.
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)][string]$Url,
         [Parameter(Mandatory = $true)][string]$Path,
         [string]$Activity = 'Downloading',
-        [scriptblock]$Tick
+        [scriptblock]$Tick,
+        [scriptblock]$Log
     )
     Initialize-DzHttp
     $part = $Path + '.part'
@@ -209,6 +249,9 @@ function Save-DzWebFile {
         if ($have -gt 0) { $request.Headers.Range = New-Object System.Net.Http.Headers.RangeHeaderValue($have, $null) }
         $response = $client.SendAsync($request, [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead).GetAwaiter().GetResult()
         $code = [int]$response.StatusCode
+        $final = $response.RequestMessage.RequestUri
+        if ($Url.StartsWith('https://') -and $final.Scheme -ne 'https') { $response.Dispose(); throw "Refusing a download redirected to plain http: $final" }
+        if ($Log -and $final.Host -ne ([System.Uri]$Url).Host) { & $Log "Served by the mirror $($final.Host)" }
         if ($code -eq 416) { $response.Dispose(); Move-Item -LiteralPath $part -Destination $Path -Force; return $Path }
         if (-not $response.IsSuccessStatusCode) { throw "The download failed: HTTP $code from $Url" }
         $append = ($have -gt 0 -and $code -eq 206)
@@ -251,6 +294,65 @@ function Save-DzWebFile {
     return $Path
 }
 
+function Resolve-DzLinuxIsoSource {
+    <#
+    .SYNOPSIS
+        Finds the newest ISO of a distro and its published SHA-256, as distros.json describes:
+          latestFrom  {page, regex}: the release named on the project's own page (group 1 = {v})
+          latestDir   regex: the highest-numbered folder in baseUrl (its name without / = {v})
+          path        appended to baseUrl ({v} filled in)
+          sums / sumsPattern: the checksum file, by name or by regex over the folder listing
+          isoPattern  regex for the ISO name in the checksum file
+        Every address must be https on an allowed host. $Fetch(url) returns the text (tests replace it).
+    .OUTPUTS
+        Object with Url, Name, Sha256, SumsUrl, Version.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][object]$Distro,
+        [Parameter(Mandatory = $true)][string[]]$AllowedHosts,
+        [scriptblock]$Fetch
+    )
+    if (-not $Fetch) { $Fetch = { param($u) Get-DzWebText -Url $u } }
+    $get = {
+        param($u)
+        if (-not (Test-DzLinuxDownloadUrl -Url $u -AllowedHosts $AllowedHosts)) { throw "Refusing to download from $u (not an allowed https address)." }
+        return [string](& $Fetch $u)
+    }
+    $has = { param($name) [bool]$Distro.PSObject.Properties[$name] -and [string]$Distro.$name }
+    $base = [string]$Distro.baseUrl
+    if (-not $base.EndsWith('/')) { $base += '/' }
+    $v = ''
+    if (& $has 'latestFrom') {
+        $page = & $get ([string]$Distro.latestFrom.page)
+        $found = @([regex]::Matches($page, [string]$Distro.latestFrom.regex) | ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ })
+        $v = Select-DzLatestName -Names $found -Pattern '.'
+        if (-not $v) { throw "Could not find the current $($Distro.name) release on $($Distro.latestFrom.page)." }
+    }
+    if (& $has 'latestDir') {
+        $dir = Select-DzLatestName -Names @(ConvertFrom-DzHtmlLinks -Html (& $get $base)) -Pattern ([string]$Distro.latestDir)
+        if (-not $dir) { throw "Could not find a $($Distro.name) release folder in $base." }
+        $base += $dir.TrimEnd('/') + '/'
+        if (-not $v) { $v = $dir.TrimEnd('/') }
+    }
+    if ($v -notmatch '^[A-Za-z0-9._-]*$') { throw "Unexpected release name: $v" }
+    $ev = [regex]::Escape($v)
+    if (& $has 'path') { $base += ([string]$Distro.path).Replace('{v}', $v) }
+    if (& $has 'sumsPattern') {
+        $sumsName = Select-DzLatestName -Names @(ConvertFrom-DzHtmlLinks -Html (& $get $base)) -Pattern ([string]$Distro.sumsPattern).Replace('{v}', $ev)
+        if (-not $sumsName) { throw "No checksum file for $($Distro.name) in $base." }
+    }
+    else { $sumsName = ([string]$Distro.sums).Replace('{v}', $v) }
+    $sumsUrl = $base + $sumsName
+    $sums = @(ConvertFrom-DzSha256Sums -Text (& $get $sumsUrl))
+    $pick = Select-DzLinuxIso -Sums $sums -Pattern ([string]$Distro.isoPattern).Replace('{v}', $ev)
+    if ($null -eq $pick) { throw "No $($Distro.name) ISO is listed in $sumsUrl." }
+    if ($pick.Name -notmatch '^[A-Za-z0-9._+-]+\.iso$') { throw "Unexpected ISO name in the checksum list: $($pick.Name)" }
+    $url = $base + $pick.Name
+    if (-not (Test-DzLinuxDownloadUrl -Url $url -AllowedHosts $AllowedHosts)) { throw "Refusing to download from $url (not an allowed https address)." }
+    return [pscustomobject]@{ Url = $url; Name = $pick.Name; Sha256 = $pick.Sha256; SumsUrl = $sumsUrl; Version = $v }
+}
+
 function Get-DzLinuxIso {
     <#
     .SYNOPSIS
@@ -269,17 +371,9 @@ function Get-DzLinuxIso {
     $catalog = Get-DzLinuxCatalog -DataRoot $DataRoot
     $distro = Get-DzLinuxDistro -Id $DistroId -DataRoot $DataRoot
     if (-not $CacheRoot) { $CacheRoot = Get-DzLinuxCacheRoot }
-    $base = [string]$distro.baseUrl
-    if (-not $base.EndsWith('/')) { $base += '/' }
-    $sumsUrl = $base + [string]$distro.sums
-    if (-not (Test-DzLinuxDownloadUrl -Url $sumsUrl -AllowedHosts $catalog.AllowedHosts)) { throw "Refusing to download from $sumsUrl (not an allowed https address)." }
-    if ($Tick) { & $Tick "Asking $([System.Uri]::new($sumsUrl).Host) for the newest $($distro.name)..." }
-    $sums = @(ConvertFrom-DzSha256Sums -Text (Get-DzWebText -Url $sumsUrl))
-    $pick = Select-DzLinuxIso -Sums $sums -Pattern ([string]$distro.isoPattern)
-    if ($null -eq $pick) { throw "No $($distro.name) ISO is listed in $sumsUrl." }
-    if ($pick.Name -notmatch '^[A-Za-z0-9._+-]+\.iso$') { throw "Unexpected ISO name in the checksum list: $($pick.Name)" }
-    $url = $base + $pick.Name
-    if (-not (Test-DzLinuxDownloadUrl -Url $url -AllowedHosts $catalog.AllowedHosts)) { throw "Refusing to download from $url (not an allowed https address)." }
+    if ($Tick) { & $Tick "Asking $([System.Uri]::new([string]$distro.baseUrl).Host) for the newest $($distro.name)..." }
+    $pick = Resolve-DzLinuxIsoSource -Distro $distro -AllowedHosts $catalog.AllowedHosts
+    $url = $pick.Url
     if ($Log) { & $Log "Newest $($distro.name): $($pick.Name), SHA-256 $($pick.Sha256)" }
 
     [void](New-Item -ItemType Directory -Path $CacheRoot -Force)
@@ -295,7 +389,15 @@ function Get-DzLinuxIso {
     }
     if (-not (Test-Path -LiteralPath $path)) {
         if ($Log) { & $Log "Downloading $url" }
-        [void](Save-DzWebFile -Url $url -Path $path -Activity "Downloading $($distro.name)" -Tick $Tick)
+        for ($attempt = 1; ; $attempt++) {
+            try { [void](Save-DzWebFile -Url $url -Path $path -Activity "Downloading $($distro.name)" -Tick $Tick -Log $Log); break }
+            catch {
+                if ($attempt -ge 3) { throw }
+                # Save-DzWebFile keeps the .part file, so the next attempt continues where this one stopped.
+                if ($Log) { & $Log "Download interrupted ($($_.Exception.Message)); continuing where it stopped." }
+                Start-Sleep -Seconds (3 * $attempt)
+            }
+        }
     }
     $hash = Get-DzFileSha256 -Path $path -Tick $Tick -Activity "Checking $($distro.name)"
     if ($hash -ne $pick.Sha256) {
@@ -756,7 +858,7 @@ function Test-DzLinuxStick {
 
 Export-ModuleMember -Function @(
     'Get-DzLinuxDataRoot', 'Get-DzLinuxCatalog', 'Get-DzLinuxDistro', 'Test-DzLinuxDownloadUrl',
-    'ConvertFrom-DzSha256Sums', 'Select-DzLinuxIso', 'Get-DzFileSha256', 'Get-DzLinuxCacheRoot', 'Get-DzWebText', 'Save-DzWebFile', 'Get-DzLinuxIso',
+    'ConvertFrom-DzSha256Sums', 'ConvertFrom-DzHtmlLinks', 'Select-DzLatestName', 'Resolve-DzLinuxIsoSource', 'Select-DzLinuxIso', 'Get-DzFileSha256', 'Get-DzLinuxCacheRoot', 'Get-DzWebText', 'Save-DzWebFile', 'Get-DzLinuxIso',
     'ConvertTo-DzSha512Crypt', 'Test-DzLinuxUserName', 'ConvertTo-DzLinuxUserName', 'Test-DzLinuxHostName',
     'ConvertTo-DzLinuxLocale', 'ConvertTo-DzLinuxTimeZone', 'ConvertTo-DzLinuxKeyboard',
     'ConvertTo-DzYamlString', 'New-DzAutoinstallYaml', 'Get-DzForbiddenAutoinstallKey',

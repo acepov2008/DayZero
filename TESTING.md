@@ -118,8 +118,11 @@ it. This part cannot be tested in the automated checks. Use a stick with nothing
 - [ ] Make a second stick: "Using the copy checked earlier", no new download.
 - [ ] **Add DayZero to an Ubuntu USB stick I already made**: with a Rufus Ubuntu stick (ISO mode,
       FAT32) only autoinstall.yaml, dayzero\ and DayZero-README.txt are added.
-- [ ] **Another Linux ISO file** (for example Linux Mint or Fedora): written and "read back to
-      check it". Windows may then offer to format the stick: say no. The stick boots that system.
+- [ ] **Fedora Workstation**, **Debian (GNOME)**, **Linux Mint (Cinnamon)**, **CachyOS**: the Log
+      shows the release found, the download (Debian: "Served by the mirror ..."), "SHA-256 matches",
+      then the write and "read back". Windows may then offer to format the stick: say no. The
+      stick boots that system's own menu. A second stick of the same distro is not downloaded again.
+- [ ] **Another Linux ISO file**: written and "read back to check it", the same way.
 - [ ] Install from the DayZero Ubuntu stick in a VM (UEFI firmware, 25 GB disk): the installer
       shows only the disk screen and the confirmation, not the account or language screens.
       After the restart and first sign-in, a "DayZero setup" window (or terminal) shows the log;
