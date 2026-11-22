@@ -12,6 +12,7 @@ import unittest
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 KIT = os.path.join(REPO, "kit", "linux")
 sys.path.insert(0, KIT)
+sys.dont_write_bytecode = True
 import dayzero  # noqa: E402
 
 

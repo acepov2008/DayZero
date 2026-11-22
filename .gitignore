@@ -14,3 +14,7 @@ TestResults/
 *.log
 .vscode/
 kit/language.txt
+
+# Python bytecode from running the Linux kit tests
+__pycache__/
+*.pyc
