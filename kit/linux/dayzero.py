@@ -109,12 +109,14 @@ def log(message):
 # --------------------------------------------------------------------------------------
 
 def pick_apps(settings, catalog):
-    """Apps to install: the mode's apps, plus whatever was picked in the builder."""
+    """Apps to install: exactly the builder's list when appsExact is set, else the mode's apps
+    plus whatever was picked."""
     mode = str(settings.get("defaultMode") or "custom")
     picked = set(settings.get("apps") or [])
+    exact = bool(settings.get("appsExact"))
     out = []
     for app in catalog.get("apps", []):
-        if app.get("id") in picked or mode == "everything" or mode in (app.get("modes") or []):
+        if app.get("id") in picked or (not exact and (mode == "everything" or mode in (app.get("modes") or []))):
             out.append(app)
     return out
 

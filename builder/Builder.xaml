@@ -32,6 +32,8 @@
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,290,0">
                 <Button x:Name="LanguageButton" VerticalAlignment="Center" Margin="0,0,16,0" Content="Language: English"
                         ToolTip="Switch the language of this program (English / Russian)"/>
+                <Button x:Name="LinuxButton" VerticalAlignment="Center" Margin="0,0,16,0" Content="Make a _Linux stick..."
+                        ToolTip="Ubuntu with your account, apps and scripts, or any other Linux ISO written as it is"/>
                 <TextBlock VerticalAlignment="Center" TextAlignment="Right" Style="{StaticResource DzHint}"
                            Text="Makes a Windows install USB stick with your settings on it,&#x0a;or adds DayZero to a stick you already made."/>
             </StackPanel>

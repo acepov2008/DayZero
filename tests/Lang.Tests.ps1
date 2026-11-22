@@ -38,9 +38,9 @@ BeforeDiscovery {
     foreach ($r in $debloat.optionalRemovals) { foreach ($k in 'title', 'what', 'warning') { if ($r.PSObject.Properties[$k]) { & $add $r.$k 'debloat.json' } } }
     $drivers = & $json 'drivers'
     foreach ($k in 'gpuApps', 'oemTools') { foreach ($x in @($drivers.$k)) { if ($x.PSObject.Properties['what']) { & $add $x.what 'drivers.json' } } }
-    foreach ($f in 'builder/Builder.ps1', 'kit/DayZero.ps1', 'kit/lib/Ui.psm1') {
+    foreach ($f in 'builder/Builder.ps1', 'builder/LinuxBuilder.ps1', 'kit/DayZero.ps1', 'kit/lib/Ui.psm1') {
         $code = Get-Content -Raw -LiteralPath (Join-Path $repo $f)
-        foreach ($m in [regex]::Matches($code, "(?:Get-DzText \`$?\(?|New-ListItem -Label |Show-DzMessage -Text |Set-BuilderStatus -Text )'((?:[^']|'')+)'")) { & $add ($m.Groups[1].Value -replace "''", "'") $f }
+        foreach ($m in [regex]::Matches($code, "(?:Get-DzText \`$?\(?|New-ListItem -Label |Show-DzMessage -Text |Set-BuilderStatus -Text |Set-LxStatus -Text |\`$errors\.Add\(|\`$warnings\.Add\()'((?:[^']|'')+)'")) { & $add ($m.Groups[1].Value -replace "''", "'") $f }
         foreach ($m in [regex]::Matches($code, '(?:Get-DzText \$?\(?|New-ListItem -Label )"([^"$`]+)"')) { & $add $m.Groups[1].Value $f }
     }
     $script:NeededTexts = @($need.GetEnumerator() | ForEach-Object { @{ Text = $_.Key; Source = $_.Value; Short = $(if ($_.Key.Length -gt 60) { $_.Key.Substring(0, 60) + '...' } else { $_.Key }) -replace "`n", ' ' } })

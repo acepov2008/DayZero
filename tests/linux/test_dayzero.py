@@ -50,6 +50,10 @@ class PlanTests(unittest.TestCase):
         none = self.ids(dayzero.build_plan({"defaultMode": "custom"}, catalog(), "/nonexistent"))
         self.assertNotIn("flathub", none)
 
+    def test_the_builders_exact_list_wins_over_the_mode(self):
+        ids = self.ids(dayzero.build_plan({"defaultMode": "gaming", "apps": ["vlc", "steam"], "appsExact": True}, catalog(), "/x"))
+        self.assertEqual([i for i in ids if i.startswith("app-")], ["app-steam", "app-vlc"])
+
     def test_drivers_can_be_left_out(self):
         self.assertIn("drivers", self.ids(dayzero.build_plan({}, catalog(), "/x")))
         self.assertNotIn("drivers", self.ids(dayzero.build_plan({"installDrivers": False}, catalog(), "/x")))

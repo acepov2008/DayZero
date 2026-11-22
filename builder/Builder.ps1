@@ -1216,6 +1216,9 @@ function Show-CacheManager {
     Update-NewUsbInfo
 }
 
+# The Linux window (LinuxWindow.xaml) lives in its own file.
+. (Join-Path $PSScriptRoot 'LinuxBuilder.ps1')
+
 # ------------------------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------------------------
@@ -1267,6 +1270,9 @@ function Start-Builder {
     # Events
     $ui.LanguageButton.Add_Click({
             try { Switch-BuilderLanguage } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
+        })
+    $ui.LinuxButton.Add_Click({
+            try { Show-LinuxBuilder } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
         })
     $ui.RefreshDrivesButton.Add_Click({ $script:MediaByDrive = @{}; Update-DriveList })
     $ui.DriveCombo.Add_SelectionChanged({ Update-MediaInfo })

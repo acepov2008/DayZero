@@ -714,21 +714,27 @@ function New-DzDiskpartScript {
     param(
         [Parameter(Mandatory = $true)][ValidateRange(0, 99)][int]$DiskNumber,
         [Parameter(Mandatory = $true)][ValidateRange(7000, 32000)][int]$PartitionMB,
-        [ValidatePattern('^[A-Z0-9]{1,11}$')][string]$Label = 'DAYZERO'
+        [ValidatePattern('^[A-Z0-9]{1,11}$')][string]$Label = 'DAYZERO',
+        [switch]$CleanOnly
     )
     # No "remove ... dismount" before "clean": on a removable stick that works like Eject, and
     # the stick then answers "The device is not ready" until it is unplugged and plugged in again.
-    $lines = @(
-        "select disk $DiskNumber",
-        'clean',
-        'convert mbr noerr',
-        "create partition primary size=$PartitionMB",
-        'select partition 1',
-        'active',
-        "format fs=fat32 quick label=$Label",
-        'assign',
-        'exit'
-    )
+    $lines = @("select disk $DiskNumber", 'clean')
+    if ($CleanOnly) {
+        # For writing a whole disk image afterwards: no partition, so nothing gets mounted.
+        $lines += 'exit'
+    }
+    else {
+        $lines += @(
+            'convert mbr noerr',
+            "create partition primary size=$PartitionMB",
+            'select partition 1',
+            'active',
+            "format fs=fat32 quick label=$Label",
+            'assign',
+            'exit'
+        )
+    }
     return (($lines -join "`r`n") + "`r`n")
 }
 
@@ -812,7 +818,8 @@ function Initialize-DzUsbDisk {
     param(
         [Parameter(Mandatory = $true)][object]$Disk,
         [scriptblock]$Tick,
-        [scriptblock]$Log
+        [scriptblock]$Log,
+        [switch]$CleanOnly
     )
     $now = @(Get-DzUsbDiskCandidate | Where-Object { $_.Number -eq $Disk.Number }) | Select-Object -First 1
     if ($null -eq $now) { throw 'The USB stick is gone. Plug it back in and press Refresh.' }
@@ -821,7 +828,7 @@ function Initialize-DzUsbDisk {
     }
     if ($now.Problem) { throw "This drive cannot be used: $($now.Problem)" }
 
-    if ($Log) { & $Log ("Erasing disk {0} ({1}, {2} GB) and formatting it FAT32." -f $now.Number, $now.Name, $now.SizeGB) }
+    if ($Log) { & $Log ("Erasing disk {0} ({1}, {2} GB){3}." -f $now.Number, $now.Name, $now.SizeGB, $(if ($CleanOnly) { '' } else { ' and formatting it FAT32' })) }
     $file = Join-Path ([System.IO.Path]::GetTempPath()) ('dayzero-diskpart-' + [guid]::NewGuid().ToString('N') + '.txt')
     $failure = $null
     try {
@@ -834,7 +841,7 @@ function Initialize-DzUsbDisk {
             }
             Stop-DzStaleCopy -Letter $cur.Letters -Log $Log
             if ($Log) { & $Log ('Before formatting, attempt {0}: {1}' -f $attempt, (Get-DzDiskStatusText -Number $cur.Number)) }
-            $commands = New-DzDiskpartScript -DiskNumber $cur.Number -PartitionMB (Get-DzUsbPartitionSize -DiskBytes $cur.Size) -Label $script:UsbLabel
+            $commands = New-DzDiskpartScript -DiskNumber $cur.Number -PartitionMB (Get-DzUsbPartitionSize -DiskBytes $cur.Size) -Label $script:UsbLabel -CleanOnly:$CleanOnly
             [System.IO.File]::WriteAllText($file, $commands, [System.Text.Encoding]::ASCII)
             $r = Invoke-DzProcess -FilePath (Join-Path $env:SystemRoot 'System32\diskpart.exe') -Arguments ('/s "{0}"' -f $file) -Activity 'Erasing and formatting the USB stick' -Tick $Tick
             if ($r.ExitCode -eq 0) { $failure = $null; break }
@@ -854,6 +861,10 @@ function Initialize-DzUsbDisk {
     }
     if ($failure) {
         throw "Formatting the USB stick failed ($failure) Unplug the stick, plug it back in, press Refresh and try again. If it says access is denied, also close every File Explorer window that shows the stick."
+    }
+    if ($CleanOnly) {
+        if ($Log) { & $Log ("Disk {0} is erased (no partitions left)." -f $now.Number) }
+        return $null
     }
 
     $letter = $null
@@ -927,7 +938,8 @@ function Copy-DzMediaTree {
         [Parameter(Mandatory = $true)][string]$Source,
         [Parameter(Mandatory = $true)][string]$TargetRoot,
         [string[]]$ExcludeFile = @(),
-        [scriptblock]$Tick
+        [scriptblock]$Tick,
+        [string]$Label = 'Copying Windows to the USB stick'
     )
     # No /NP and no /NFL: robocopy then prints each file's size and its percentage, which is
     # the only honest progress. (Free space on the stick is useless for that: Windows reserves
@@ -943,7 +955,7 @@ function Copy-DzMediaTree {
     # Closures: Invoke-DzProcess has its own $Tick and $clock, which plain script blocks would pick up instead.
     $onLine = { param($line) Update-DzCopyState -State $state -Line $line }.GetNewClosure()
     $progress = {
-        $label = 'Copying Windows to the USB stick'
+        $label = $Label
         if ($state.Seen -and $total -gt 0) {
             $bytes = Get-DzCopyStateBytes -State $state
             $percent = 100 * $bytes / $total

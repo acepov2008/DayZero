@@ -2634,6 +2634,374 @@
     [
       "Asking {0} for the newest {1}...",
       "Спрашиваем у {0} свежую версию {1}..."
+    ],
+    [
+      "DayZero - Linux USB stick",
+      "DayZero: флешка с Linux"
+    ],
+    [
+      "LINUX USB STICK",
+      "ФЛЕШКА С LINUX"
+    ],
+    [
+      "Makes a USB stick that installs Ubuntu with your settings,\nor writes any other Linux ISO as it is.",
+      "Делает флешку, которая ставит Ubuntu с вашими настройками,\nили записывает любой другой ISO с Linux как есть."
+    ],
+    [
+      "①  WHICH LINUX",
+      "①  КАКОЙ LINUX"
+    ],
+    [
+      "An Ubuntu ISO file I already have (24.04 or newer, with DayZero)",
+      "Мой ISO-файл Ubuntu (24.04 или новее, с DayZero)"
+    ],
+    [
+      "Another Linux ISO file, written as it is (Fedora, Mint, Debian...; no DayZero)",
+      "Другой ISO с Linux, записать как есть (Fedora, Mint, Debian...; без DayZero)"
+    ],
+    [
+      "②  WHERE TO WRITE",
+      "②  КУДА ЗАПИСАТЬ"
+    ],
+    [
+      "Make a new Linux USB stick (erases the stick)",
+      "Сделать новую флешку с Linux (флешка будет стёрта)"
+    ],
+    [
+      "Add DayZero to an Ubuntu USB stick I already made (Rufus, ISO mode)",
+      "Добавить DayZero на готовую флешку Ubuntu (Rufus, режим ISO)"
+    ],
+    [
+      "Your name (optional, shown on the sign-in screen)",
+      "Ваше имя (необязательно, видно на экране входа)"
+    ],
+    [
+      "User name (small letters, digits, - and _)",
+      "Имя пользователя (строчные латинские буквы, цифры, - и _)"
+    ],
+    [
+      "Temporary password: Linux asks for a new one at the first sign-in",
+      "Временный пароль: при первом входе Linux попросит придумать новый"
+    ],
+    [
+      "Only a SHA-512 hash of the password goes on the stick (in autoinstall.yaml), never the password itself. The password is also what sudo asks for.",
+      "На флешку попадает только хеш пароля SHA-512 (в autoinstall.yaml), сам пароль никогда. Этот же пароль спрашивает sudo."
+    ],
+    [
+      "Letters, digits and hyphens. Leave empty for \"username-pc\".",
+      "Латинские буквы, цифры и дефисы. Если оставить пустым, будет «имя-pc»."
+    ],
+    [
+      "⑤  MODE AND APPS",
+      "⑤  РЕЖИМ И ПРИЛОЖЕНИЯ"
+    ],
+    [
+      "Apps come from Flathub and are installed after the first start. Tick or untick any of them.",
+      "Приложения берутся из Flathub и ставятся после первого запуска. Любое можно отметить или снять."
+    ],
+    [
+      "⑥  OPTIONS",
+      "⑥  ПАРАМЕТРЫ"
+    ],
+    [
+      "Install graphics card and other drivers that Ubuntu recommends (NVIDIA, Wi-Fi...)",
+      "Установить драйверы видеокарты и другие, которые рекомендует Ubuntu (NVIDIA, Wi-Fi...)"
+    ],
+    [
+      "Install media codecs (MP3, H.264, ...)",
+      "Установить медиакодеки (MP3, H.264, ...)"
+    ],
+    [
+      "Dry run: the setup on the new PC only logs what it would do (Ubuntu itself is still installed)",
+      "Пробный прогон: настройка на новом компьютере только записывает в журнал, что бы она сделала (сама Ubuntu всё равно устанавливается)"
+    ],
+    [
+      "Your own scripts (run as root on the new PC after the apps)",
+      "Ваши скрипты (запускаются от root на новом компьютере после приложений)"
+    ],
+    [
+      "_Open the Linux scripts folder",
+      "Открыть папку скриптов для Linux"
+    ],
+    [
+      "Put .sh files there; they are copied to the stick and run with bash in name order",
+      "Положите туда файлы .sh: они копируются на флешку и запускаются через bash по порядку имён"
+    ],
+    [
+      "Safety: on the new PC the Ubuntu installer always stops on the disk screen and you pick the disk; DayZero never picks, wipes or partitions it. Here, only the USB stick you pick and confirm is erased; internal disks are always refused.",
+      "Безопасность: на новом компьютере установщик Ubuntu всегда останавливается на экране выбора диска, и диск выбираете вы; DayZero никогда не выбирает, не стирает и не размечает его. Здесь стирается только выбранная и подтверждённая вами флешка; внутренние диски всегда отклоняются."
+    ],
+    [
+      "Checks a finished DayZero Linux stick: boot files, Ubuntu files, autoinstall.yaml and the DayZero kit. Changes nothing.",
+      "Проверяет готовую флешку DayZero с Linux: файлы загрузки, файлы Ubuntu, autoinstall.yaml и набор DayZero. Ничего не меняет."
+    ],
+    [
+      "_Preview autoinstall.yaml",
+      "Просмотр autoinstall.yaml"
+    ],
+    [
+      "_CREATE LINUX USB  ▶",
+      "СОЗДАТЬ ФЛЕШКУ LINUX  ▶"
+    ],
+    [
+      "Make a _Linux stick...",
+      "Флешка с Linux..."
+    ],
+    [
+      "Ubuntu with your account, apps and scripts, or any other Linux ISO written as it is",
+      "Ubuntu с вашей учётной записью, приложениями и скриптами или любой другой ISO с Linux как есть"
+    ],
+    [
+      "{0} - downloaded from ubuntu.com, with DayZero (supported until {1})",
+      "{0} - загрузка с ubuntu.com, с DayZero (поддержка до {1})"
+    ],
+    [
+      "Downloaded once (about 6 GB) from releases.ubuntu.com, checked against Ubuntu's published SHA-256 and kept for the next stick. The PC needs UEFI (any PC from the last ten years).",
+      "Скачивается один раз (около 6 ГБ) с releases.ubuntu.com, сверяется с опубликованной суммой SHA-256 и сохраняется для следующей флешки. Компьютеру нужен UEFI (подойдёт любой за последние десять лет)."
+    ],
+    [
+      "Pick an Ubuntu Desktop ISO, 24.04 or newer. Its files are copied to the stick, with DayZero added. The PC needs UEFI.",
+      "Выберите ISO Ubuntu Desktop 24.04 или новее. Его файлы копируются на флешку вместе с DayZero. Компьютеру нужен UEFI."
+    ],
+    [
+      "The ISO is written to the stick exactly as it is and read back to check it, like Rufus in DD mode or balenaEtcher. You install it by hand; your account, apps and scripts below are not used.",
+      "ISO записывается на флешку точно как есть и затем считывается для проверки, как в Rufus (режим DD) или balenaEtcher. Устанавливаете вручную; учётная запись, приложения и скрипты ниже не используются."
+    ],
+    [
+      "Pick a Linux ISO file",
+      "Выберите ISO-файл с Linux"
+    ],
+    [
+      "Linux ISO files",
+      "ISO-файлы Linux"
+    ],
+    [
+      "{0} (Alt+Shift switches)",
+      "{0} (переключение Alt+Shift)"
+    ],
+    [
+      "On Linux: {0}, keyboard {1}, {2}",
+      "В Linux: {0}, клавиатура {1}, {2}"
+    ],
+    [
+      "This language has no Linux name DayZero knows; English (US) is used.",
+      "Для этого языка DayZero не знает имени в Linux; будет английский (США)."
+    ],
+    [
+      "This keyboard has no Linux layout DayZero knows; US English is used. You can add yours in Settings after installing.",
+      "Для этой клавиатуры DayZero не знает раскладки Linux; будет английская (США). Свою можно добавить в настройках после установки."
+    ],
+    [
+      "This time zone has no Linux name DayZero knows; UTC is used.",
+      "Для этого часового пояса DayZero не знает имени в Linux; будет UTC."
+    ],
+    [
+      "No scripts yet.",
+      "Скриптов пока нет."
+    ],
+    [
+      "{0} script(s) will be copied.",
+      "Будет скопировано скриптов: {0}."
+    ],
+    [
+      "Pick the Ubuntu USB stick to add DayZero to.",
+      "Выберите флешку Ubuntu, на которую добавить DayZero."
+    ],
+    [
+      "Pick the USB stick to erase.",
+      "Выберите флешку, которую можно стереть."
+    ],
+    [
+      "Pick the ISO file.",
+      "Выберите ISO-файл."
+    ],
+    [
+      "For example: {0}",
+      "Например: {0}"
+    ],
+    [
+      "Enter a password. Linux needs one (sudo asks for it).",
+      "Введите пароль. Без него в Linux нельзя (его спрашивает sudo)."
+    ],
+    [
+      "The two passwords are not the same.",
+      "Пароли не совпадают."
+    ],
+    [
+      "Use a password of at least 4 characters.",
+      "Пароль должен быть не короче 4 знаков."
+    ],
+    [
+      "Your name contains a line break or control character.",
+      "В имени есть перевод строки или управляющий символ."
+    ],
+    [
+      "The keyboard is set to US English (your layout has no Linux name DayZero knows).",
+      "Клавиатура будет английской (США): для вашей раскладки DayZero не знает имени в Linux."
+    ],
+    [
+      "Please fix this first:",
+      "Сначала исправьте:"
+    ],
+    [
+      "Add DayZero to the Ubuntu stick {0}?",
+      "Добавить DayZero на флешку Ubuntu {0}?"
+    ],
+    [
+      "Nothing on it is erased.",
+      "Ничего на ней не стирается."
+    ],
+    [
+      "Write {0} to this stick as it is?",
+      "Записать {0} на эту флешку как есть?"
+    ],
+    [
+      "Make a {0} install USB with DayZero on this stick?",
+      "Сделать на этой флешке установочный {0} с DayZero?"
+    ],
+    [
+      "Warning: this file has no boot record, so it may not start from a USB stick.",
+      "Внимание: в этом файле нет загрузочной записи, с флешки он может не запуститься."
+    ],
+    [
+      "Mode: {0}, {1} apps",
+      "Режим: {0}, приложений: {1}"
+    ],
+    [
+      "The Ubuntu installer will stop and let you choose the disk. Everything else runs on its own.",
+      "Установщик Ubuntu остановится и даст вам выбрать диск. Всё остальное пройдёт само."
+    ],
+    [
+      "The image needs {0} GB but the stick only holds {1} GB.",
+      "Образу нужно {0} ГБ, а на флешку помещается только {1} ГБ."
+    ],
+    [
+      "Erasing the USB stick...",
+      "Стираем флешку..."
+    ],
+    [
+      "Done! The ISO is on the stick and was checked.",
+      "Готово! ISO на флешке и проверен."
+    ],
+    [
+      "Done! {0} is on the stick and was read back to check it.",
+      "Готово! {0} записан на флешку и проверен повторным чтением."
+    ],
+    [
+      "Windows may now say the stick needs formatting: do NOT format it. That is normal for Linux sticks.",
+      "Windows может предложить отформатировать флешку: НЕ форматируйте. Для флешек с Linux это нормально."
+    ],
+    [
+      "Adding DayZero to the stick...",
+      "Добавляем DayZero на флешку..."
+    ],
+    [
+      "The stick check found no problems.",
+      "Проверка флешки проблем не нашла."
+    ],
+    [
+      "The stick check found problems:",
+      "Проверка флешки нашла проблемы:"
+    ],
+    [
+      "No Ubuntu USB stick found. Plug it in and press Refresh.",
+      "Флешка Ubuntu не найдена. Вставьте её и нажмите «Обновить»."
+    ],
+    [
+      "No Ubuntu USB stick found. Make one with Rufus (ISO mode, FAT32), plug it in and press Refresh.",
+      "Флешка Ubuntu не найдена. Сделайте её в Rufus (режим ISO, FAT32), вставьте и нажмите «Обновить»."
+    ],
+    [
+      "This stick is not FAT32, so DayZero may not be readable while Ubuntu installs. Make it again with Rufus in ISO mode and FAT32.",
+      "Эта флешка не в FAT32, поэтому при установке Ubuntu DayZero может не прочитаться. Сделайте её заново в Rufus: режим ISO и FAT32."
+    ],
+    [
+      "Only autoinstall.yaml, the dayzero folder and a README are added. Nothing on the stick is erased.",
+      "Добавляются только autoinstall.yaml, папка dayzero и README. Ничего на флешке не стирается."
+    ],
+    [
+      "This PC's keyboard ({0})",
+      "Клавиатура этого компьютера ({0})"
+    ],
+    [
+      "Next steps:\n 1. Eject the stick safely.\n 2. Boot the PC from it (boot menu key is often F12, F11, F8 or Esc).\n 3. When the Ubuntu installer asks where to install, pick the disk yourself.\n 4. Everything else runs on its own; DayZero finishes the setup after the first start.",
+      "Дальше:\n 1. Безопасно извлеките флешку.\n 2. Загрузите компьютер с неё (меню загрузки обычно на F12, F11, F8 или Esc).\n 3. Когда установщик Ubuntu спросит, куда ставить, выберите диск сами.\n 4. Остальное пройдёт само; после первого запуска DayZero закончит настройку."
+    ],
+    [
+      "UEFI boot file",
+      "Файл загрузки UEFI"
+    ],
+    [
+      "Ubuntu system files",
+      "Системные файлы Ubuntu"
+    ],
+    [
+      "Boot menu",
+      "Меню загрузки"
+    ],
+    [
+      "autoinstall.yaml leaves the disk to you",
+      "autoinstall.yaml оставляет выбор диска вам"
+    ],
+    [
+      "DayZero Linux kit",
+      "Набор DayZero для Linux"
+    ],
+    [
+      "Settings",
+      "Настройки"
+    ],
+    [
+      "Copying Ubuntu to the USB stick",
+      "Копирование Ubuntu на флешку"
+    ],
+    [
+      "Copying Ubuntu to the USB stick: {0} of {1} GB, {2} MB/s ({3}%)",
+      "Копирование Ubuntu на флешку: {0} из {1} ГБ, {2} МБ/с ({3}%)"
+    ],
+    [
+      "Copying Ubuntu to the USB stick: {0} of {1} GB ({2}%)",
+      "Копирование Ubuntu на флешку: {0} из {1} ГБ ({2}%)"
+    ],
+    [
+      "Writing the image to the USB stick: {0} of {1} GB ({2}%)",
+      "Запись образа на флешку: {0} из {1} ГБ ({2}%)"
+    ],
+    [
+      "Checking what was written: {0} of {1} GB ({2}%)",
+      "Проверка записанного: {0} из {1} ГБ ({2}%)"
+    ],
+    [
+      "This ISO has no casper folder, so it is not Ubuntu Desktop. Use \"Another Linux ISO file\" for other systems.",
+      "В этом ISO нет папки casper, значит это не Ubuntu Desktop. Для других систем выберите «Другой ISO с Linux»."
+    ],
+    [
+      "This stick has no casper folder, so it is not an Ubuntu stick.",
+      "На этой флешке нет папки casper, значит это не флешка Ubuntu."
+    ],
+    [
+      "This file is too small to be a bootable disk image.",
+      "Этот файл слишком мал для загрузочного образа диска."
+    ],
+    [
+      "The USB stick returned less data than was written. It may be faulty or fake (smaller than it claims).",
+      "Флешка вернула меньше данных, чем было записано. Возможно, она неисправна или поддельная (меньше заявленного)."
+    ],
+    [
+      "What the USB stick returned differs from the image. The stick may be faulty or fake; try another one.",
+      "Считанное с флешки не совпадает с образом. Возможно, флешка неисправна или поддельная; попробуйте другую."
+    ],
+    [
+      "No {0} ISO is listed in {1}.",
+      "В {1} нет ISO для {0}."
+    ],
+    [
+      "The download failed: HTTP {0} from {1}",
+      "Загрузка не удалась: HTTP {0} от {1}"
+    ],
+    [
+      "Disk {0} is erased (no partitions left).",
+      "Диск {0} стёрт (разделов не осталось)."
     ]
   ]
 }
