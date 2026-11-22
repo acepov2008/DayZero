@@ -82,7 +82,8 @@ function Write-CliTick {
     if (-not $Text -or $Text -eq $script:LastTick) { return }
     $script:LastTick = $Text
     $t = [string](Get-DzText $Text)
-    $width = [math]::Max(20, [Console]::WindowWidth - 1)
+    $width = 100
+    try { if ([Console]::WindowWidth -ge 40) { $width = [Console]::WindowWidth - 1 } } catch { $width = 100 }
     if ($t.Length -gt $width) { $t = $t.Substring(0, $width) }
     Write-Host ("`r" + $t.PadRight($width)) -NoNewline
 }
