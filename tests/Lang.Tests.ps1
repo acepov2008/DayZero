@@ -5,7 +5,7 @@
 BeforeDiscovery {
     $repo = Split-Path -Parent $PSScriptRoot
     # Names and brands that are the same in every language.
-    $same = @('DAYZERO', 'DayZero', 'Windows 11', 'Windows 10', 'Language: English')
+    $same = @('DAYZERO', 'DayZero', 'Windows 11', 'Windows 10', 'Language: English', 'WINDOWS', 'LINUX')
     $need = New-Object 'System.Collections.Generic.Dictionary[string,string]' ([System.StringComparer]::Ordinal)
     $add = {
         param($text, $source)

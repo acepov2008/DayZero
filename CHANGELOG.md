@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.16.0 - WINDOWS | LINUX switch
+- The builder window has a **WINDOWS | LINUX** switch in the header instead of the
+  "Make a Linux stick..." button and second window. LINUX shows the Linux form in the same
+  window; WINDOWS shows the Windows form again. What you typed on either side stays.
+- The switch and the language button are greyed out while a stick is being written, and the
+  window cannot be closed then, on either side. The language button also re-translates the Linux
+  side, keeping the distro, apps and ticks you picked.
+- `builder\LinuxWindow.xaml` became `builder\LinuxPanel.xaml` (the same form, without its own
+  window and header), loaded the first time LINUX is picked.
+
 ## 0.15.0 - Fedora, Debian, Linux Mint and CachyOS
 - New choices in **Make a Linux stick...** and in the Linux terminal builder: **Fedora
   Workstation**, **Debian (GNOME)**, **Linux Mint (Cinnamon)** and **CachyOS**. The builder finds

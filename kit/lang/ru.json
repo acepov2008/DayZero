@@ -3178,6 +3178,18 @@
     [
       "Download interrupted ({0}); continuing where it stopped.",
       "Загрузка прервалась ({0}); продолжаем с того же места."
+    ],
+    [
+      "Makes a Windows or Linux install USB stick\nwith your settings on it.",
+      "Делает установочную флешку Windows или Linux\nс вашими настройками."
+    ],
+    [
+      "Make a Windows install stick",
+      "Сделать установочную флешку Windows"
+    ],
+    [
+      "Make a Linux install stick: Ubuntu with your account, apps and scripts, or Fedora, Debian, Linux Mint, CachyOS and any other Linux ISO written as it is",
+      "Сделать установочную флешку Linux: Ubuntu с вашей учётной записью, приложениями и скриптами или Fedora, Debian, Linux Mint, CachyOS и любой другой ISO с Linux как есть"
     ]
   ]
 }

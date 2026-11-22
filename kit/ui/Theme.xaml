@@ -434,6 +434,41 @@
 
     <!-- Big selectable card (a RadioButton underneath, so arrows/Space work).
          Hover: lighter border. Selected: white border and a slightly lighter surface. -->
+    <!-- Two-way switch in a window header (WINDOWS | LINUX): the checked half is filled. -->
+    <Style x:Key="DzSwitchButton" TargetType="RadioButton">
+        <Setter Property="Foreground" Value="{StaticResource DzMuted}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="MinWidth" Value="96"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="Bd" CornerRadius="6" BorderThickness="1" Padding="16,7" Margin="0,0,4,0"
+                            BorderBrush="{StaticResource DzBorder}" Background="Transparent">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource DzHover}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource DzPrimaryButtonBg}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzPrimaryButtonBg}"/>
+                            <Setter Property="Foreground" Value="{StaticResource DzPrimaryText}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource DzCyan}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="DzModeCard" TargetType="RadioButton">
         <Setter Property="Foreground" Value="{StaticResource DzText}"/>
         <Setter Property="Cursor" Value="Hand"/>

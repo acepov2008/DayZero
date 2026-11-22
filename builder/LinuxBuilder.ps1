@@ -1,8 +1,9 @@
 #Requires -Version 5.1
 <#
-    DayZero USB Builder - the Linux window (LinuxWindow.xaml). Dot-sourced by Builder.ps1, so it
-    shares the language, the theme and the list helpers (Get-RegionItemList, Get-KeyboardItemList,
-    Get-TimeZoneItemList, Select-ComboValue, New-ListItem).
+    DayZero USB Builder - the LINUX side of the builder window (LinuxPanel.xaml, shown in
+    Builder.xaml's LinuxHost when LINUX is picked in the header). Dot-sourced by Builder.ps1, so it
+    shares the window, the language, the theme and the list helpers (Get-RegionItemList,
+    Get-KeyboardItemList, Get-TimeZoneItemList, Select-ComboValue, New-ListItem).
 
     Three ways to make a Linux stick:
       * Ubuntu from ubuntu.com or your own Ubuntu ISO: the stick is erased, gets one FAT32
@@ -14,7 +15,8 @@
 #>
 
 $script:lx = $null
-$script:LxWindow = $null
+$script:LxWindow = $null   # the builder window (owner of dialogs, cursor, dispatcher)
+$script:LxRoot = $null     # the loaded LinuxPanel.xaml
 $script:LxBusy = $false
 $script:LxLog = New-Object System.Collections.Generic.List[string]
 $script:LxAppBoxes = @()
@@ -77,6 +79,8 @@ function Set-LxBusy {
     $lx.LxProgress.Value = 0
     $lx.LxProgress.Visibility = if ($Busy -and $ShowProgress) { 'Visible' } else { 'Collapsed' }
     foreach ($n in 'LxBodyGrid', 'LxVerifyButton', 'LxPreviewButton', 'LxWriteButton') { $lx[$n].IsEnabled = -not $Busy }
+    # No switching sides or language in the middle of a write.
+    foreach ($n in 'OsWindowsRadio', 'OsLinuxRadio', 'LanguageButton') { $script:ui[$n].IsEnabled = -not $Busy }
     $script:LxWindow.Cursor = if ($Busy) { [System.Windows.Input.Cursors]::AppStarting } else { $null }
     Invoke-DzUiRefresh -Element $script:LxWindow
 }
@@ -558,16 +562,20 @@ function Invoke-LxVerify {
 # The window
 # ------------------------------------------------------------------------------------
 
-function Show-LinuxBuilder {
+function Initialize-LinuxPanel {
+    <# Loads LinuxPanel.xaml into the builder window once, fills it and wires its events. #>
+    if ($script:lx) { return }
     Import-Module (Join-Path $script:BuilderRoot 'lib\Linux.psm1') -Force
     Import-Module (Join-Path $script:BuilderRoot 'lib\RawWrite.psm1') -Force
-    $path = Join-Path $script:BuilderRoot 'LinuxWindow.xaml'
-    $script:LxWindow = Import-DzXaml -Path $path
-    $script:lx = Get-DzNamedElement -Root $script:LxWindow -XamlPath $path
+    $path = Join-Path $script:BuilderRoot 'LinuxPanel.xaml'
+    $script:LxWindow = $script:Window
+    $script:LxRoot = Import-DzXaml -Path $path
     $script:LxAppBoxes = @()
-    $lx = $script:lx
-    Update-DzTranslation -Root $script:LxWindow
+    $lx = Get-DzNamedElement -Root $script:LxRoot -XamlPath $path
+    $script:ui.LinuxHost.Content = $script:LxRoot
+    Update-DzTranslation -Root $script:LxRoot
 
+    $script:lx = $lx
     Initialize-LxDistros
     $lx.LxLanguageCombo.ItemsSource = Get-RegionItemList
     $lx.LxKeyboardCombo.ItemsSource = Get-KeyboardItemList
@@ -603,20 +611,43 @@ function Show-LinuxBuilder {
     $lx.LxPreviewButton.Add_Click({ try { Invoke-LxPreview } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:LxWindow) } })
     $lx.LxVerifyButton.Add_Click({ try { Invoke-LxVerify } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:LxWindow) } })
     $lx.LxWriteButton.Add_Click({ try { Invoke-LxWrite } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:LxWindow) } })
-    $script:LxWindow.Add_Activated({ try { Update-LxScriptsCount } catch { Write-LxLog ('Scripts folder: ' + $_.Exception.Message) } })
-    $script:LxWindow.Add_Closing({
-            if ($script:LxBusy) {
-                $args[1].Cancel = $true
-                $script:lx.LxStatusText.Text = Get-DzText $('Still working. The window can be closed when this is finished.')
-            }
-        })
-    $script:LxWindow.Add_ContentRendered({
-            Update-LxSystemMode
-            Update-LxDisks
-            $script:lx.LxUserNameText.Focus()
-        })
-    $script:LxWindow.Owner = $script:Window
-    [void]$script:LxWindow.ShowDialog()
-    $script:lx = $null
-    $script:LxWindow = $null
+
+    Update-LxSystemMode
+    Update-LxDisks
+}
+
+function Update-LinuxPanelLanguage {
+    <# After the language button: every text of the Linux side again, keeping what was picked and typed. #>
+    if (-not $script:lx) { return }
+    $picked = Get-LxSystem
+    Update-DzTranslation -Root $script:LxRoot
+    Initialize-LxDistros
+    if ($picked.Kind -like 'download*') { foreach ($r in $script:LxDistroRadios) { $r.IsChecked = ([string]$r.Tag -eq $picked.DistroId) } }
+    Initialize-LxModes
+    Initialize-LxApps
+    Update-LxSystemMode
+    Update-LxRegionText
+    Update-LxScriptsCount
+    Set-LxStatus -Text 'Ready.'
+}
+
+function Show-BuilderSide {
+    <# WINDOWS or LINUX in the header: shows that form and its buttons; what was entered on the other side stays. #>
+    param([Parameter(Mandatory = $true)][ValidateSet('windows', 'linux')][string]$Side)
+    $ui = $script:ui
+    if ($Side -eq 'linux') {
+        $script:Window.Cursor = [System.Windows.Input.Cursors]::Wait
+        try { Initialize-LinuxPanel } finally { $script:Window.Cursor = $null }
+    }
+    $isLinux = ($Side -eq 'linux')
+    $ui.WindowsBodyScroll.Visibility = if ($isLinux) { 'Collapsed' } else { 'Visible' }
+    $ui.WindowsFooter.Visibility = if ($isLinux) { 'Collapsed' } else { 'Visible' }
+    $ui.LinuxHost.Visibility = if ($isLinux) { 'Visible' } else { 'Collapsed' }
+    if ($isLinux) { Update-LxScriptsCount; $script:lx.LxUserNameText.Focus() | Out-Null }
+    Write-BuilderLog "Showing the $Side side."
+}
+
+function Test-BuilderAnyBusy {
+    <# $true while either side is writing a stick (then the switch and the window close are blocked). #>
+    return ([bool]$script:Busy -or [bool]$script:LxBusy)
 }

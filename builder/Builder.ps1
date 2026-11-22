@@ -66,6 +66,8 @@ function Set-BuilderBusy {
     $ui.PreviewButton.IsEnabled = -not $Busy
     $ui.VerifyButton.IsEnabled = -not $Busy
     $ui.WriteButton.IsEnabled = -not $Busy
+    # No switching between WINDOWS and LINUX or changing the language in the middle of a write.
+    foreach ($n in 'OsWindowsRadio', 'OsLinuxRadio', 'LanguageButton') { $ui[$n].IsEnabled = -not $Busy }
     $script:Window.Cursor = if ($Busy) { [System.Windows.Input.Cursors]::AppStarting } else { $null }
     Invoke-DzUiRefresh -Element $script:Window
 }
@@ -163,6 +165,7 @@ function Switch-BuilderLanguage {
     Update-EditionHint
     Update-ScriptsCount
     Update-Tiny11Info
+    Update-LinuxPanelLanguage
     Set-BuilderStatus -Text 'Ready.'
     Write-BuilderLog "Interface language: $next"
 }
@@ -1216,7 +1219,7 @@ function Show-CacheManager {
     Update-NewUsbInfo
 }
 
-# The Linux window (LinuxWindow.xaml) lives in its own file.
+# The LINUX side of the window (LinuxPanel.xaml) lives in its own file.
 . (Join-Path $PSScriptRoot 'LinuxBuilder.ps1')
 
 # ------------------------------------------------------------------------------------
@@ -1271,8 +1274,15 @@ function Start-Builder {
     $ui.LanguageButton.Add_Click({
             try { Switch-BuilderLanguage } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
         })
-    $ui.LinuxButton.Add_Click({
-            try { Show-LinuxBuilder } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
+    $ui.OsWindowsRadio.Add_Checked({
+            try { Show-BuilderSide -Side windows } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
+        })
+    $ui.OsLinuxRadio.Add_Checked({
+            try { Show-BuilderSide -Side linux }
+            catch {
+                [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window)
+                $script:ui.OsWindowsRadio.IsChecked = $true
+            }
         })
     $ui.RefreshDrivesButton.Add_Click({ $script:MediaByDrive = @{}; Update-DriveList })
     $ui.DriveCombo.Add_SelectionChanged({ Update-MediaInfo })
@@ -1315,7 +1325,9 @@ function Start-Builder {
             }
             catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
         })
-    $script:Window.Add_Activated({ try { Update-ScriptsCount } catch { Write-BuilderLog ('Scripts folder: ' + $_.Exception.Message) } })
+    $script:Window.Add_Activated({
+            try { Update-ScriptsCount; if ($script:lx) { Update-LxScriptsCount } } catch { Write-BuilderLog ('Scripts folder: ' + $_.Exception.Message) }
+        })
     $ui.CheckAppsButton.Add_Click({
             try { Invoke-CheckApps } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
         })
@@ -1334,10 +1346,11 @@ function Start-Builder {
         })
 
     $script:Window.Add_Closing({
-            if ($script:Busy) {
+            if (Test-BuilderAnyBusy) {
                 # Closing in the middle of formatting or copying would leave a half-made stick.
                 $args[1].Cancel = $true
                 $script:ui.StatusText.Text = Get-DzText $('Still working. The window can be closed when this is finished.')
+                if ($script:lx) { $script:lx.LxStatusText.Text = Get-DzText $('Still working. The window can be closed when this is finished.') }
             }
         })
     $script:Window.Add_ContentRendered({

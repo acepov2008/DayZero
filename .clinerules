@@ -5,7 +5,7 @@ Project: DayZero - Windows setup toolkit on a USB stick.
 - kit\lang\ru.json : Russian texts as pairs [English shown text, translation]. kit\lib\Lang.psm1 translates where text is shown (Get-DzText). Add a pair for every new text shown to the user; tests\Lang.Tests.ps1 fails otherwise. Logs stay English.
 - kit\ui\Theme.xaml : all colours/styles (monochrome). Keep resource key names (DzMagenta etc.), code uses them.
 - builder\lib\Linux.psm1 + builder\linux\*.json : Linux install sticks (Ubuntu autoinstall, ISO download + SHA-256, Windows->Linux locale/keyboard/time zone maps).
-- builder\LinuxWindow.xaml + LinuxBuilder.ps1 : the Linux window (dot-sourced by Builder.ps1). builder\lib\RawWrite.psm1 : any ISO byte for byte + read-back.
+- builder\LinuxPanel.xaml + LinuxBuilder.ps1 : the LINUX side of the builder window, shown by the WINDOWS | LINUX switch in the header (dot-sourced by Builder.ps1). builder\lib\RawWrite.psm1 : any ISO byte for byte + read-back.
 - build-dayzero-usb.sh + builder\BuilderCli.ps1 + builder\lib\LinuxHost.psm1 : the builder on Linux (PowerShell 7 only; may use PS7/.NET 6 APIs with a SuppressMessage that says why).
 - kit\linux\ : Linux first-boot setup (dayzero.py, Python 3 stdlib only), installed to /opt/dayzero by install-kit.sh. Apps in kit\linux\apps.json (Flathub ids). Your scripts: kit\Scripts-Linux\*.sh.
 - tests\    : Pester tests. Run: pwsh tools\Invoke-DzChecks.ps1 (tests + PSScriptAnalyzer). Must stay green.

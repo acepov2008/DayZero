@@ -17,7 +17,8 @@ BeforeDiscovery {
             ForEach-Object { @{ Path = $_.FullName; Name = $_.FullName.Substring($repo.Length + 1) } })
     # Script -> the XAML files whose x:Name elements it uses through $ui / $names.
     $script:ScriptXamlPairs = @(
-        @{ Script = 'builder/Builder.ps1'; Xaml = @('builder/Builder.xaml', 'builder/PreviewWindow.xaml', 'builder/PickerWindow.xaml', 'builder/CacheWindow.xaml') },
+        @{ Script = 'builder/Builder.ps1'; Xaml = @('builder/Builder.xaml', 'builder/LinuxPanel.xaml', 'builder/PreviewWindow.xaml', 'builder/PickerWindow.xaml', 'builder/CacheWindow.xaml') },
+        @{ Script = 'builder/LinuxBuilder.ps1'; Xaml = @('builder/Builder.xaml', 'builder/LinuxPanel.xaml', 'builder/PreviewWindow.xaml') },
         @{ Script = 'kit/DayZero.ps1'; Xaml = @('kit/ui/Wizard.xaml') }
     )
 }
@@ -160,7 +161,7 @@ Describe 'XAML' {
         $names = Get-XamlName -Paths $Xaml
         $text = Get-Content -Raw -LiteralPath (Join-Path $repo $Script)
         $ignore = @('ContainsKey', 'Keys', 'Values', 'Count', 'Add', 'Remove', 'Clone')
-        $used = [regex]::Matches($text, '\$(?:script:)?(?:ui|names)\.([A-Za-z][A-Za-z0-9]*)') |
+        $used = [regex]::Matches($text, '\$(?:script:)?(?:ui|names|lx)\.([A-Za-z][A-Za-z0-9]*)') |
             ForEach-Object { $_.Groups[1].Value } | Where-Object { $ignore -notcontains $_ } | Sort-Object -Unique
         @($used).Count | Should -BeGreaterThan 0
         foreach ($u in $used) { $names.Contains($u) | Should -BeTrue -Because "$Script uses `$ui.$u" }

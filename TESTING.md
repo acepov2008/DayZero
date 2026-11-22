@@ -106,7 +106,9 @@ it. This part cannot be tested in the automated checks. Use a stick with nothing
 
 ## 2e. Linux sticks from the Windows builder (needs a USB stick you can erase)
 
-- [ ] **Make a Linux stick...** opens the Linux window in the builder's language. Ubuntu 26.04
+- [ ] **LINUX** in the header swaps the form in the same window (WINDOWS swaps back; what you typed
+      on either side stays). The switch and the language button are greyed out while a stick is written.
+      The Linux side follows the language button. Ubuntu 26.04
       LTS is selected, your Windows user name is suggested in Linux form (small letters).
 - [ ] Keyboard Russian: the hint says `us,ru (Alt+Shift switches)`; time zone shows an IANA name
       like `Europe/Moscow`.

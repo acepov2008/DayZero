@@ -30,18 +30,23 @@
                 <TextBlock x:Name="VersionText" Text="USB BUILDER" Style="{StaticResource DzSubtitle}" Margin="2,0,0,0"/>
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,290,0">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <RadioButton x:Name="OsWindowsRadio" GroupName="OsSwitch" Style="{StaticResource DzSwitchButton}" IsChecked="True" Content="WINDOWS"
+                                 ToolTip="Make a Windows install stick"/>
+                    <RadioButton x:Name="OsLinuxRadio" GroupName="OsSwitch" Style="{StaticResource DzSwitchButton}" Content="LINUX"
+                                 ToolTip="Make a Linux install stick: Ubuntu with your account, apps and scripts, or Fedora, Debian, Linux Mint, CachyOS and any other Linux ISO written as it is"/>
+                </StackPanel>
                 <Button x:Name="LanguageButton" VerticalAlignment="Center" Margin="0,0,16,0" Content="Language: English"
                         ToolTip="Switch the language of this program (English / Russian)"/>
-                <Button x:Name="LinuxButton" VerticalAlignment="Center" Margin="0,0,16,0" Content="Make a _Linux stick..."
-                        ToolTip="Ubuntu with your account, apps and scripts, or any other Linux ISO written as it is"/>
+
                 <TextBlock VerticalAlignment="Center" TextAlignment="Right" Style="{StaticResource DzHint}"
-                           Text="Makes a Windows install USB stick with your settings on it,&#x0a;or adds DayZero to a stick you already made."/>
+                           Text="Makes a Windows or Linux install USB stick&#x0a;with your settings on it."/>
             </StackPanel>
         </Grid>
         <Border Grid.Row="0" VerticalAlignment="Bottom" Height="1" Margin="0" Background="{StaticResource DzBorder}"/>
 
         <!-- ===== Body ===== -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="16,8">
+        <ScrollViewer x:Name="WindowsBodyScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="16,8">
             <Grid x:Name="BodyGrid">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -254,7 +259,7 @@
         </ScrollViewer>
 
         <!-- ===== Footer ===== -->
-        <Border Grid.Row="2" Background="{StaticResource DzPanelSolid}" BorderBrush="{StaticResource DzBorder}" BorderThickness="0,1,0,0">
+        <Border x:Name="WindowsFooter" Grid.Row="2" Background="{StaticResource DzPanelSolid}" BorderBrush="{StaticResource DzBorder}" BorderThickness="0,1,0,0">
             <StackPanel Margin="24,12">
                 <ProgressBar x:Name="BuildProgress" Minimum="0" Maximum="100" Value="0" Height="4" Margin="0,0,0,10" Visibility="Collapsed"/>
                 <Grid>
@@ -275,5 +280,8 @@
                 </Expander>
             </StackPanel>
         </Border>
+
+        <!-- ===== Linux (LinuxPanel.xaml, loaded the first time LINUX is picked) ===== -->
+        <ContentControl x:Name="LinuxHost" Grid.Row="1" Grid.RowSpan="2" Visibility="Collapsed" Focusable="False"/>
     </Grid>
 </Window>

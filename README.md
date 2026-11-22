@@ -3,7 +3,7 @@
 A USB stick that installs Windows and then sets the PC up for you: think **Ninite + an
 unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 
-> **Status: v0.15.0, with Linux.** About 1,300 automated tests and static checks cover it,
+> **Status: v0.16.0, with Linux.** About 1,300 automated tests and static checks cover it,
 > including a complete dry run of every mode and a whole Ubuntu stick written to a test disk on
 > Linux. **The Windows GUI (WPF) and the Windows-only steps have not run on real Windows yet,
 > and no DayZero Linux stick has installed a real PC yet.** Do the VM tests in
@@ -89,7 +89,8 @@ the second text of each pair.
 
 DayZero also makes **Linux** sticks, and the whole builder also **runs on Linux**.
 
-**From Windows:** in the builder, press **Make a Linux stick...** (top right). You get:
+**From Windows:** in the builder, switch the header from **WINDOWS** to **LINUX**. The window
+shows the Linux form instead (what you typed on the Windows side stays). You get:
 
 * **Ubuntu 26.04 LTS or 24.04 LTS with DayZero.** Downloaded once from releases.ubuntu.com
   (the newest point release, checked against Ubuntu's published SHA-256) or taken from your own
@@ -323,7 +324,7 @@ Build-DayZeroUSB.cmd      builder launcher (asks for admin; execution policy byp
 build-dayzero-usb.sh      the builder on Linux (terminal, PowerShell 7): builder\BuilderCli.ps1
 builder\                  builder GUI + modules (Unattend.psm1 = answer-file generator, WinMedia.psm1 = Windows
                           download + making the stick, Bundles.psm1 = offline installers)
-  LinuxWindow.xaml + LinuxBuilder.ps1   the Linux window
+  LinuxPanel.xaml + LinuxBuilder.ps1    the LINUX side of the builder window
   lib\Linux.psm1          Ubuntu download + SHA-256, autoinstall.yaml, Linux kit writer, stick check
   lib\RawWrite.psm1       any ISO written byte for byte and read back
   lib\LinuxHost.psm1      the builder on Linux: lsblk/parted/mkfs.vfat/wimlib-imagex in place of diskpart/DISM
