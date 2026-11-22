@@ -221,7 +221,7 @@ Mode tweaks:
 | --- | :-: | :-: | --- |
 | Game Mode on | ✅ | | |
 | Hardware-accelerated GPU scheduling | ✅ | | real GPUs only; restart |
-| Mouse acceleration off | ✅ | | sign out |
+| Mouse acceleration off | optional, off | | sign out; tick it on the review screen |
 | Store apps not running in the background | ✅ | | desktop programs unaffected |
 | Launchers and chat apps don't auto-start | ✅ | | same switch as Task Manager |
 | Ultimate/High performance power plan | ✅ desktops | | **laptops: off by default, battery warning** |
