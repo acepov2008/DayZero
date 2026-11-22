@@ -3002,6 +3002,146 @@
     [
       "Disk {0} is erased (no partitions left).",
       "Диск {0} стёрт (разделов не осталось)."
+    ],
+    [
+      "Number",
+      "Номер"
+    ],
+    [
+      "Type one of the numbers above.",
+      "Введите один из номеров выше."
+    ],
+    [
+      "No disks found.",
+      "Диски не найдены."
+    ],
+    [
+      "Windows 11 (downloaded from Microsoft)",
+      "Windows 11 (загрузка с сайта Microsoft)"
+    ],
+    [
+      "Windows 10 (downloaded from Microsoft)",
+      "Windows 10 (загрузка с сайта Microsoft)"
+    ],
+    [
+      "Windows from an ISO file I already have",
+      "Windows из моего ISO-файла"
+    ],
+    [
+      "Ubuntu 26.04 LTS (downloaded from ubuntu.com, with DayZero)",
+      "Ubuntu 26.04 LTS (загрузка с ubuntu.com, с DayZero)"
+    ],
+    [
+      "Ubuntu 24.04 LTS (downloaded from ubuntu.com, with DayZero)",
+      "Ubuntu 24.04 LTS (загрузка с ubuntu.com, с DayZero)"
+    ],
+    [
+      "Ubuntu from an ISO file I already have (with DayZero)",
+      "Ubuntu из моего ISO-файла (с DayZero)"
+    ],
+    [
+      "Another Linux ISO file, written as it is (no DayZero)",
+      "Другой ISO с Linux, записать как есть (без DayZero)"
+    ],
+    [
+      "What should the stick install?",
+      "Что будет устанавливать флешка?"
+    ],
+    [
+      "USB sticks (+ can be used, - is never offered):",
+      "Флешки (+ можно использовать, - никогда не предлагается):"
+    ],
+    [
+      "Which USB stick? EVERYTHING on it will be erased.",
+      "Какую флешку? ВСЁ на ней будет стёрто."
+    ],
+    [
+      "User name",
+      "Имя пользователя"
+    ],
+    [
+      "Your name (optional)",
+      "Ваше имя (необязательно)"
+    ],
+    [
+      "Computer name (empty = automatic)",
+      "Имя компьютера (пусто = автоматически)"
+    ],
+    [
+      "Language (like en-US, ru-RU, de-DE)",
+      "Язык (например en-US, ru-RU, de-DE)"
+    ],
+    [
+      "Mode",
+      "Режим"
+    ],
+    [
+      "Type {0} to erase it, or anything else to stop",
+      "Введите {0}, чтобы стереть её, или что угодно другое, чтобы отказаться"
+    ],
+    [
+      "Run this as root: sudo ./build-dayzero-usb.sh",
+      "Запустите от root: sudo ./build-dayzero-usb.sh"
+    ],
+    [
+      "Path of the ISO file",
+      "Путь к ISO-файлу"
+    ],
+    [
+      "Next steps:\n 1. Eject the stick safely.\n 2. Boot the PC from it (boot menu key is often F12, F11, F8 or Esc).\n 3. When Setup asks where to install Windows, pick the disk yourself.\n 4. Everything else runs on its own; the DayZero wizard starts after the first sign-in.",
+      "Дальше:\n 1. Безопасно извлеките флешку.\n 2. Загрузите компьютер с неё (меню загрузки обычно на F12, F11, F8 или Esc).\n 3. Когда установщик спросит, куда ставить Windows, выберите диск сами.\n 4. Остальное пройдёт само; мастер DayZero запустится после первого входа."
+    ],
+    [
+      "Adding DayZero to the stick: {0} of {1} GB, {2} MB/s ({3}%)",
+      "Добавляем DayZero на флешку: {0} из {1} ГБ, {2} МБ/с ({3}%)"
+    ],
+    [
+      "Copying to the USB stick: {0} of {1} GB, {2} MB/s ({3}%)",
+      "Копирование на флешку: {0} из {1} ГБ, {2} МБ/с ({3}%)"
+    ],
+    [
+      "The running system is on it.",
+      "На ней работающая система."
+    ],
+    [
+      "not mounted",
+      "не подключена"
+    ],
+    [
+      "Made on Linux, the stick boots on UEFI PCs only.",
+      "Флешка сделана в Linux, поэтому загружается только на компьютерах с UEFI."
+    ],
+    [
+      "Waiting for the new partition...",
+      "Ждём новый раздел..."
+    ],
+    [
+      "Unpacking the ISO file",
+      "Распаковываем ISO-файл"
+    ],
+    [
+      "The stick check found problems (see above).",
+      "Проверка флешки нашла проблемы (см. выше)."
+    ],
+    [
+      "The USB stick is gone. Plug it back in and start again.",
+      "Флешка пропала. Вставьте её снова и начните заново."
+    ],
+    [
+      "The drives changed since you picked the USB stick. Start again and pick it again.",
+      "Диски изменились после выбора флешки. Начните заново и выберите её ещё раз."
+    ],
+    [
+      "No USB stick that can be used. Plug one in (8 GB or more) and start again. Internal disks and drives over 300 GB are never offered.",
+      "Нет подходящей флешки. Вставьте флешку (от 8 ГБ) и начните заново. Внутренние диски и накопители больше 300 ГБ никогда не предлагаются."
+    ],
+    [
+      "{0} cannot be used. Only the disks marked + above can.",
+      "{0} использовать нельзя. Можно только диски, отмеченные + выше."
+    ],
+    [
+      "ISO file not found: {0}",
+      "ISO-файл не найден: {0}"
     ]
   ]
 }

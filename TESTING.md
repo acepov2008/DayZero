@@ -104,6 +104,42 @@ it. This part cannot be tested in the automated checks. Use a stick with nothing
       wizard starts. Edge is gone; Windows Update and Windows Security work.
 - [ ] In the wizard, pick a mode with Chrome: winget still works on tiny11 and installs it.
 
+## 2e. Linux sticks from the Windows builder (needs a USB stick you can erase)
+
+- [ ] **Make a Linux stick...** opens the Linux window in the builder's language. Ubuntu 26.04
+      LTS is selected, your Windows user name is suggested in Linux form (small letters).
+- [ ] Keyboard Russian: the hint says `us,ru (Alt+Shift switches)`; time zone shows an IANA name
+      like `Europe/Moscow`.
+- [ ] **Preview autoinstall.yaml** shows `interactive-sections: - storage`, no `storage:` key and a
+      `$6$...` hash instead of the password.
+- [ ] CREATE LINUX USB with Ubuntu 26.04: the Log shows the newest ISO name and its SHA-256, the
+      download (about 6 GB) with GB and MB/s, "SHA-256 matches", the erase, "Copying Ubuntu to
+      the USB stick" with progress, then the stick check with no problems.
+- [ ] Make a second stick: "Using the copy checked earlier", no new download.
+- [ ] **Add DayZero to an Ubuntu USB stick I already made**: with a Rufus Ubuntu stick (ISO mode,
+      FAT32) only autoinstall.yaml, dayzero\ and DayZero-README.txt are added.
+- [ ] **Another Linux ISO file** (for example Linux Mint or Fedora): written and "read back to
+      check it". Windows may then offer to format the stick: say no. The stick boots that system.
+- [ ] Install from the DayZero Ubuntu stick in a VM (UEFI firmware, 25 GB disk): the installer
+      shows only the disk screen and the confirmation, not the account or language screens.
+      After the restart and first sign-in, a "DayZero setup" window (or terminal) shows the log;
+      the apps of the mode appear in the app grid; `/var/log/dayzero/setup.log` ends with
+      "DayZero finished". Restart in the middle once: it carries on.
+- [ ] With **Temporary password** ticked, the first sign-in asks for a new password.
+
+## 2f. The builder on Linux (needs a Linux PC and a USB stick you can erase)
+
+- [ ] `./build-dayzero-usb.sh -ListDisks` (no root) lists the disks: the stick with `+`, the
+      internal disk with `-` and a reason. Without pwsh or parted it says what to install.
+- [ ] `sudo ./build-dayzero-usb.sh`, pick Ubuntu 26.04 and the stick: typing anything but the
+      stick's name (`sdb`) stops without touching it. Typing the name makes the stick; it ends
+      with "All done!" and every check OK. The same tests as in 2e on the new PC.
+- [ ] Windows 11 from Linux (needs wimtools and cabextract, about 25 GB free in
+      /var/cache/dayzero): download, SHA-1 check, "Unpacking ..." with wimlib, split into
+      install.swm, stick written. It boots on a UEFI PC/VM and installs like a stick made on
+      Windows (disk screen, then the wizard).
+- [ ] `-AppLanguage ru`: prompts and progress are in Russian.
+
 ## 3a. Hyper-V (Windows Pro/Enterprise)
 
 1. **New > Virtual Machine**: **Generation 2**, 4096 MB RAM or more (untick Dynamic Memory),

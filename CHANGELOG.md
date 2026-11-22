@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased - Linux
+## 0.14.0 - Linux
 - **Linux install sticks (groundwork).** `builder\lib\Linux.psm1` downloads Ubuntu Desktop
   (26.04 LTS or 24.04 LTS) from releases.ubuntu.com, picks the newest point release from the
   published `SHA256SUMS` and keeps the ISO only when its SHA-256 matches.
@@ -12,6 +12,17 @@
   install, resumes after restarts and shows a progress window after sign-in. It installs
   updates and drivers, sets up Flathub, installs the apps of your mode (35 checked Flathub
   apps in `kit\linux\apps.json`) and runs your scripts from `kit\Scripts-Linux`.
+- **Make a Linux stick...** in the builder (new window): Ubuntu with DayZero from ubuntu.com or
+  your ISO; DayZero added to an Ubuntu stick made with Rufus; or any other Linux ISO written byte
+  for byte and read back (`builder\lib\RawWrite.psm1`).
+- **The builder on Linux**: `build-dayzero-usb.sh` (terminal, PowerShell 7) makes Windows 11/10,
+  Ubuntu and raw-ISO sticks. `builder\lib\LinuxHost.psm1` uses lsblk, wipefs, parted, mkfs.vfat,
+  wimlib-imagex and cabextract; it writes with mtools when FAT32 cannot be mounted. Same disk
+  rules as on Windows, and the stick is erased only after you type its name. Windows sticks
+  made on Linux boot on UEFI only; tiny11 is Windows-only.
+- Windows sticks no longer carry the Linux kit.
+- Tested: the real Ubuntu 26.04.1 download and SHA-256 check, and a whole Ubuntu stick written
+  to a loop device on Linux. Not yet: the Linux window on real Windows, and a real install.
 
 ## 0.13.0 - tiny11 option
 - New tick box under "Where Windows comes from": **Make it tiny11**. The builder turns the

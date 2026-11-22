@@ -95,6 +95,8 @@ function Copy-DzKit {
         if ($item.Name -like 'build-*.marker') { continue }
         # Left over from trying the wizard on this PC (DayZero.cmd -DryRun): not for the new PC.
         if ($item.Name -like 'state.json*' -or $item.Name -eq 'backup' -or $item.Name -eq 'language.txt') { continue }
+        # The Linux kit and Linux scripts only go on Linux sticks (Linux.psm1).
+        if ($item.Name -eq 'linux' -or $item.Name -eq 'Scripts-Linux') { continue }
         if ($Tick) { & $Tick }   # lets the builder window stay responsive between items
         $target = Join-Path $Destination $item.Name
         if ($script:MergedFolders -contains $item.Name) {

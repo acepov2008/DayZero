@@ -130,7 +130,7 @@ function Open-DzRawDisk {
     [CmdletBinding()]
     param([int]$Number = -1, [string]$DevicePath)
     if ($DevicePath) {
-        if ($DevicePath -notmatch '^/dev/(sd[a-z]+|mmcblk[0-9]+|nvme[0-9]+n[0-9]+|vd[a-z]+)$') { throw "Not a whole-disk device path: $DevicePath" }
+        if ($DevicePath -notmatch '^/dev/(sd[a-z]+|mmcblk[0-9]+|nvme[0-9]+n[0-9]+|vd[a-z]+|loop[0-9]+)$') { throw "Not a whole-disk device path: $DevicePath" }
         return (New-Object System.IO.FileStream($DevicePath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::ReadWrite, 1))
     }
     if ($Number -lt 0 -or $Number -gt 99) { throw 'Disk number missing.' }

@@ -3,9 +3,10 @@
 A USB stick that installs Windows and then sets the PC up for you: think **Ninite + an
 unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 
-> **Status: v0.13.0, all six stages built.** 1,079 automated tests and static checks cover it,
-> including a complete dry run of every mode. **It has not run on real Windows yet**: the
-> GUI (WPF) and the Windows-only steps can only be tested on Windows. Do the VM test in
+> **Status: v0.14.0, now with Linux.** About 1,290 automated tests and static checks cover it,
+> including a complete dry run of every mode and a whole Ubuntu stick written to a test disk on
+> Linux. **The Windows GUI (WPF) and the Windows-only steps have not run on real Windows yet,
+> and no DayZero Linux stick has installed a real PC yet.** Do the VM tests in
 > [TESTING.md](TESTING.md) before you use it on a real PC.
 
 ## How it works
@@ -83,6 +84,45 @@ the second text of each pair.
   every write. It only reads.
 * **Downloaded Windows...** shows how much space the downloaded copies of Windows take on
   this PC and deletes the ones you tick.
+
+## Linux
+
+DayZero also makes **Linux** sticks, and the whole builder also **runs on Linux**.
+
+**From Windows:** in the builder, press **Make a Linux stick...** (top right). You get:
+
+* **Ubuntu 26.04 LTS or 24.04 LTS with DayZero.** Downloaded once from releases.ubuntu.com
+  (the newest point release, checked against Ubuntu's published SHA-256) or taken from your own
+  Ubuntu Desktop ISO. The stick gets Ubuntu's files on FAT32 (boots on UEFI PCs),
+  `autoinstall.yaml` and the DayZero Linux kit. The Ubuntu installer fills in your account,
+  computer name, language, keyboard (Windows layouts are mapped; US English is added before
+  Cyrillic and other non-Latin ones, Alt+Shift switches), time zone, drivers and codecs, and
+  **still stops on the disk screen**: you pick the disk.
+* **Add DayZero to an Ubuntu stick you made with Rufus** (ISO mode, FAT32): only
+  `autoinstall.yaml` and the kit are added; nothing is erased.
+* **Any other Linux ISO** (Fedora, Linux Mint, Debian, ...) written to the stick exactly as it
+  is, like Rufus' DD mode or balenaEtcher, then read back and compared. No DayZero automation.
+
+After the first start, the **DayZero Linux setup** (`/opt/dayzero/dayzero.py`, a systemd
+service) runs once in the background: all updates, the drivers Ubuntu recommends (NVIDIA,
+Wi-Fi, ...), Flathub, the apps of your mode (35 checked Flathub apps, tick any of them in the
+builder) and your own scripts from `kit\Scripts-Linux\*.sh` (run as root, in name order).
+It resumes after restarts, shows its progress in a window after you sign in, and logs to
+`/var/log/dayzero/setup.log`. `sudo python3 /opt/dayzero/dayzero.py retry` runs failed steps again.
+
+**On Linux:** the same builder in a terminal, for Windows 11/10 sticks too.
+
+```bash
+sudo snap install powershell --classic      # PowerShell 7, once (or your distro's package)
+sudo apt install parted dosfstools wimtools cabextract
+sudo ./build-dayzero-usb.sh                 # asks everything; -ListDisks only shows the sticks
+```
+
+It downloads Windows from Microsoft's catalogue (same size and SHA-1 checks) and unpacks it with
+`wimlib-imagex` instead of DISM, or uses your ISO. A Windows stick made on Linux boots on UEFI
+PCs only (the legacy BIOS boot code can only be written from Windows), and tiny11 is not
+available there. Ubuntu sticks and "any Linux ISO" work the same as on Windows. The stick is
+erased only after you type its name (for example `sdb`).
 
 ## The four modes
 
@@ -240,6 +280,12 @@ once (digital licence). The summary shows the result. No activators or bypass sc
 * Restore point before tweaks; every tweak recorded and reversible; dry-run mode.
 * Windows Update, Defender, the firewall and the Store are never reconfigured, at any clean-up level.
 * Downloads come only from Microsoft or the vendor; installers must be signed by them.
+* Linux: `autoinstall.yaml` always keeps the disk screen interactive and never has a storage
+  section (a test fails the build otherwise). Ubuntu ISOs come only from ubuntu.com over HTTPS
+  and must match the published SHA-256. On Linux, the builder offers only USB disks that do not
+  hold the running system, re-checks the disk right before erasing, and erases it only after you
+  type its name. A raw ISO write is read back and compared. Updates and the firewall are never
+  turned off; Flathub ids are checked, never guessed.
 
 ## What is on the stick
 
@@ -256,12 +302,27 @@ DayZero\bundled\          offline installers (winget, Office Deployment Tool), i
 On the new PC: `C:\DayZero\Logs\engine-*.log` (every step), `C:\DayZero\state.json`
 (progress), `C:\DayZero\backup\` (what `-Undo` uses).
 
+A Linux (Ubuntu) stick has Ubuntu's own files plus:
+
+```
+autoinstall.yaml          Ubuntu's answer file (password only as a SHA-512 hash; disk screen stays interactive)
+DayZero-README.txt        plain-text explanation
+dayzero/                  the Linux kit, copied to /opt/dayzero by the installer
+dayzero/scripts/          your own .sh scripts
+```
+
 ## Repository layout
 
 ```
 Build-DayZeroUSB.cmd      builder launcher (asks for admin; execution policy bypassed for that process only)
+build-dayzero-usb.sh      the builder on Linux (terminal, PowerShell 7): builder\BuilderCli.ps1
 builder\                  builder GUI + modules (Unattend.psm1 = answer-file generator, WinMedia.psm1 = Windows
                           download + making the stick, Bundles.psm1 = offline installers)
+  LinuxWindow.xaml + LinuxBuilder.ps1   the Linux window
+  lib\Linux.psm1          Ubuntu download + SHA-256, autoinstall.yaml, Linux kit writer, stick check
+  lib\RawWrite.psm1       any ISO written byte for byte and read back
+  lib\LinuxHost.psm1      the builder on Linux: lsblk/parted/mkfs.vfat/wimlib-imagex in place of diskpart/DISM
+  linux\                  distros.json (Ubuntu releases), keyboards.json and timezones.json (Windows -> Linux)
 kit\                      everything copied to the stick and then to C:\DayZero
   DayZero.cmd / .ps1      wizard launcher / wizard (-DryRun, -Resume, -Reset, -Undo, /console)
   bootstrap\              scripts the answer file runs during setup and at first sign-in
@@ -269,7 +330,9 @@ kit\                      everything copied to the stick and then to C:\DayZero
   lib\                    modules: Core, State, Engine, Plan, System, Config, Winget, Office, Tweaks,
                           Debloat, Undo, WindowsUpdate, Drivers, Steps.* and Ui
   ui\                     Theme.xaml (monochrome) and Wizard.xaml
-tests\                    Pester tests + static checks
+  linux\                  the Linux first-boot setup (dayzero.py, Python 3) and its app list (Flathub)
+  Scripts-Linux\          your own .sh scripts for Linux sticks
+tests\                    Pester tests + static checks (tests\linux: Python tests of the Linux setup)
 tools\                    Invoke-DzChecks.ps1, New-DzTestIso.ps1, Test-DzAppIds.ps1
 ```
 
@@ -289,7 +352,9 @@ The checks run on PowerShell 5.1 and 7 (also on Linux). They cover the answer fi
 engine (resume, restarts, retries), plans, winget flows, Office config, tweaks with a fake
 registry (apply and undo), debloat safety, Windows Update with mocked COM, a full dry run of
 every mode, and static checks: PowerShell 5.1 compatibility, CRLF batch files, and every
-control, resource and animation target in the XAML.
+control, resource and animation target in the XAML. On Linux as root they also partition,
+format and fill a loop device (a file acting as a disk) and run the terminal builder start to
+finish on it; with `DAYZERO_E2E_ISO=<an Ubuntu ISO>` they write a whole Ubuntu stick.
 
 See [CHANGELOG.md](CHANGELOG.md) for what each stage added.
 
