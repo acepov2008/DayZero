@@ -21,8 +21,12 @@
   rules as on Windows, and the stick is erased only after you type its name. Windows sticks
   made on Linux boot on UEFI only; tiny11 is Windows-only.
 - Windows sticks no longer carry the Linux kit.
-- Tested: the real Ubuntu 26.04.1 download and SHA-256 check, and a whole Ubuntu stick written
-  to a loop device on Linux. Not yet: the Linux window on real Windows, and a real install.
+- Tested: the real Ubuntu 26.04.1 download and SHA-256 check; a whole Ubuntu stick made by the
+  terminal builder on a loop device; that stick booted in QEMU (UEFI): GRUB, kernel and the live
+  system start from the FAT32 copy, and /cdrom shows autoinstall.yaml and the dayzero kit.
+  Not yet: the Linux window on real Windows, a complete unattended install and the first-boot
+  setup on a real PC, and the Windows download on Linux (Microsoft's hosts were not reachable
+  from the test machine).
 
 ## 0.13.0 - tiny11 option
 - New tick box under "Where Windows comes from": **Make it tiny11**. The builder turns the

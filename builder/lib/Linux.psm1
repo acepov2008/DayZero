@@ -21,6 +21,8 @@
 #>
 
 Set-StrictMode -Version 2.0
+# Any error stops the function (also when no caller has a try/catch): never carry on after a failed download or disk step.
+$ErrorActionPreference = 'Stop'
 
 $script:Fat32MaxFile = 4294967295
 $script:KitFolder = 'dayzero'

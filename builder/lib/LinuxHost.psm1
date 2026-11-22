@@ -11,6 +11,8 @@
 #>
 
 Set-StrictMode -Version 2.0
+# Any error stops the function (also when no caller has a try/catch): never carry on after a failed download or disk step.
+$ErrorActionPreference = 'Stop'
 
 $script:SystemMounts = @('/', '/boot', '/boot/efi', '/efi', '/usr', '/var', '/home', '/opt', '/srv', '/nix', '[SWAP]')
 $script:UsbLabel = 'DAYZERO'

@@ -13,6 +13,8 @@
 #>
 
 Set-StrictMode -Version 2.0
+# Any error stops the function (also when no caller has a try/catch): never carry on after a failed download or disk step.
+$ErrorActionPreference = 'Stop'
 
 $script:Chunk = 4MB
 $script:Head = 1MB
