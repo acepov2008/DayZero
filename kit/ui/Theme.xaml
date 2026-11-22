@@ -444,7 +444,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="Bd" CornerRadius="6" BorderThickness="1" Padding="16,7" Margin="0,0,4,0"
+                    <Border x:Name="Bd" CornerRadius="6" BorderThickness="1" Padding="18,7" Margin="2,0"
                             BorderBrush="{StaticResource DzBorder}" Background="Transparent">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
                     </Border>

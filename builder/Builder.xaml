@@ -20,28 +20,25 @@
 
         <!-- ===== Header ===== -->
         <ContentControl Grid.Row="0" Template="{StaticResource DzHeaderArt}"/>
-        <Grid Grid.Row="0" Margin="24,18,24,6">
+        <Grid Grid.Row="0" Margin="24,18,24,10">
+            <!-- Title left, WINDOWS | LINUX centred over the window, language right. -->
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <StackPanel>
+            <StackPanel Grid.Column="0" VerticalAlignment="Center">
                 <TextBlock Text="DAYZERO" Style="{StaticResource DzTitle}"/>
                 <TextBlock x:Name="VersionText" Text="USB BUILDER" Style="{StaticResource DzSubtitle}" Margin="2,0,0,0"/>
             </StackPanel>
-            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,290,0">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <RadioButton x:Name="OsWindowsRadio" GroupName="OsSwitch" Style="{StaticResource DzSwitchButton}" IsChecked="True" Content="WINDOWS"
-                                 ToolTip="Make a Windows install stick"/>
-                    <RadioButton x:Name="OsLinuxRadio" GroupName="OsSwitch" Style="{StaticResource DzSwitchButton}" Content="LINUX"
-                                 ToolTip="Make a Linux install stick: Ubuntu with your account, apps and scripts, or Fedora, Debian, Linux Mint, CachyOS and any other Linux ISO written as it is"/>
-                </StackPanel>
-                <Button x:Name="LanguageButton" VerticalAlignment="Center" Margin="0,0,16,0" Content="Language: English"
-                        ToolTip="Switch the language of this program (English / Russian)"/>
-
-                <TextBlock VerticalAlignment="Center" TextAlignment="Right" Style="{StaticResource DzHint}"
-                           Text="Makes a Windows or Linux install USB stick&#x0a;with your settings on it."/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <RadioButton x:Name="OsWindowsRadio" GroupName="OsSwitch" Style="{StaticResource DzSwitchButton}" IsChecked="True" Content="WINDOWS"
+                             ToolTip="Make a Windows install stick"/>
+                <RadioButton x:Name="OsLinuxRadio" GroupName="OsSwitch" Style="{StaticResource DzSwitchButton}" Content="LINUX"
+                             ToolTip="Make a Linux install stick: Ubuntu with your account, apps and scripts, or Fedora, Debian, Linux Mint, CachyOS and any other Linux ISO written as it is"/>
             </StackPanel>
+            <Button x:Name="LanguageButton" Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Content="Language: English"
+                    ToolTip="Switch the language of this program (English / Russian)"/>
         </Grid>
         <Border Grid.Row="0" VerticalAlignment="Bottom" Height="1" Margin="0" Background="{StaticResource DzBorder}"/>
 

@@ -3180,10 +3180,6 @@
       "Загрузка прервалась ({0}); продолжаем с того же места."
     ],
     [
-      "Makes a Windows or Linux install USB stick\nwith your settings on it.",
-      "Делает установочную флешку Windows или Linux\nс вашими настройками."
-    ],
-    [
       "Make a Windows install stick",
       "Сделать установочную флешку Windows"
     ],
