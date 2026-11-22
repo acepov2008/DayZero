@@ -3186,6 +3186,50 @@
     [
       "Make a Linux install stick: Ubuntu with your account, apps and scripts, or Fedora, Debian, Linux Mint, CachyOS and any other Linux ISO written as it is",
       "Сделать установочную флешку Linux: Ubuntu с вашей учётной записью, приложениями и скриптами или Fedora, Debian, Linux Mint, CachyOS и любой другой ISO с Linux как есть"
+    ],
+    [
+      "The newest NVIDIA graphics driver for this card, straight from NVIDIA and installed silently.",
+      "Новейший драйвер NVIDIA для этой видеокарты, прямо от NVIDIA, ставится без вопросов."
+    ],
+    [
+      "The newest AMD Radeon driver and its settings app, installed silently by AMD's own auto-detect installer.",
+      "Новейший драйвер AMD Radeon и его программа настроек, ставятся без вопросов собственным установщиком AMD с автоопределением."
+    ],
+    [
+      "NVIDIA Game Ready driver",
+      "драйвер NVIDIA Game Ready"
+    ],
+    [
+      "Download the {0}",
+      "Скачать: {0}"
+    ],
+    [
+      "Installed the NVIDIA Game Ready driver {0} for the {1}. A restart finishes it.",
+      "Установлен драйвер NVIDIA Game Ready {0} для {1}. Перезагрузка завершит установку."
+    ],
+    [
+      "The newest NVIDIA driver ({0}) is already installed.",
+      "Новейший драйвер NVIDIA ({0}) уже установлен."
+    ],
+    [
+      "Installed the latest AMD driver with AMD's installer ({0}). A restart finishes it.",
+      "Установлен новейший драйвер AMD установщиком AMD ({0}). Перезагрузка завершит установку."
+    ],
+    [
+      "{0} The summary has a button for the official download page. Windows Update already installed a working driver.",
+      "{0} На итоговом экране есть кнопка официальной страницы загрузки. Рабочий драйвер Центр обновления Windows уже установил."
+    ],
+    [
+      "No NVIDIA graphics card found.",
+      "Видеокарта NVIDIA не найдена."
+    ],
+    [
+      "[DRY-RUN] would look up, download and silently install the latest NVIDIA Game Ready driver for this card.",
+      "[ПРОБНЫЙ ПРОГОН] нашёл бы, скачал и тихо установил новейший драйвер NVIDIA Game Ready для этой видеокарты."
+    ],
+    [
+      "[DRY-RUN] would download AMD's auto-detect installer and silently install the latest AMD driver.",
+      "[ПРОБНЫЙ ПРОГОН] скачал бы установщик AMD с автоопределением и тихо установил новейший драйвер AMD."
     ]
   ]
 }

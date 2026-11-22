@@ -143,7 +143,11 @@ Describe 'Dry run of <Mode> on a <Form> (clean-up level: <Level>)' -ForEach $scr
         $ids | Should -Not -Contain 'tweak:game-bar-off'
         if ($Level -ne 'advanced') { $ids | Should -Not -Contain 'remove:onedrive' }
     }
-    It 'leaves the NVIDIA app as a link on the summary' {
-        @($script:final.followUps | ForEach-Object { $_.url }) | Should -Contain 'https://www.nvidia.com/en-us/software/nvidia-app/'
+    It 'plans the latest NVIDIA driver and, in a dry run, downloads nothing' {
+        $gpu = @($script:final.steps | Where-Object { $_.id -eq 'gpu-nvidia' })[0]
+        $gpu.status | Should -Be 'done'
+        $gpu.message | Should -Match '^\[DRY-RUN\]'
+        $urls = if ($script:final.PSObject.Properties['followUps']) { @($script:final.followUps | ForEach-Object { $_.url }) } else { @() }
+        $urls | Should -Not -Contain 'https://www.nvidia.com/en-us/drivers/'
     }
 }

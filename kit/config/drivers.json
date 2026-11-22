@@ -7,19 +7,23 @@
     "page:    official download page, used when the vendor does not publish the app through winget.",
     "         DayZero never downloads installers from unofficial mirrors; it shows a link on the summary",
     "         screen instead. Windows Update still installs a working graphics driver in the meantime.",
+    "driver:  'nvidia' or 'amd' = the latest driver is downloaded from the vendor and installed silently",
+    "         (kit\\lib\\GpuDriver.psm1; signed by the vendor or not used). 'page' is the fallback button.",
     "PC-brand tools are offered on the review screen (ticked) when the brand is recognised; never in a VM."
   ],
   "gpuApps": [
     {
       "vendor": "NVIDIA",
-      "name": "NVIDIA App",
-      "what": "NVIDIA's driver and game-settings app (GeForce Game Ready drivers, overlay, recording).",
-      "page": "https://www.nvidia.com/en-us/software/nvidia-app/"
+      "name": "NVIDIA Game Ready driver",
+      "what": "The newest NVIDIA graphics driver for this card, straight from NVIDIA and installed silently.",
+      "driver": "nvidia",
+      "page": "https://www.nvidia.com/en-us/drivers/"
     },
     {
       "vendor": "AMD",
       "name": "AMD Software: Adrenalin Edition",
-      "what": "AMD's Radeon driver and settings app. The page offers AMD's auto-detect installer.",
+      "what": "The newest AMD Radeon driver and its settings app, installed silently by AMD's own auto-detect installer.",
+      "driver": "amd",
       "page": "https://www.amd.com/en/support/download/drivers.html"
     },
     {

@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.17.0 - the latest graphics driver, by itself
+- **NVIDIA**: the wizard finds the card in NVIDIA's product list, asks NVIDIA's driver service
+  for the newest WHQL Game Ready driver for that card and Windows version, downloads it from
+  us.download.nvidia.com, checks it is signed by NVIDIA Corporation and installs it silently
+  (`-s -noreboot`). Nothing is downloaded when that version is already installed.
+- **AMD**: AMD's auto-detect installer named on amd.com's driver page is downloaded from
+  drivers.amd.com, checked for AMD's signature (Advanced Micro Devices) and run silently with
+  AMD's documented `-INSTALL` switch.
+- Any failure leaves the official download page as a button on the summary, as before. Intel
+  is unchanged (Intel Driver & Support Assistant via winget). New module `kit\lib\GpuDriver.psm1`.
+- Checked live on 2026-11-22: NVIDIA's lookup gave 621.24 for an RTX 4070 on Windows 11; AMD's page
+  named Adrenalin 26.11.2; both installers' signers were read from the real files. Not yet run on
+  a real Windows PC, and AMD's silent switch is documented for its installer framework, not
+  explicitly for the auto-detect installer.
+
 ## 0.16.0 - WINDOWS | LINUX switch
 - The builder window has a **WINDOWS | LINUX** switch in the header instead of the
   "Make a Linux stick..." button and second window. LINUX shows the Linux form in the same

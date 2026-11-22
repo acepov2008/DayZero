@@ -43,22 +43,24 @@ Describe 'GPU and PC-brand apps' {
         $r = Invoke-DzStepGpuApp -Context $ctx
         $r.Message | Should -Be 'installed Intel.IntelDriverAndSupportAssistant from winget'
     }
-    It 'links to the official NVIDIA page instead of guessing a download' {
-        $ctx = New-Ctx
-        $ctx.Step = [pscustomobject]@{ args = [pscustomobject]@{ vendor = 'NVIDIA' } }
-        $r = Invoke-DzStepGpuApp -Context $ctx
-        $r.Status | Should -Be 'Warn'
-        $r.Message | Should -Match 'nvidia\.com'
-        @($ctx.State.followUps).Count | Should -Be 1
-        $ctx.State.followUps[0].url | Should -Be 'https://www.nvidia.com/en-us/software/nvidia-app/'
+    It 'installs the latest NVIDIA and AMD drivers itself instead of only linking to them' {
+        Mock -ModuleName Steps.Drivers Install-DzGpuDriver { New-DzStepResult -Status Done -Message "driver for $($Item.vendor)" }
+        foreach ($v in 'NVIDIA', 'AMD') {
+            $ctx = New-Ctx
+            $ctx.Step = [pscustomobject]@{ args = [pscustomobject]@{ vendor = $v } }
+            (Invoke-DzStepGpuApp -Context $ctx).Message | Should -Be "driver for $v"
+        }
         Should -Invoke -ModuleName Drivers Install-DzWingetPackage -Times 0
     }
-    It 'does not add the same link twice (retry)' {
+    It 'falls back to one link on the summary when the vendor cannot be reached (also on retry)' {
+        Mock -ModuleName GpuDriver Get-DzWebString { throw 'offline' }
         $ctx = New-Ctx
         $ctx.Step = [pscustomobject]@{ args = [pscustomobject]@{ vendor = 'AMD' } }
+        $r = Invoke-DzStepGpuApp -Context $ctx
         [void](Invoke-DzStepGpuApp -Context $ctx)
-        [void](Invoke-DzStepGpuApp -Context $ctx)
+        $r.Status | Should -Be 'Warn'
         @($ctx.State.followUps).Count | Should -Be 1
+        $ctx.State.followUps[0].url | Should -Be 'https://www.amd.com/en/support/download/drivers.html'
     }
     It 'installs Lenovo Vantage from the Microsoft Store' {
         $ctx = New-Ctx

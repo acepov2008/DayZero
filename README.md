@@ -3,7 +3,7 @@
 A USB stick that installs Windows and then sets the PC up for you: think **Ninite + an
 unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 
-> **Status: v0.16.0, with Linux.** About 1,300 automated tests and static checks cover it,
+> **Status: v0.17.0, with Linux.** About 1,300 automated tests and static checks cover it,
 > including a complete dry run of every mode and a whole Ubuntu stick written to a test disk on
 > Linux. **The Windows GUI (WPF) and the Windows-only steps have not run on real Windows yet,
 > and no DayZero Linux stick has installed a real PC yet.** Do the VM tests in
@@ -133,7 +133,7 @@ erased only after you type its name (for example `sdb`).
 
 | | Apps | Mode tweaks |
 | --- | --- | --- |
-| 🎮 **Gaming** | Chrome, Steam, Epic Games Launcher, Discord, OBS Studio, MSI Afterburner, HWiNFO, WizTree + your graphics card's app | all gaming tweaks (below) |
+| 🎮 **Gaming** | Chrome, Steam, Epic Games Launcher, Discord, OBS Studio, MSI Afterburner, HWiNFO, WizTree + the latest driver for your graphics card | all gaming tweaks (below) |
 | 💼 **Office** | Microsoft 365 Apps (Word, Excel, PowerPoint, Outlook, OneNote), Chrome, Acrobat Reader, Spotify, VLC, 7-Zip, Notepad++, Everything, WizTree. *Optional: LibreOffice* | none |
 | 🧰 **Everything** | Gaming + Office + PowerToys, VS Code, Windows Terminal (Windows 10), Visual C++ 2015-2022, .NET 10, DirectX runtime. *Optional: .NET 8* | Gaming's |
 | 🎛️ **Custom** | You pick every app in the builder (**CHOOSE APPS...**) or on the new PC | the ones you tick |
@@ -252,9 +252,18 @@ run twice. Don't put passwords in scripts you commit to GitHub.
    `pnputil`, so a network driver can come from the stick.
 2. **Windows Update** through the API built into Windows: software and driver updates Windows
    would install by itself, restarting and continuing until nothing is left.
-3. **Graphics card app**: Intel Driver & Support Assistant via winget. NVIDIA App and AMD
-   Adrenalin aren't published through winget, so the summary has a button that opens their
-   official download pages (Windows Update has already installed a working driver).
+3. **Latest graphics driver, by itself**:
+   * **NVIDIA**: the card is looked up in NVIDIA's own product list and NVIDIA's driver service
+     (the one nvidia.com's driver search uses) names the newest WHQL Game Ready driver for it.
+     It is downloaded from `us.download.nvidia.com`, run only if signed by NVIDIA Corporation,
+     and installed silently. Skipped when that version is already installed.
+   * **AMD**: AMD's auto-detect installer (named on amd.com's driver page; it picks the right
+     driver for the card) is downloaded from `drivers.amd.com`, run only if signed by Advanced
+     Micro Devices, and run silently with AMD's documented `-INSTALL` switch.
+   * **Intel**: Intel Driver & Support Assistant via winget.
+   If anything goes wrong (no internet, card not in NVIDIA's list, bad signature, installer
+   error), the summary has a button for the official download page instead; Windows Update has
+   already installed a working driver by then.
 4. **PC-brand tool** (ticked when the brand is recognised, never in a VM): Dell Command |
    Update and HP Support Assistant via winget, Lenovo Vantage and MyASUS from the Microsoft Store.
 

@@ -19,6 +19,7 @@ Hard rules:
 - Never disable Windows Update or Defender; no third-party activators.
 - Every tweak must be reversible (backup + DayZero.cmd -Undo); no scripts in JSON.
 - winget IDs must be real (check winget-pkgs), never guessed.
+- Graphics drivers (kit\lib\GpuDriver.psm1): only from the vendor's own https hosts, run only when Test-DzFileSignature confirms the vendor (NVIDIA Corporation / Advanced Micro Devices); on any failure fall back to the official page link.
 - Don't use "$name?" inside strings (write "${name}?").
 - Linux: autoinstall.yaml must always list 'storage' in interactive-sections and never have a 'storage' key (Get-DzForbiddenAutoinstallKey). Without it Ubuntu wipes a single-disk PC by itself.
 - Linux ISOs only from the https hosts in builder\linux\distros.json, and only when they match the SHA-256 published on that host. Redirects to the project's https mirrors are allowed (never http); the checksum always comes from the project's own host.

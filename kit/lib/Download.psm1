@@ -25,7 +25,9 @@ function Save-DzDownload {
     param(
         [Parameter(Mandatory = $true)][string]$Url,
         [Parameter(Mandatory = $true)][string]$Path,
-        [int]$TimeoutSec = 1800
+        [int]$TimeoutSec = 1800,
+        [hashtable]$Headers = @{},
+        [string]$UserAgent = ''
     )
     Enable-DzTls12
     $dir = Split-Path -Parent $Path
@@ -34,7 +36,10 @@ function Save-DzDownload {
     $old = $ProgressPreference
     $ProgressPreference = 'SilentlyContinue'   # the progress bar makes Invoke-WebRequest many times slower on 5.1
     try {
-        Invoke-WebRequest -Uri $Url -OutFile $tmp -UseBasicParsing -TimeoutSec $TimeoutSec -ErrorAction Stop
+        $more = @{}
+        if ($Headers.Count -gt 0) { $more.Headers = $Headers }
+        if ($UserAgent) { $more.UserAgent = $UserAgent }
+        Invoke-WebRequest -Uri $Url -OutFile $tmp -UseBasicParsing -TimeoutSec $TimeoutSec -ErrorAction Stop @more
         if (Test-Path -LiteralPath $Path) { Remove-Item -LiteralPath $Path -Force }
         Move-Item -LiteralPath $tmp -Destination $Path -Force
     }

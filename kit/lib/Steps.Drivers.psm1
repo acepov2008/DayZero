@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
     DayZero - driver steps: Drivers\ folder, Windows Update (first pass and final check),
-    graphics-card app and PC-brand update tool.
+    graphics driver (NVIDIA / AMD, GpuDriver.psm1) or graphics app (Intel), PC-brand update tool.
 #>
 
 Set-StrictMode -Version 2.0
@@ -24,6 +24,8 @@ function Invoke-DzStepGpuApp {
     $vendor = [string](Get-DzStepArg -Context $Context -Name 'vendor')
     $item = @(Get-DzProperty $Context.Config.drivers 'gpuApps' @()) | Where-Object { $_.vendor -eq $vendor } | Select-Object -First 1
     if ($null -eq $item) { return (New-DzStepResult -Status Skipped -Message "No app configured for $vendor graphics.") }
+    # NVIDIA and AMD: the latest driver straight from the vendor (GpuDriver.psm1). Intel: its app with winget.
+    if ([string](Get-DzProperty $item 'driver' '')) { return (Install-DzGpuDriver -Context $Context -Item $item) }
     return (Install-DzVendorApp -Context $Context -Item $item)
 }
 

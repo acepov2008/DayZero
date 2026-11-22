@@ -279,9 +279,16 @@ changing OOBE, so results can differ between builds.
 - [ ] "Final Windows Update check" never restarts by itself; the summary says "Restart the PC
       once you are done" if something still needs it.
 - [ ] In a VM: no graphics-card app and no PC-brand tool steps (expected).
-- [ ] On real hardware: NVIDIA/AMD show "Open download pages" on the summary, which opens the
-      official page in your normal browser; Intel DSA installs by itself. The PC-brand tool
-      (Dell/Lenovo/HP/ASUS) installs when ticked.
+- [ ] On real hardware with **NVIDIA**: the step "Install the NVIDIA Game Ready driver" logs the
+      card, its current and the newest driver version, the download (about 1 GB, from
+      us.download.nvidia.com), "Signed by NVIDIA Corporation" and ends "Installed ... A restart
+      finishes it". No window opens. After the restart, Device Manager shows that driver version.
+      Run the wizard again: "already installed", nothing downloaded.
+- [ ] With **AMD**: the step downloads AMD's auto-detect installer and runs it silently. This is
+      the part most likely to need a fix: if an AMD window opens and waits, or the step ends with
+      an exit code, note what it says (C:\DayZero\downloads\amd-install.log). The summary then
+      has AMD's download page as a button.
+- [ ] Intel DSA installs by itself. The PC-brand tool (Dell/Lenovo/HP/ASUS) installs when ticked.
 
 **Your own scripts**
 - [ ] Builder: **Open the Scripts folder** opens `kit\Scripts`; after adding `01-test.cmd`
