@@ -39,17 +39,6 @@
       "largestFile": 3432136704
     },
     {
-      "id": "ubuntu-24.04",
-      "name": "Ubuntu 24.04 LTS",
-      "family": "ubuntu",
-      "automation": "ubuntu-autoinstall",
-      "supportedUntil": "2029-04",
-      "baseUrl": "https://releases.ubuntu.com/24.04/",
-      "sums": "SHA256SUMS",
-      "isoPattern": "^ubuntu-24\\.04(\\.[0-9]+)*-desktop-amd64\\.iso$",
-      "largestFile": 2238521344
-    },
-    {
       "id": "fedora-workstation",
       "name": "Fedora Workstation",
       "family": "fedora",

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.18.0 - step by step
+- The builder is a step-by-step wizard on both sides: one step on screen, **Next** and **Back**.
+  Windows: where to write, Windows, your account, PC and region, mode, clean-up level, options,
+  create. Linux: which Linux, where to write, your account, PC and language, mode and apps,
+  options, create (only the first two and create when an ISO is written as it is).
+- A line under the header is split into one segment per step and filled up to the current one,
+  with the step names and "Step N of M". Steps already visited can be clicked to go back.
+- **Next** checks the current step and says what to fix before moving on. **Back** always works
+  and keeps everything entered. The last step lists everything that will be made and the
+  remaining problems; CREATE still asks once more before erasing.
+- Only the latest Ubuntu LTS (26.04) is offered for download; your own Ubuntu ISO (24.04 or newer)
+  still works.
+
 ## 0.17.0 - the latest graphics driver, by itself
 - **NVIDIA**: the wizard finds the card in NVIDIA's product list, asks NVIDIA's driver service
   for the newest WHQL Game Ready driver for that card and Windows version, downloads it from

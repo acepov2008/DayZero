@@ -67,6 +67,8 @@ function Set-BuilderBusy {
     $ui.PreviewButton.IsEnabled = -not $Busy
     $ui.VerifyButton.IsEnabled = -not $Busy
     $ui.WriteButton.IsEnabled = -not $Busy
+    $ui.NextButton.IsEnabled = -not $Busy
+    $ui.BackButton.IsEnabled = (-not $Busy) -and ($script:WinStep -gt 0)
     # No switching between WINDOWS and LINUX or changing the language in the middle of a write.
     foreach ($n in 'OsWindowsRadio', 'OsLinuxRadio', 'LanguageButton') { $ui[$n].IsEnabled = -not $Busy }
     $script:Window.Cursor = if ($Busy) { [System.Windows.Input.Cursors]::AppStarting } else { $null }
@@ -169,6 +171,7 @@ function Switch-BuilderLanguage {
     foreach ($c in @($script:ui.RegionCombo, $script:ui.DisplayLanguageCombo)) { Update-ListLanguage -Combo $c -Kind culture }
     Update-ListLanguage -Combo $script:ui.TimeZoneCombo -Kind timezone
     Update-LinuxPanelLanguage
+    if ($script:ui.LinuxHost.Visibility -eq 'Visible') { Show-LxStep -Index $script:LxStep } else { Show-WinStep -Index $script:WinStep }
     Set-BuilderStatus -Text 'Ready.'
     Write-BuilderLog "Interface language: $next"
 }
@@ -982,10 +985,10 @@ function Invoke-Preview {
     [void]$preview.ShowDialog()
 }
 
-function Invoke-Write {
-    $data = Get-BuilderInput
-    if ($data.Errors.Count -gt 0) { Show-ValidationErrors -InputData $data; return }
-
+function Get-WriteSummaryLines {
+    <# What CREATE will make, line by line (English; translated where shown). Used by the review step and the final question. #>
+    param([Parameter(Mandatory = $true)][object]$Data)
+    $data = $Data
     $summary = New-Object System.Collections.Generic.List[string]
     if ($data.Kind -eq 'newusb') {
         $disk = $data.UsbDisk
@@ -1015,6 +1018,14 @@ function Invoke-Write {
         $summary.Add('Please note:')
         foreach ($w in $data.Warnings) { $summary.Add(" - $w") }
     }
+    return $summary.ToArray()
+}
+
+function Invoke-Write {
+    $data = Get-BuilderInput
+    if ($data.Errors.Count -gt 0) { Show-ValidationErrors -InputData $data; return }
+
+    $summary = @(Get-WriteSummaryLines -Data $data)
     $answer = Show-DzMessage -Text ($summary -join "`n") -Title 'DayZero Builder' -Kind Question -Owner $script:Window
     if ($answer -ne 'Yes') { Set-BuilderStatus -Text 'Cancelled.'; return }
 
@@ -1288,6 +1299,140 @@ function Show-CacheManager {
 # The LINUX side of the window (LinuxPanel.xaml) lives in its own file.
 . (Join-Path $PSScriptRoot 'LinuxBuilder.ps1')
 
+
+# ------------------------------------------------------------------------------------
+# Steps: one page at a time, Back / Next, and the step line under the header
+# ------------------------------------------------------------------------------------
+
+$script:WinSteps = @(
+    @{ Panel = 'WinStepTarget'; Label = 'WHERE TO WRITE'; Errors = 'USB stick|ISO file|export folder|is gone|32-bit|installation USB' },
+    @{ Panel = 'WinStepWindows'; Label = 'WINDOWS'; Errors = 'edition|product key|tiny11|media contains Windows|ARM64' },
+    @{ Panel = 'WinStepAccount'; Label = 'YOUR ACCOUNT'; Errors = 'user name|password|built-in Windows name' },
+    @{ Panel = 'WinStepRegion'; Label = 'PC AND REGION'; Errors = 'computer name|display language|region format|language/region|[Kk]eyboard|time zone|has no Windows download' },
+    @{ Panel = 'WinStepMode'; Label = 'MODE'; Errors = '' },
+    @{ Panel = 'WinStepLevel'; Label = 'CLEAN-UP'; Errors = '' },
+    @{ Panel = 'WinStepOptions'; Label = 'OPTIONS'; Errors = '' },
+    @{ Panel = 'WinStepReview'; Label = 'CREATE'; Errors = '' }
+)
+$script:WinStep = 0
+$script:WinReached = 0
+$script:StepJump = $null
+
+function Update-StepBar {
+    <#
+        The line under the header: one segment per step, filled up to the current one, with the
+        step names below. Steps already visited can be clicked to go back to them.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][object[]]$Steps,
+        [Parameter(Mandatory = $true)][int]$Index,
+        [Parameter(Mandatory = $true)][int]$Reached,
+        [Parameter(Mandatory = $true)][scriptblock]$OnJump
+    )
+    $bar = $script:ui.StepBar
+    $bar.Children.Clear()
+    $bar.ColumnDefinitions.Clear()
+    $script:StepJump = $OnJump
+    $res = [System.Windows.Application]::Current
+    for ($i = 0; $i -lt $Steps.Count; $i++) {
+        $col = New-Object System.Windows.Controls.ColumnDefinition
+        $col.Width = New-Object System.Windows.GridLength(1, [System.Windows.GridUnitType]::Star)
+        $bar.ColumnDefinitions.Add($col)
+        $cell = New-Object System.Windows.Controls.StackPanel
+        $cell.Margin = New-Object System.Windows.Thickness(3, 0, 3, 0)
+        $cell.Background = [System.Windows.Media.Brushes]::Transparent
+        $line = New-Object System.Windows.Controls.Border
+        $line.Height = 4
+        $line.CornerRadius = New-Object System.Windows.CornerRadius(2)
+        $line.Background = $res.FindResource($(if ($i -le $Index) { 'DzText' } else { 'DzBorder' }))
+        $label = New-Object System.Windows.Controls.TextBlock
+        $label.Text = ('{0}  {1}' -f ($i + 1), (Get-DzText ([string]$Steps[$i].Label)))
+        $label.FontSize = 11
+        $label.Margin = New-Object System.Windows.Thickness(0, 7, 0, 0)
+        $label.HorizontalAlignment = 'Center'
+        $label.TextTrimming = 'CharacterEllipsis'
+        $label.Foreground = $res.FindResource($(if ($i -eq $Index) { 'DzText' } else { 'DzMuted' }))
+        if ($i -eq $Index) { $label.FontWeight = [System.Windows.FontWeights]::SemiBold }
+        if ($i -gt $Reached) { $cell.Opacity = 0.55 }
+        [void]$cell.Children.Add($line)
+        [void]$cell.Children.Add($label)
+        if ($i -le $Reached -and $i -ne $Index) {
+            $cell.Cursor = [System.Windows.Input.Cursors]::Hand
+            $cell.ToolTip = Get-DzText 'Go back to this step'
+            $cell.Tag = $i
+            $cell.Add_MouseLeftButtonUp({ param($src) if ($script:StepJump -and -not (Test-BuilderAnyBusy)) { & $script:StepJump ([int]$src.Tag) } })
+        }
+        [System.Windows.Controls.Grid]::SetColumn($cell, $i)
+        [void]$bar.Children.Add($cell)
+    }
+    $script:ui.StepCountText.Text = (Get-DzText 'Step {0} of {1}: {2}') -f ($Index + 1), $Steps.Count, (Get-DzText ([string]$Steps[$Index].Label))
+}
+
+function Get-WinStepProblem {
+    <# The problems that belong to a step (from Get-BuilderInput), as shown texts. #>
+    param([Parameter(Mandatory = $true)][int]$Index)
+    $pattern = [string]$script:WinSteps[$Index].Errors
+    if (-not $pattern) { return @() }
+    $data = Get-BuilderInput
+    return @($data.Errors | Where-Object { $_ -match $pattern })
+}
+
+function Show-WinStep {
+    <# Shows one step of the Windows side and sets the footer buttons for it. #>
+    param([Parameter(Mandatory = $true)][int]$Index)
+    $ui = $script:ui
+    $last = $script:WinSteps.Count - 1
+    if ($Index -lt 0) { $Index = 0 }
+    if ($Index -gt $last) { $Index = $last }
+    $script:WinStep = $Index
+    if ($Index -gt $script:WinReached) { $script:WinReached = $Index }
+    for ($i = 0; $i -le $last; $i++) { $ui[$script:WinSteps[$i].Panel].Visibility = if ($i -eq $Index) { 'Visible' } else { 'Collapsed' } }
+    $ui.BackButton.IsEnabled = ($Index -gt 0)
+    $ui.NextButton.Visibility = if ($Index -lt $last) { 'Visible' } else { 'Collapsed' }
+    $ui.PreviewButton.Visibility = if ($Index -eq $last) { 'Visible' } else { 'Collapsed' }
+    $ui.WriteButton.Visibility = if ($Index -eq $last) { 'Visible' } else { 'Collapsed' }
+    if ($Index -eq $last) { Update-WinReview }
+    $ui.WindowsBodyScroll.ScrollToTop()
+    Update-StepBar -Steps $script:WinSteps -Index $Index -Reached $script:WinReached -OnJump { param($i) Show-WinStep -Index $i }
+}
+
+function Move-WinStep {
+    <# Next (+1) checks the current step first; Back (-1) always works and loses nothing. #>
+    param([Parameter(Mandatory = $true)][int]$Delta)
+    if ($Delta -gt 0) {
+        $problems = @(Get-WinStepProblem -Index $script:WinStep)
+        if ($problems.Count -gt 0) {
+            $text = (Get-DzText 'Please fix this first:') + "`n`n" + (($problems | ForEach-Object { ' - ' + (Get-DzText $_) }) -join "`n")
+            [void](Show-DzMessage -Text $text -Title 'DayZero Builder' -Kind Warning -Owner $script:Window)
+            return
+        }
+    }
+    Show-WinStep -Index ($script:WinStep + $Delta)
+}
+
+function Update-WinReview {
+    <# The last step: everything that will be made, plus what still has to be fixed. #>
+    $ui = $script:ui
+    $data = Get-BuilderInput
+    $lines = New-Object System.Collections.Generic.List[string]
+    foreach ($l in @(Get-WriteSummaryLines -Data $data)) { $lines.Add([string]$l) }
+    $lines.Add('')
+    foreach ($pair in @(@('Language', $ui.DisplayLanguageCombo), @('Region format', $ui.RegionCombo), @('Keyboard layout', $ui.KeyboardCombo), @('Time zone', $ui.TimeZoneCombo))) {
+        $item = $pair[1].SelectedItem
+        if ($item) { $lines.Add(('{0}: {1}' -f (Get-DzText $pair[0]), $item.Label)) }
+    }
+    if ($data.Settings.computerName) { $lines.Add(('{0}: {1}' -f (Get-DzText 'Computer name'), $data.Settings.computerName)) }
+    $ui.WinReviewText.Text = (@($lines | ForEach-Object { Get-DzText $_ }) -join "`n")
+    $problems = New-Object System.Collections.Generic.List[string]
+    foreach ($e in $data.Errors) { $problems.Add(' - ' + (Get-DzText $e)) }
+    if ($problems.Count -gt 0) {
+        $ui.WinReviewProblemsText.Text = (Get-DzText 'Please fix this first:') + "`n" + ($problems -join "`n")
+        $ui.WinReviewProblemsBox.Visibility = 'Visible'
+    }
+    else { $ui.WinReviewProblemsBox.Visibility = 'Collapsed' }
+    $ui.WriteButton.IsEnabled = ($data.Errors.Count -eq 0 -and -not $script:Busy)
+}
+
 # ------------------------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------------------------
@@ -1397,6 +1542,12 @@ function Start-Builder {
     $ui.CheckAppsButton.Add_Click({
             try { Invoke-CheckApps } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
         })
+    $ui.NextButton.Add_Click({
+            try { Move-WinStep -Delta 1 } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
+        })
+    $ui.BackButton.Add_Click({
+            try { Move-WinStep -Delta -1 } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
+        })
     $ui.WriteButton.Add_Click({
             try { Invoke-Write } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:Window) }
         })
@@ -1423,6 +1574,7 @@ function Start-Builder {
             Update-SourceMode
             Update-UsbDiskList
             Update-EditionHint
+            Show-WinStep -Index 0
             $script:ui.UserNameText.Focus()
         })
 

@@ -11,17 +11,13 @@
         <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
 
-        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="16,8">
-            <Grid x:Name="LxBodyGrid">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Grid.Column="0">
+        <ScrollViewer x:Name="LxBodyScroll" Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="16,8">
+            <Grid x:Name="LxBodyGrid" MaxWidth="860" HorizontalAlignment="Stretch" Margin="0,0,0,8">
+                <!-- One step at a time (LinuxBuilder.ps1, Get-LxSteps); Back / Next in the footer. -->
+                <StackPanel x:Name="LxStepWhich">
                     <Border Style="{StaticResource DzCard}">
                         <StackPanel>
-                            <TextBlock Text="&#x2460;  WHICH LINUX" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock Text="WHICH LINUX" Style="{StaticResource DzCardTitle}"/>
                             <StackPanel x:Name="LxDistroPanel"/>
                             <RadioButton x:Name="LxUbuntuIsoRadio" GroupName="LxSystem" Margin="0,6,0,0" Content="An Ubuntu ISO file I already have (24.04 or newer, with DayZero)"/>
                             <RadioButton x:Name="LxRawIsoRadio" GroupName="LxSystem" Margin="0,6,0,0" Content="Another Linux ISO file, written as it is (Fedora, Mint, Debian...; no DayZero)"/>
@@ -36,10 +32,11 @@
                             <TextBlock x:Name="LxSystemHintText" Style="{StaticResource DzHint}"/>
                         </StackPanel>
                     </Border>
-
+                </StackPanel>
+                <StackPanel x:Name="LxStepWhere" Visibility="Collapsed">
                     <Border Style="{StaticResource DzCard}">
                         <StackPanel>
-                            <TextBlock Text="&#x2461;  WHERE TO WRITE" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock Text="WHERE TO WRITE" Style="{StaticResource DzCardTitle}"/>
                             <RadioButton x:Name="LxTargetNewRadio" GroupName="LxTarget" IsChecked="True" Content="Make a new Linux USB stick (erases the stick)"/>
                             <RadioButton x:Name="LxTargetExistingRadio" GroupName="LxTarget" Margin="0,6,0,0" Content="Add DayZero to an Ubuntu USB stick I already made (Rufus, ISO mode)"/>
                             <Grid Margin="0,10,0,0">
@@ -54,10 +51,11 @@
                             <TextBlock x:Name="LxTargetHintText" Style="{StaticResource DzHint}" Text="Looking for USB sticks..."/>
                         </StackPanel>
                     </Border>
-
+                </StackPanel>
+                <StackPanel x:Name="LxStepAccount" Visibility="Collapsed">
                     <Border x:Name="LxAccountCard" Style="{StaticResource DzCard}">
                         <StackPanel>
-                            <TextBlock Text="&#x2462;  YOUR ACCOUNT" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock Text="YOUR ACCOUNT" Style="{StaticResource DzCardTitle}"/>
                             <TextBlock Text="Your name (optional, shown on the sign-in screen)" Style="{StaticResource DzLabel}"/>
                             <TextBox x:Name="LxFullNameText" MaxLength="60"/>
                             <TextBlock Text="User name (small letters, digits, - and _)" Style="{StaticResource DzLabel}"/>
@@ -87,11 +85,10 @@
                         </StackPanel>
                     </Border>
                 </StackPanel>
-
-                <StackPanel Grid.Column="1">
+                <StackPanel x:Name="LxStepPc" Visibility="Collapsed">
                     <Border x:Name="LxRegionCard" Style="{StaticResource DzCard}">
                         <StackPanel>
-                            <TextBlock Text="&#x2463;  THIS PC" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock Text="THIS PC" Style="{StaticResource DzCardTitle}"/>
                             <TextBlock Text="Computer name" Style="{StaticResource DzLabel}"/>
                             <TextBox x:Name="LxComputerNameText" MaxLength="63"/>
                             <TextBlock Style="{StaticResource DzHint}" Text="Letters, digits and hyphens. Leave empty for &quot;username-pc&quot;."/>
@@ -105,19 +102,21 @@
                             <TextBlock x:Name="LxLinuxSettingsText" Style="{StaticResource DzHint}"/>
                         </StackPanel>
                     </Border>
-
+                </StackPanel>
+                <StackPanel x:Name="LxStepApps" Visibility="Collapsed">
                     <Border x:Name="LxAppsCard" Style="{StaticResource DzCard}">
                         <StackPanel>
-                            <TextBlock Text="&#x2464;  MODE AND APPS" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock Text="MODE AND APPS" Style="{StaticResource DzCardTitle}"/>
                             <ComboBox x:Name="LxModeCombo" DisplayMemberPath="Label" SelectedValuePath="Value"/>
                             <TextBlock Style="{StaticResource DzHint}" Margin="0,6,0,6" Text="Apps come from Flathub and are installed after the first start. Tick or untick any of them."/>
                             <StackPanel x:Name="LxAppsPanel"/>
                         </StackPanel>
                     </Border>
-
+                </StackPanel>
+                <StackPanel x:Name="LxStepOptions" Visibility="Collapsed">
                     <Border x:Name="LxOptionsCard" Style="{StaticResource DzCard}">
                         <StackPanel>
-                            <TextBlock Text="&#x2465;  OPTIONS" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock Text="OPTIONS" Style="{StaticResource DzCardTitle}"/>
                             <CheckBox x:Name="LxDriversCheck" IsChecked="True">
                                 <TextBlock TextWrapping="Wrap" Text="Install graphics card and other drivers that Ubuntu recommends (NVIDIA, Wi-Fi...)"/>
                             </CheckBox>
@@ -140,6 +139,18 @@
                         </StackPanel>
                     </Border>
                 </StackPanel>
+                <StackPanel x:Name="LxStepReview" Visibility="Collapsed">
+                    <Border Style="{StaticResource DzCard}">
+                        <StackPanel>
+                            <TextBlock Text="READY TO CREATE" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock x:Name="LxReviewText" TextWrapping="Wrap" LineHeight="21"/>
+                            <Border x:Name="LxReviewProblemsBox" Style="{StaticResource DzWarningBox}" Visibility="Collapsed">
+                                <TextBlock x:Name="LxReviewProblemsText" TextWrapping="Wrap" LineHeight="19"/>
+                            </Border>
+                            <TextBlock Style="{StaticResource DzHint}" Text="Check everything above. CREATE LINUX USB asks once more before anything is erased."/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
             </Grid>
         </ScrollViewer>
 
@@ -152,12 +163,16 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock x:Name="LxStatusText" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{StaticResource DzMuted}" Text="Ready."/>
                     <Button x:Name="LxVerifyButton" Grid.Column="1" Margin="12,0,0,0" Content="_Verify a stick"
                             ToolTip="Checks a finished DayZero Linux stick: boot files, Ubuntu files, autoinstall.yaml and the DayZero kit. Changes nothing."/>
-                    <Button x:Name="LxPreviewButton" Grid.Column="2" Margin="12,0,0,0" Content="_Preview autoinstall.yaml"/>
-                    <Button x:Name="LxWriteButton" Grid.Column="3" Margin="12,0,0,0" Style="{StaticResource DzPrimaryButton}" Content="_CREATE LINUX USB  &#x25B6;"/>
+                    <Button x:Name="LxBackButton" Grid.Column="2" Margin="12,0,0,0" Content="&#x25C0;  _Back" ToolTip="Go back to the previous step; nothing you entered is lost"/>
+                    <Button x:Name="LxPreviewButton" Grid.Column="3" Margin="12,0,0,0" Content="_Preview autoinstall.yaml" Visibility="Collapsed"/>
+                    <Button x:Name="LxNextButton" Grid.Column="4" Margin="12,0,0,0" Style="{StaticResource DzPrimaryButton}" Content="_Next  &#x25B6;"/>
+                    <Button x:Name="LxWriteButton" Grid.Column="5" Margin="12,0,0,0" Style="{StaticResource DzPrimaryButton}" Content="_CREATE LINUX USB  &#x25B6;" Visibility="Collapsed"/>
                 </Grid>
                 <Expander x:Name="LxLogExpander" Header="Log" Foreground="{StaticResource DzMuted}" Margin="0,8,0,0">
                     <TextBox x:Name="LxLogText" Style="{StaticResource DzLogBox}" Height="130" Margin="0,6,0,0"/>

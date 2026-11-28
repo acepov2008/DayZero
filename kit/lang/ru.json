@@ -3230,6 +3230,114 @@
     [
       "[DRY-RUN] would download AMD's auto-detect installer and silently install the latest AMD driver.",
       "[ПРОБНЫЙ ПРОГОН] скачал бы установщик AMD с автоопределением и тихо установил новейший драйвер AMD."
+    ],
+    [
+      "WHERE TO WRITE",
+      "КУДА ЗАПИСАТЬ"
+    ],
+    [
+      "YOUR ACCOUNT",
+      "УЧЁТНАЯ ЗАПИСЬ"
+    ],
+    [
+      "THIS PC",
+      "ЭТОТ КОМПЬЮТЕР"
+    ],
+    [
+      "LANGUAGE & REGION",
+      "ЯЗЫК И РЕГИОН"
+    ],
+    [
+      "DEFAULT MODE",
+      "РЕЖИМ ПО УМОЛЧАНИЮ"
+    ],
+    [
+      "CLEAN-UP LEVEL",
+      "УРОВЕНЬ ОЧИСТКИ"
+    ],
+    [
+      "READY TO CREATE",
+      "ВСЁ ГОТОВО"
+    ],
+    [
+      "Check everything above. CREATE WINDOWS USB asks once more before anything is erased.",
+      "Проверьте всё выше. «Создать флешку Windows» ещё раз спросит, прежде чем что-либо стереть."
+    ],
+    [
+      "Check everything above. CREATE LINUX USB asks once more before anything is erased.",
+      "Проверьте всё выше. «Создать флешку Linux» ещё раз спросит, прежде чем что-либо стереть."
+    ],
+    [
+      "◀  _Back",
+      "◀  Назад"
+    ],
+    [
+      "Go back to the previous step; nothing you entered is lost",
+      "Вернуться к предыдущему шагу; всё введённое сохранится"
+    ],
+    [
+      "_Next  ▶",
+      "Далее  ▶"
+    ],
+    [
+      "WHICH LINUX",
+      "КАКОЙ LINUX"
+    ],
+    [
+      "MODE AND APPS",
+      "РЕЖИМ И ПРИЛОЖЕНИЯ"
+    ],
+    [
+      "PC AND REGION",
+      "КОМПЬЮТЕР И РЕГИОН"
+    ],
+    [
+      "MODE",
+      "РЕЖИМ"
+    ],
+    [
+      "CLEAN-UP",
+      "ОЧИСТКА"
+    ],
+    [
+      "CREATE",
+      "СОЗДАНИЕ"
+    ],
+    [
+      "Go back to this step",
+      "Вернуться к этому шагу"
+    ],
+    [
+      "PC AND LANGUAGE",
+      "КОМПЬЮТЕР И ЯЗЫК"
+    ],
+    [
+      "drivers",
+      "драйверы"
+    ],
+    [
+      "media codecs",
+      "медиакодеки"
+    ],
+    [
+      "DRY RUN",
+      "ПРОБНЫЙ ПРОГОН"
+    ],
+    [
+      "Also: {0}",
+      "Также: {0}"
+    ],
+    [
+      "You install it by hand; your account, apps and scripts are not used.",
+      "Устанавливаете вручную; учётная запись, приложения и скрипты не используются."
+    ],
+    [
+      "Step {0} of {1}: {2}",
+      "Шаг {0} из {1}: {2}"
+    ],
+    [
+      "Region format",
+      "Формат региона"
     ]
   ]
 }

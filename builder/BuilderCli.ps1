@@ -7,7 +7,7 @@
       * Windows 11 / 10 from Microsoft (or your Windows ISO), with autounattend.xml and the
         DayZero kit. Unpacked with wimlib-imagex instead of DISM. The stick boots on UEFI PCs
         (Windows' legacy BIOS boot code can only be written from Windows).
-      * Ubuntu 26.04 / 24.04 LTS from ubuntu.com (or your Ubuntu ISO), with autoinstall.yaml
+      * Ubuntu 26.04 LTS from ubuntu.com (or your Ubuntu ISO), with autoinstall.yaml
         and the DayZero Linux kit.
       * Any other Linux ISO, written as it is and read back.
     Only a USB stick that passes Test-DzUsbDiskAllowed is offered, and it is erased only after
@@ -25,7 +25,7 @@
 [CmdletBinding()]
 param(
     # windows11, windows10, windows-iso, ubuntu-iso, linux-iso, or a distro id from builder/linux/distros.json
-    # (ubuntu-26.04, ubuntu-24.04, fedora-workstation, debian-gnome, linuxmint-cinnamon, cachyos-desktop).
+    # (ubuntu-26.04, fedora-workstation, debian-gnome, linuxmint-cinnamon, cachyos-desktop).
     [ValidatePattern('^[a-z0-9.-]*$')][string]$System = '',
     [string]$Disk,
     [string]$IsoPath,

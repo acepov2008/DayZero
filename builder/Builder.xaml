@@ -14,6 +14,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -42,19 +43,24 @@
         </Grid>
         <Border Grid.Row="0" VerticalAlignment="Bottom" Height="1" Margin="0" Background="{StaticResource DzBorder}"/>
 
-        <!-- ===== Body ===== -->
-        <ScrollViewer x:Name="WindowsBodyScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="16,8">
-            <Grid x:Name="BodyGrid">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+        <!-- ===== Step line: one segment per step, filled up to the current one (filled in code) ===== -->
+        <Grid Grid.Row="1" Margin="40,14,40,4">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid x:Name="StepBar"/>
+            <TextBlock x:Name="StepCountText" Grid.Row="1" HorizontalAlignment="Center" Margin="0,8,0,0" Style="{StaticResource DzHint}"/>
+        </Grid>
 
-                <!-- Left column -->
-                <StackPanel Grid.Column="0">
+        <!-- ===== Body ===== -->
+        <ScrollViewer x:Name="WindowsBodyScroll" Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="16,8">
+            <Grid x:Name="BodyGrid" MaxWidth="860" HorizontalAlignment="Stretch" Margin="0,0,0,8">
+                <!-- One step at a time (Builder.ps1, $script:WinSteps); Back / Next in the footer. -->
+                <StackPanel x:Name="WinStepTarget">
                     <Border Style="{StaticResource DzCard}">
                         <StackPanel>
-                            <TextBlock Text="&#x2460;  WHERE TO WRITE" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock Text="WHERE TO WRITE" Style="{StaticResource DzCardTitle}"/>
                             <StackPanel>
                                 <RadioButton x:Name="TargetNewUsbRadio" GroupName="Target" IsChecked="True" Content="Make a _new Windows USB stick (erases the stick)"/>
                                 <RadioButton x:Name="TargetUsbRadio" GroupName="Target" Margin="0,6,0,0" Content="A Windows _USB stick I already made (Media Creation Tool or Rufus)"/>
@@ -111,10 +117,11 @@
                             <TextBlock x:Name="MediaInfoText" Style="{StaticResource DzHint}" Text="Looking for USB sticks..."/>
                         </StackPanel>
                     </Border>
-
+                </StackPanel>
+                <StackPanel x:Name="WinStepWindows" Visibility="Collapsed">
                     <Border Style="{StaticResource DzCard}">
                         <StackPanel>
-                            <TextBlock Text="&#x2461;  WINDOWS" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock Text="WINDOWS" Style="{StaticResource DzCardTitle}"/>
                             <StackPanel Orientation="Horizontal">
                                 <RadioButton x:Name="Win11Radio" GroupName="WinVer" IsChecked="True" Content="Windows 11"/>
                                 <RadioButton x:Name="Win10Radio" GroupName="WinVer" Content="Windows 10"/>
@@ -127,10 +134,11 @@
                             <TextBlock x:Name="EditionHintText" Style="{StaticResource DzHint}"/>
                         </StackPanel>
                     </Border>
-
+                </StackPanel>
+                <StackPanel x:Name="WinStepAccount" Visibility="Collapsed">
                     <Border Style="{StaticResource DzCard}">
                         <StackPanel>
-                            <TextBlock Text="&#x2462;  YOUR ACCOUNT" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock Text="YOUR ACCOUNT" Style="{StaticResource DzCardTitle}"/>
                             <TextBlock Text="User name (a local account, no Microsoft account needed)" Style="{StaticResource DzLabel}"/>
                             <TextBox x:Name="UserNameText" MaxLength="20"/>
                             <Grid>
@@ -167,21 +175,18 @@
                         </StackPanel>
                     </Border>
                 </StackPanel>
-
-                <!-- Right column -->
-                <StackPanel Grid.Column="1">
+                <StackPanel x:Name="WinStepRegion" Visibility="Collapsed">
                     <Border Style="{StaticResource DzCard}">
                         <StackPanel>
-                            <TextBlock Text="&#x2463;  THIS PC" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock Text="THIS PC" Style="{StaticResource DzCardTitle}"/>
                             <TextBlock Text="Computer name" Style="{StaticResource DzLabel}"/>
                             <TextBox x:Name="ComputerNameText" MaxLength="15"/>
                             <TextBlock Style="{StaticResource DzHint}" Text="Up to 15 letters, digits or hyphens. Leave empty and Windows picks a random name."/>
                         </StackPanel>
                     </Border>
-
                     <Border Style="{StaticResource DzCard}">
                         <StackPanel>
-                            <TextBlock Text="&#x2464;  LANGUAGE &amp; REGION" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock Text="LANGUAGE &amp; REGION" Style="{StaticResource DzCardTitle}"/>
                             <TextBlock Text="Windows display language" Style="{StaticResource DzLabel}"/>
                             <ComboBox x:Name="DisplayLanguageCombo" DisplayMemberPath="Label" SelectedValuePath="Value"/>
                             <TextBlock Text="Region format (dates, numbers, currency)" Style="{StaticResource DzLabel}"/>
@@ -193,10 +198,11 @@
                             <Button x:Name="UseThisPcButton" HorizontalAlignment="Left" Margin="0,12,0,0" Content="Use _this PC's settings"/>
                         </StackPanel>
                     </Border>
-
+                </StackPanel>
+                <StackPanel x:Name="WinStepMode" Visibility="Collapsed">
                     <Border Style="{StaticResource DzCard}">
                         <StackPanel>
-                            <TextBlock Text="&#x2465;  DEFAULT MODE" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock Text="DEFAULT MODE" Style="{StaticResource DzCardTitle}"/>
                             <UniformGrid x:Name="ModeCardsPanel" Columns="2"/>
                             <Border Style="{StaticResource DzInfoBox}">
                                 <StackPanel>
@@ -209,10 +215,11 @@
                             <TextBlock Style="{StaticResource DzHint}" Text="This is only pre-selected: you can still pick another mode on the new PC."/>
                         </StackPanel>
                     </Border>
-
+                </StackPanel>
+                <StackPanel x:Name="WinStepLevel" Visibility="Collapsed">
                     <Border Style="{StaticResource DzCard}">
                         <StackPanel>
-                            <TextBlock Text="&#x2466;  CLEAN-UP LEVEL" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock Text="CLEAN-UP LEVEL" Style="{StaticResource DzCardTitle}"/>
                             <TextBlock Style="{StaticResource DzHint}" Margin="0,0,0,6"
                                        Text="How much of Windows' preinstalled extras and data collection to remove, for any mode. Modelled on Chris Titus Tech's WinUtil presets."/>
                             <UniformGrid x:Name="LevelCardsPanel" Columns="2"/>
@@ -225,10 +232,11 @@
                             <TextBlock Style="{StaticResource DzHint}" Text="Pre-selected on the new PC, where every switch can still be changed. Everything is undone by DayZero.cmd -Undo."/>
                         </StackPanel>
                     </Border>
-
+                </StackPanel>
+                <StackPanel x:Name="WinStepOptions" Visibility="Collapsed">
                     <Border Style="{StaticResource DzCard}">
                         <StackPanel>
-                            <TextBlock Text="&#x2467;  OPTIONS" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock Text="OPTIONS" Style="{StaticResource DzCardTitle}"/>
                             <CheckBox x:Name="DryRunCheck">
                                 <TextBlock TextWrapping="Wrap" Text="Dry run: the wizard on the new PC only logs what it would do and changes nothing (for testing)"/>
                             </CheckBox>
@@ -252,11 +260,23 @@
                         </StackPanel>
                     </Border>
                 </StackPanel>
+                <StackPanel x:Name="WinStepReview" Visibility="Collapsed">
+                    <Border Style="{StaticResource DzCard}">
+                        <StackPanel>
+                            <TextBlock Text="READY TO CREATE" Style="{StaticResource DzCardTitle}"/>
+                            <TextBlock x:Name="WinReviewText" TextWrapping="Wrap" LineHeight="21"/>
+                            <Border x:Name="WinReviewProblemsBox" Style="{StaticResource DzWarningBox}" Visibility="Collapsed">
+                                <TextBlock x:Name="WinReviewProblemsText" TextWrapping="Wrap" LineHeight="19"/>
+                            </Border>
+                            <TextBlock Style="{StaticResource DzHint}" Text="Check everything above. CREATE WINDOWS USB asks once more before anything is erased."/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
             </Grid>
         </ScrollViewer>
 
         <!-- ===== Footer ===== -->
-        <Border x:Name="WindowsFooter" Grid.Row="2" Background="{StaticResource DzPanelSolid}" BorderBrush="{StaticResource DzBorder}" BorderThickness="0,1,0,0">
+        <Border x:Name="WindowsFooter" Grid.Row="3" Background="{StaticResource DzPanelSolid}" BorderBrush="{StaticResource DzBorder}" BorderThickness="0,1,0,0">
             <StackPanel Margin="24,12">
                 <ProgressBar x:Name="BuildProgress" Minimum="0" Maximum="100" Value="0" Height="4" Margin="0,0,0,10" Visibility="Collapsed"/>
                 <Grid>
@@ -265,12 +285,16 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock x:Name="StatusText" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{StaticResource DzMuted}" Text="Ready."/>
                     <Button x:Name="VerifyButton" Grid.Column="1" Margin="12,0,0,0" Content="_Verify a stick"
                             ToolTip="Checks a finished DayZero stick: Windows files, boot files, answer file and toolkit. Changes nothing."/>
-                    <Button x:Name="PreviewButton" Grid.Column="2" Margin="12,0,0,0" Content="_Preview answer file"/>
-                    <Button x:Name="WriteButton" Grid.Column="3" Margin="12,0,0,0" Style="{StaticResource DzPrimaryButton}" Content="_CREATE WINDOWS USB  &#x25B6;"/>
+                    <Button x:Name="BackButton" Grid.Column="2" Margin="12,0,0,0" Content="&#x25C0;  _Back" ToolTip="Go back to the previous step; nothing you entered is lost"/>
+                    <Button x:Name="PreviewButton" Grid.Column="3" Margin="12,0,0,0" Content="_Preview answer file" Visibility="Collapsed"/>
+                    <Button x:Name="NextButton" Grid.Column="4" Margin="12,0,0,0" Style="{StaticResource DzPrimaryButton}" Content="_Next  &#x25B6;"/>
+                    <Button x:Name="WriteButton" Grid.Column="5" Margin="12,0,0,0" Style="{StaticResource DzPrimaryButton}" Content="_CREATE WINDOWS USB  &#x25B6;" Visibility="Collapsed"/>
                 </Grid>
                 <Expander x:Name="LogExpander" Header="Log" Foreground="{StaticResource DzMuted}" Margin="0,8,0,0">
                     <TextBox x:Name="LogText" Style="{StaticResource DzLogBox}" Height="130" Margin="0,6,0,0"/>
@@ -279,6 +303,6 @@
         </Border>
 
         <!-- ===== Linux (LinuxPanel.xaml, loaded the first time LINUX is picked) ===== -->
-        <ContentControl x:Name="LinuxHost" Grid.Row="1" Grid.RowSpan="2" Visibility="Collapsed" Focusable="False"/>
+        <ContentControl x:Name="LinuxHost" Grid.Row="2" Grid.RowSpan="2" Visibility="Collapsed" Focusable="False"/>
     </Grid>
 </Window>

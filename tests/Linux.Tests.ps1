@@ -37,7 +37,7 @@ Describe 'Linux catalogue (builder\linux\distros.json)' {
     }
     It 'offers Ubuntu with DayZero, and Fedora, Debian, Linux Mint and CachyOS written as they are' {
         $ids = @($script:Catalog.Distros | ForEach-Object { $_.id })
-        foreach ($id in 'ubuntu-26.04', 'ubuntu-24.04', 'fedora-workstation', 'debian-gnome', 'linuxmint-cinnamon', 'cachyos-desktop') { $ids | Should -Contain $id }
+        foreach ($id in 'ubuntu-26.04', 'fedora-workstation', 'debian-gnome', 'linuxmint-cinnamon', 'cachyos-desktop') { $ids | Should -Contain $id }
         foreach ($d in $script:Catalog.Distros) {
             @('ubuntu-autoinstall', 'none') | Should -Contain ([string]$d.automation)
             if ($d.automation -eq 'ubuntu-autoinstall') { [string]$d.family | Should -Be 'ubuntu' }
@@ -57,13 +57,12 @@ Describe 'Linux catalogue (builder\linux\distros.json)' {
         Test-DzLinuxDownloadUrl -Url 'not a url' -AllowedHosts $h | Should -BeFalse
     }
     It 'picks the newest desktop ISO from the published checksum list' {
-        $d24 = Get-DzLinuxDistro -Id 'ubuntu-24.04'
-        $pick = Select-DzLinuxIso -Sums @(ConvertFrom-DzSha256Sums -Text $script:Sums2404) -Pattern $d24.isoPattern
-        $pick.Name | Should -Be 'ubuntu-24.04.5.1-desktop-amd64.iso'
-        $pick.Sha256 | Should -Be '4da4a0c9035da8e68a59a838674f403f0a54472c78a83b4fb7f78d03588f85a7'
         $d26 = Get-DzLinuxDistro -Id 'ubuntu-26.04'
-        (Select-DzLinuxIso -Sums @(ConvertFrom-DzSha256Sums -Text $script:Sums2604) -Pattern $d26.isoPattern).Name | Should -Be 'ubuntu-26.04.1-desktop-amd64.iso'
-        Select-DzLinuxIso -Sums @(ConvertFrom-DzSha256Sums -Text $script:Sums2604) -Pattern $d24.isoPattern | Should -BeNullOrEmpty
+        $pick = Select-DzLinuxIso -Sums @(ConvertFrom-DzSha256Sums -Text $script:Sums2604) -Pattern $d26.isoPattern
+        $pick.Name | Should -Be 'ubuntu-26.04.1-desktop-amd64.iso'
+        $pick.Sha256 | Should -Be '601e30fbf5d97759367c632e2c33630665039b7e2158fd068403da3ccf1bda1f'
+        Select-DzLinuxIso -Sums @(ConvertFrom-DzSha256Sums -Text $script:Sums2404) -Pattern $d26.isoPattern | Should -BeNullOrEmpty
+        @($script:Catalog.Distros | Where-Object { $_.family -eq 'ubuntu' }).Count | Should -Be 1
     }
     It 'reads both sha256sum line styles and ignores junk' {
         $s = @(ConvertFrom-DzSha256Sums -Text ("AB" * 32 + "  a.iso`r`nnonsense`n" + "cd" * 32 + " *b.iso"))

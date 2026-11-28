@@ -43,6 +43,12 @@ finds its folder by the build marker file, so a second virtual DVD drive behaves
 
 ## 2b. Make the Windows stick (needs a real USB stick you can erase)
 
+- [ ] The builder shows one step at a time. The line under the header has 8 segments (Linux: 7,
+      or 3 when an ISO is written as it is), filled up to the current step, with the step names
+      and "Step N of 8". **Next** on a step with a problem (no stick, no password...) says what to
+      fix and stays; **Back** always works and nothing typed is lost; a step already visited can
+      be clicked on the line. The last step lists everything and has CREATE (and Preview).
+
 The builder's default, **Make a new Windows USB stick**, erases a stick and puts Windows on
 it. This part cannot be tested in the automated checks. Use a stick with nothing you need.
 

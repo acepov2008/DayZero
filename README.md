@@ -3,7 +3,7 @@
 A USB stick that installs Windows and then sets the PC up for you: think **Ninite + an
 unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 
-> **Status: v0.17.0, with Linux.** About 1,300 automated tests and static checks cover it,
+> **Status: v0.18.0, with Linux.** About 1,300 automated tests and static checks cover it,
 > including a complete dry run of every mode and a whole Ubuntu stick written to a test disk on
 > Linux. **The Windows GUI (WPF) and the Windows-only steps have not run on real Windows yet,
 > and no DayZero Linux stick has installed a real PC yet.** Do the VM tests in
@@ -12,7 +12,8 @@ unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 ## How it works
 
 1. **Run the DayZero Builder** on any Windows PC and plug in an empty USB stick (16 GB recommended).
-2. **Choose your settings and press CREATE WINDOWS USB.** The builder downloads Windows 10 or
+2. **Go through the steps** (Back / Next; a line at the top shows how many are left) **and press
+   CREATE WINDOWS USB on the last one.** The builder downloads Windows 10 or
    11 from Microsoft (or uses an ISO file you have), erases the stick, puts Windows on it and
    adds `autounattend.xml` (the answer file Windows Setup reads by itself) and the `DayZero\`
    toolkit. A stick you already made with the Media Creation Tool or Rufus works too.
@@ -27,8 +28,10 @@ unattended Windows installer + a tweak tool**, in a clean monochrome GUI.
 2. Get DayZero: in GitHub Desktop **Clone** `acepov2008/DayZero`, or on GitHub use
    **Code > Download ZIP** (then right-click the ZIP > **Properties** > tick **Unblock** before extracting).
 3. Double-click **`Build-DayZeroUSB.cmd`** and accept the admin prompt.
-4. Pick the stick, Windows 10 or 11, your account, region, default mode and clean-up level,
-   then press **CREATE WINDOWS USB**. The first time, Windows is downloaded (about 5 GB) and
+4. Go through the steps one at a time with **Next** (and **Back** to change something; the line
+   at the top shows the steps and you can click one you already did): where to write, Windows,
+   your account, PC and region, mode, clean-up level, options. The last step lists everything;
+   press **CREATE WINDOWS USB** there. The first time, Windows is downloaded (about 5 GB) and
    unpacked (15 to 40 minutes); after that it is reused and a new stick takes a few minutes.
 5. Boot the target PC from the stick (boot menu key: often F12, F11, F8 or Esc), pick the disk
    when Setup asks, and let it run.
@@ -92,7 +95,7 @@ DayZero also makes **Linux** sticks, and the whole builder also **runs on Linux*
 **From Windows:** in the builder, switch the header from **WINDOWS** to **LINUX**. The window
 shows the Linux form instead (what you typed on the Windows side stays). You get:
 
-* **Ubuntu 26.04 LTS or 24.04 LTS with DayZero.** Downloaded once from releases.ubuntu.com
+* **Ubuntu 26.04 LTS with DayZero** (always the latest Ubuntu LTS). Downloaded once from releases.ubuntu.com
   (the newest point release, checked against Ubuntu's published SHA-256) or taken from your own
   Ubuntu Desktop ISO. The stick gets Ubuntu's files on FAT32 (boots on UEFI PCs),
   `autoinstall.yaml` and the DayZero Linux kit. The Ubuntu installer fills in your account,

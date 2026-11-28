@@ -78,7 +78,8 @@ function Set-LxBusy {
     $lx = $script:lx
     $lx.LxProgress.Value = 0
     $lx.LxProgress.Visibility = if ($Busy -and $ShowProgress) { 'Visible' } else { 'Collapsed' }
-    foreach ($n in 'LxBodyGrid', 'LxVerifyButton', 'LxPreviewButton', 'LxWriteButton') { $lx[$n].IsEnabled = -not $Busy }
+    foreach ($n in 'LxBodyGrid', 'LxVerifyButton', 'LxPreviewButton', 'LxWriteButton', 'LxNextButton') { $lx[$n].IsEnabled = -not $Busy }
+    $lx.LxBackButton.IsEnabled = (-not $Busy) -and ($script:LxStep -gt 0)
     # No switching sides or language in the middle of a write.
     foreach ($n in 'OsWindowsRadio', 'OsLinuxRadio', 'LanguageButton') { $script:ui[$n].IsEnabled = -not $Busy }
     $script:LxWindow.Cursor = if ($Busy) { [System.Windows.Input.Cursors]::AppStarting } else { $null }
@@ -146,6 +147,11 @@ function Update-LxSystemMode {
     }
     $lx.LxSystemHintText.Text = $hint
     Update-LxTargetMode
+    # Writing an ISO as it is has fewer steps: redraw the step line.
+    if ($script:LxRoot -and $script:ui.LinuxHost.Visibility -eq 'Visible') {
+        $script:LxReached = $script:LxStep
+        Show-LxStep -Index $script:LxStep
+    }
 }
 
 function Select-LxIsoFile {
@@ -562,6 +568,117 @@ function Invoke-LxVerify {
 # The window
 # ------------------------------------------------------------------------------------
 
+# ------------------------------------------------------------------------------------
+# Steps (the step line and Show-WinStep's twin for the Linux side)
+# ------------------------------------------------------------------------------------
+
+$script:LxStep = 0
+$script:LxReached = 0
+$script:LxAllPanels = @('LxStepWhich', 'LxStepWhere', 'LxStepAccount', 'LxStepPc', 'LxStepApps', 'LxStepOptions', 'LxStepReview')
+
+function Get-LxSteps {
+    <# The steps for what is picked: an ISO written as it is needs no account, PC, apps or options. #>
+    $which = @{ Panel = 'LxStepWhich'; Label = 'WHICH LINUX'; Errors = 'ISO file' }
+    $where = @{ Panel = 'LxStepWhere'; Label = 'WHERE TO WRITE'; Errors = 'USB stick' }
+    $review = @{ Panel = 'LxStepReview'; Label = 'CREATE'; Errors = '' }
+    if (Test-LxRawKind -Kind (Get-LxSystem).Kind) { return @($which, $where, $review) }
+    return @(
+        $which, $where,
+        @{ Panel = 'LxStepAccount'; Label = 'YOUR ACCOUNT'; Errors = 'user name|password|Your name|For example' },
+        @{ Panel = 'LxStepPc'; Label = 'PC AND LANGUAGE'; Errors = 'computer name' },
+        @{ Panel = 'LxStepApps'; Label = 'MODE AND APPS'; Errors = '' },
+        @{ Panel = 'LxStepOptions'; Label = 'OPTIONS'; Errors = '' },
+        $review
+    )
+}
+
+function Show-LxStep {
+    <# Shows one step of the Linux side and sets the footer buttons for it. #>
+    param([Parameter(Mandatory = $true)][int]$Index)
+    $lx = $script:lx
+    if (-not $lx) { return }
+    $steps = @(Get-LxSteps)
+    $last = $steps.Count - 1
+    if ($Index -lt 0) { $Index = 0 }
+    if ($Index -gt $last) { $Index = $last }
+    $script:LxStep = $Index
+    if ($script:LxReached -gt $last) { $script:LxReached = $last }
+    if ($Index -gt $script:LxReached) { $script:LxReached = $Index }
+    foreach ($p in $script:LxAllPanels) { $lx[$p].Visibility = if ($p -eq $steps[$Index].Panel) { 'Visible' } else { 'Collapsed' } }
+    $lx.LxBackButton.IsEnabled = ($Index -gt 0) -and -not $script:LxBusy
+    $lx.LxNextButton.Visibility = if ($Index -lt $last) { 'Visible' } else { 'Collapsed' }
+    $raw = Test-LxRawKind -Kind (Get-LxSystem).Kind
+    $lx.LxPreviewButton.Visibility = if ($Index -eq $last -and -not $raw) { 'Visible' } else { 'Collapsed' }
+    $lx.LxWriteButton.Visibility = if ($Index -eq $last) { 'Visible' } else { 'Collapsed' }
+    if ($Index -eq $last) { Update-LxReview }
+    $lx.LxBodyScroll.ScrollToTop()
+    Update-StepBar -Steps $steps -Index $Index -Reached $script:LxReached -OnJump { param($i) Show-LxStep -Index $i }
+}
+
+function Move-LxStep {
+    <# Next (+1) checks the current step first; Back (-1) always works and loses nothing. #>
+    param([Parameter(Mandatory = $true)][int]$Delta)
+    if ($Delta -gt 0) {
+        $pattern = [string](@(Get-LxSteps)[$script:LxStep].Errors)
+        if ($pattern) {
+            $problems = @((Get-LxInput).Errors | Where-Object { $_ -match $pattern })
+            if ($problems.Count -gt 0) {
+                $text = (Get-DzText 'Please fix this first:') + "`n`n" + (($problems | ForEach-Object { ' - ' + (Get-DzText $_) }) -join "`n")
+                [void](Show-DzMessage -Text $text -Title 'DayZero Builder' -Kind Warning -Owner $script:LxWindow)
+                return
+            }
+        }
+    }
+    Show-LxStep -Index ($script:LxStep + $Delta)
+}
+
+function Update-LxReview {
+    <# The last step: everything that will be made, plus what still has to be fixed. #>
+    $lx = $script:lx
+    $data = Get-LxInput
+    $sys = $data.System
+    $lines = New-Object System.Collections.Generic.List[string]
+    switch ($sys.Kind) {
+        'raw-iso' { $lines.Add(((Get-DzText 'Write {0} to this stick as it is?') -f $(if ($sys.IsoPath) { Split-Path -Leaf $sys.IsoPath } else { '?' }))) }
+        'download-raw' { $lines.Add(((Get-DzText 'Download {0} and write it to this stick as it is?') -f $data.DistroName)) }
+        default { $lines.Add(((Get-DzText 'Make a {0} install USB with DayZero on this stick?') -f $data.DistroName)) }
+    }
+    $lines.Add('')
+    if ($data.Existing) { $lines.Add(((Get-DzText 'Add DayZero to the Ubuntu stick {0}?') -f $data.Root)); $lines.Add((Get-DzText 'Nothing on it is erased.')) }
+    elseif ($data.Disk) {
+        $lines.Add((Get-DzText 'EVERYTHING ON IT WILL BE ERASED:'))
+        $lines.Add(('   {0}, {1} GB, {2}' -f $data.Disk.Name, $data.Disk.SizeGB, $(if ($data.Disk.Volumes) { $data.Disk.Volumes } else { Get-DzText 'no drive letter' })))
+    }
+    if ($data.Settings) {
+        $s = $data.Settings
+        $lines.Add('')
+        $lines.Add(((Get-DzText 'Account: {0}{1}') -f $s.userName, $(if ($s.temporaryPassword) { Get-DzText ' (temporary password)' } else { '' })))
+        if ($lx.LxComputerNameText.Text) { $lines.Add(('{0}: {1}' -f (Get-DzText 'Computer name'), $lx.LxComputerNameText.Text)) }
+        $lines.Add(((Get-DzText 'On Linux: {0}, keyboard {1}, {2}') -f $data.Options.Locale, $data.Options.Keyboard.Layout, $data.Options.TimeZone))
+        $names = @($script:LxAppBoxes | Where-Object { $_.IsChecked -eq $true } | ForEach-Object { [string]$_.Tag.name })
+        $lines.Add(((Get-DzText 'Mode: {0}, {1} apps') -f $s.defaultMode, $names.Count))
+        if ($names.Count -gt 0) { $lines.Add('   ' + ($names -join ', ')) }
+        $opts = @()
+        if ($s.installDrivers) { $opts += Get-DzText 'drivers' }
+        if ($data.Options.Codecs) { $opts += Get-DzText 'media codecs' }
+        if ($s.dryRun) { $opts += Get-DzText 'DRY RUN' }
+        if ($opts.Count -gt 0) { $lines.Add(((Get-DzText 'Also: {0}') -f ($opts -join ', '))) }
+        $lines.Add('')
+        $lines.Add((Get-DzText 'The Ubuntu installer will stop and let you choose the disk. Everything else runs on its own.'))
+    }
+    elseif (Test-LxRawKind -Kind $sys.Kind) {
+        $lines.Add('')
+        $lines.Add((Get-DzText 'You install it by hand; your account, apps and scripts are not used.'))
+    }
+    $lx.LxReviewText.Text = ($lines -join "`n")
+    if ($data.Errors.Count -gt 0) {
+        $lx.LxReviewProblemsText.Text = (Get-DzText 'Please fix this first:') + "`n" + (($data.Errors | ForEach-Object { ' - ' + (Get-DzText $_) }) -join "`n")
+        $lx.LxReviewProblemsBox.Visibility = 'Visible'
+    }
+    else { $lx.LxReviewProblemsBox.Visibility = 'Collapsed' }
+    $lx.LxWriteButton.IsEnabled = ($data.Errors.Count -eq 0 -and -not $script:LxBusy)
+}
+
 function Initialize-LinuxPanel {
     <# Loads LinuxPanel.xaml into the builder window once, fills it and wires its events. #>
     if ($script:lx) { return }
@@ -610,6 +727,8 @@ function Initialize-LinuxPanel {
         })
     $lx.LxPreviewButton.Add_Click({ try { Invoke-LxPreview } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:LxWindow) } })
     $lx.LxVerifyButton.Add_Click({ try { Invoke-LxVerify } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:LxWindow) } })
+    $lx.LxNextButton.Add_Click({ try { Move-LxStep -Delta 1 } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:LxWindow) } })
+    $lx.LxBackButton.Add_Click({ try { Move-LxStep -Delta -1 } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:LxWindow) } })
     $lx.LxWriteButton.Add_Click({ try { Invoke-LxWrite } catch { [void](Show-DzMessage -Text $_.Exception.Message -Kind Error -Owner $script:LxWindow) } })
 
     Update-LxSystemMode
@@ -645,7 +764,8 @@ function Show-BuilderSide {
     $ui.WindowsBodyScroll.Visibility = if ($isLinux) { 'Collapsed' } else { 'Visible' }
     $ui.WindowsFooter.Visibility = if ($isLinux) { 'Collapsed' } else { 'Visible' }
     $ui.LinuxHost.Visibility = if ($isLinux) { 'Visible' } else { 'Collapsed' }
-    if ($isLinux) { Update-LxScriptsCount; $script:lx.LxUserNameText.Focus() | Out-Null }
+    if ($isLinux) { Update-LxScriptsCount; Show-LxStep -Index $script:LxStep }
+    else { Show-WinStep -Index $script:WinStep }
     Write-BuilderLog "Showing the $Side side."
 }
 
